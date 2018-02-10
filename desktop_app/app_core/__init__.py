@@ -1,2 +1,2 @@
 
-from .help_texts import HelpTexts
+from app_core.wavefile_scanner import WaveFileScanner

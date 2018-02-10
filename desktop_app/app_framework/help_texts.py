@@ -38,7 +38,7 @@ class HelpTexts(object):
         take some years (probably many) before all detectors have internet connection built in.
         </p>
         <p>
-        The functionality available is mainly the same that later will be implemented 
+        The functionality in this desktop application is mainly the same that later will be implemented 
         in the CloudedBats detector software and/or in the cloud.
         </p>
         <p>
@@ -60,7 +60,7 @@ class HelpTexts(object):
         <p>
         The user interface contains <b>activities</b> and <b>extra tools</b>. 
         Activities are always placed in the central part and extra tools can be moved around. 
-        Valid places for extra tool are side-by-side or stacked at the bottom or to the right. 
+        Valid places for extra tools are side-by-side or stacked at the bottom or to the right. 
         It is also possible to put them outside the application window. 
         Click on the title bar to move them.
         All activites and tools keeps their content when hidden.

@@ -19,10 +19,6 @@ matplotlib.use('Qt5agg')
 # CloudedBats desktop application framework.
 import app_framework
 
-# Set up python path to other cloudedbats libs.
-import sys
-sys.path.append('../../cloudedbats_dsp')
-
 if __name__ == "__main__":
     app_framework.set_version(__version__)
     app_framework.desktop_application()

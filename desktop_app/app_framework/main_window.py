@@ -90,8 +90,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.move(position)        
         # Tell the user.
         app_framework.ToolManager().show_tool_by_name('Application log') # Show the log tool if hidden.
-        app_framework.Logging().log('Welcome to CloudedBats.org.')
-        app_framework.Logging().log('Note: Log rows are both sent to the "Application log" tool and written to the text file "cloudedbats_log.txt".')
+
         # Load resources when the main event loop has started.
 #         if app_framework.ToolboxSettings().get_value('Resources:Load at startup'):
 #             QtCore.QTimer.singleShot(10, app_framework.ToolboxResources().loadAllResources)
@@ -230,6 +229,13 @@ class MainWindow(QtWidgets.QMainWindow):
         activities = self._activitymanager.get_activity_list()
         if len(activities) > 0:
             activities[0].show_in_main_window()
+            
+            
+        
+        # DEBUG: During development...
+        activities[1].show_in_main_window()
+        
+        
 
     def showActivity(self, activity):
         """ """
@@ -301,10 +307,12 @@ class MainWindow(QtWidgets.QMainWindow):
     def setVersion(self, version):
         """ """
         self._version = version
+        app_framework.Logging().log('CloudedBats - Desktop application. Version: ' + self._version + '.')
+        app_framework.Logging().log('')
         
     def _about(self):
         """ """
-        about_text = app_core.HelpTexts().get_text('about')
+        about_text = app_framework.HelpTexts().get_text('about')
         about_text = about_text.replace('###version###', 
                             ' Version: ' + self._version + ' (year.month.bugfix)')
         

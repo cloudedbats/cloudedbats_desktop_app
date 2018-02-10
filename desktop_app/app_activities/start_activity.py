@@ -35,7 +35,7 @@ class StartActivity(app_framework.ActivityBase):
         """ """
         # Active widgets and connections.
         label = app_framework.RichTextQLabel()
-        label.setText(app_core.HelpTexts().get_text('start_activity'))
+        label.setText(app_framework.HelpTexts().get_text('start_activity'))
         # Layout.
         layout = QtWidgets.QGridLayout()
         gridrow = 0

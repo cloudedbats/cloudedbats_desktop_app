@@ -23,12 +23,8 @@ class ActivityManager(object):
     
     def init_activities(self):
         """ Activity activator. """
-        
-        
-###        self._activitylist.append(app_activities.ScannerActivity('Wave file scanner', self._parent))
-        
-        
         self._activitylist.append(app_activities.StartActivity('Welcome', self._parent))
+        self._activitylist.append(app_activities.ScannerActivity('Wave file scanner', self._parent))
 #         self._activitylist.append(app_activities.TestActivity('Test activity (template)', self._parent))
     
     def show_activity_by_name(self, object_name):
