@@ -1,0 +1,6 @@
+
+pyqt5
+matplotlib
+pandas
+librosa
+pyinstaller
