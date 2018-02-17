@@ -71,22 +71,46 @@ class ScannerActivity(app_framework.ActivityBase):
         self.recursive_checkbox.setChecked(False)
         # View from dir content as table.
         self.sourcecontent_button = QtWidgets.QPushButton('View files')
-        self.sourcecontent_button.clicked.connect(self.load_data)        
-        self.sourcefiles_tableview = QtWidgets.QTableView()
-        self.sourcefiles_tableview.setSortingEnabled(True)
-        # To dir.
-        self.targetdir_edit = QtWidgets.QLineEdit('')
-        self.targetdir_button = QtWidgets.QPushButton('Browse...')
-        self.targetdir_button.clicked.connect(self.target_dir_browse)
-        #
+        self.sourcecontent_button.clicked.connect(self.load_data)
+        
+        
+        self.sourcefiles_tableview = app_framework.SelectableQListView()
+#         self.sourcefiles_tableview = QtWidgets.QTableView()
+#        self.sourcefiles_tableview.setSortingEnabled(True)
+
+        # Check files in tool window.
+        self.showfileinbrowser_button = QtWidgets.QPushButton('Show in file browser')
+        self.showfileinbrowser_button.clicked.connect(self.load_data)        
+        self.firstfile_button = QtWidgets.QPushButton('|<')
+        self.firstfile_button.setMaximumWidth(30)
+        self.firstfile_button.clicked.connect(self.load_data)        
+        self.previousfile_button = QtWidgets.QPushButton('<')
+        self.previousfile_button.clicked.connect(self.load_data)        
+        self.previousfile_button.setMaximumWidth(30)
+        self.nextfile_button = QtWidgets.QPushButton('>')
+        self.nextfile_button.clicked.connect(self.load_data)        
+        self.nextfile_button.setMaximumWidth(30)
+        self.lastfile_button = QtWidgets.QPushButton('>|')
+        self.lastfile_button.clicked.connect(self.load_data)        
+        self.lastfile_button.setMaximumWidth(30)
+
+        
+        
+        
+        
+        # Frequencies.
         self.lowfreqfilter_edit = QtWidgets.QDoubleSpinBox()
         self.lowfreqfilter_edit.setRange(0.0, 250.0)
         self.lowfreqfilter_edit.setValue(15.0)
         self.highfreqfilter_edit = QtWidgets.QDoubleSpinBox()
         self.highfreqfilter_edit.setRange(0.0, 250.0)
         self.highfreqfilter_edit.setValue(250.0)
-        #
-        self.scanfiles_button = QtWidgets.QPushButton("Scan files")
+        # To dir.
+        self.targetdir_edit = QtWidgets.QLineEdit('')
+        self.targetdir_button = QtWidgets.QPushButton('Browse...')
+        self.targetdir_button.clicked.connect(self.target_dir_browse)
+        # Scan.
+        self.scanfiles_button = QtWidgets.QPushButton("Scan all files")
         self.scanfiles_button.clicked.connect(self.scan_files)
         
         # Layout widgets.
@@ -103,12 +127,25 @@ class ScannerActivity(app_framework.ActivityBase):
         form1.addWidget(self.sourcefiles_tableview, gridrow, 0, 1, 15)
 #         form1.addWidget(self.loaded_datasets_listview, gridrow, 0, 1, 15)
         gridrow += 1
-        form1.addWidget(QtWidgets.QLabel(''), gridrow, 0, 1, 1) # Empty row.
+#         form1.addWidget(QtWidgets.QLabel(''), gridrow, 0, 1, 1) # Empty row.
+        form1.addWidget(app_framework.LeftAlignedQLabel('<b>View in browser:</b>'), gridrow, 0, 1, 1)
         gridrow += 1
-        label = QtWidgets.QLabel('To directory:')
-        form1.addWidget(label, gridrow, 0, 1, 1)
-        form1.addWidget(self.targetdir_edit, gridrow, 1, 1, 13)
-        form1.addWidget(self.targetdir_button, gridrow, 14, 1, 1)
+#         form1.addWidget(self.showfileinbrowser_button, gridrow, 0, 1, 1)
+#         form1.addWidget(self.firstfile_button, gridrow, 1, 1, 1)
+#         form1.addWidget(self.previousfile_button, gridrow, 2, 1, 1)
+#         form1.addWidget(self.nextfile_button, gridrow, 3, 1, 1)
+#         form1.addWidget(self.lastfile_button, gridrow, 4, 1, 1)
+        
+        hlayout = QtWidgets.QHBoxLayout()
+        hlayout.addWidget(self.showfileinbrowser_button)
+        hlayout.addWidget(self.firstfile_button)
+        hlayout.addWidget(self.previousfile_button)
+        hlayout.addWidget(self.nextfile_button)
+        hlayout.addWidget(self.lastfile_button)
+        hlayout.addStretch(10)
+        form1.addLayout(hlayout, gridrow, 0, 1, 15)
+        
+        
         gridrow += 1
         label = QtWidgets.QLabel('Low frequency limit (kHz):')
         form1.addWidget(label, gridrow, 0, 1, 2)
@@ -117,6 +154,15 @@ class ScannerActivity(app_framework.ActivityBase):
         label = QtWidgets.QLabel('High frequency limit (kHz):')
         form1.addWidget(label, gridrow, 0, 1, 2)
         form1.addWidget(self.highfreqfilter_edit, gridrow, 2, 1, 5)
+        gridrow += 1
+#         form1.addWidget(QtWidgets.QLabel(''), gridrow, 0, 1, 1) # Empty row.
+        form1.addWidget(app_framework.LeftAlignedQLabel('<b>Scan all:</b>'), gridrow, 0, 1, 1)
+
+        gridrow += 1
+        label = QtWidgets.QLabel('To directory:')
+        form1.addWidget(label, gridrow, 0, 1, 1)
+        form1.addWidget(self.targetdir_edit, gridrow, 1, 1, 13)
+        form1.addWidget(self.targetdir_button, gridrow, 14, 1, 1)
         gridrow += 1
         form1.addWidget(self.scanfiles_button, gridrow, 0, 1, 1)
         #
@@ -129,39 +175,39 @@ class ScannerActivity(app_framework.ActivityBase):
         
         
 ###################        
-        self.dataframe_path = QtWidgets.QLineEdit()
-        self.load_dataframe = QtWidgets.QPushButton("Select dataframe")
-        self.load_dataframe.clicked.connect(self.load_data)
-        self.dataframe_tableview = QtWidgets.QTableView()
-        self.dataframe_tableview.setSortingEnabled(True)
-        
-        loaded_datasets_listview = QtWidgets.QListView()
-        self._loaded_datasets_model = QtGui.QStandardItemModel()
-        loaded_datasets_listview.setModel(self._loaded_datasets_model)
-        #
-        self._clear_metadata_button = app_framework.ClickableQLabel('Clear all')
-###        self.connect(self._clear_metadata_button, QtCore.SIGNAL('clicked()'), self._uncheck_all_datasets)                
-        self._markall_button = app_framework.ClickableQLabel('Mark all')
-###        self.connect(self._markall_button, QtCore.SIGNAL('clicked()'), self._check_all_datasets)  
-        self.scanfiles_button = QtWidgets.QPushButton("Scan files")
-        self.scanfiles_button.clicked.connect(self.scan_files)
-              
-        # Layout widgets.
-        hbox1 = QtWidgets.QHBoxLayout()
-        hbox1.addWidget(self._clear_metadata_button)
-        hbox1.addWidget(self._markall_button)
-        hbox1.addStretch(10)
-        #
-        layout = QtWidgets.QVBoxLayout()
-#         layout.addWidget(loaded_datasets_listview, 10)
-        layout.addWidget(self.dataframe_path)
-        layout.addWidget(self.load_dataframe)
-        layout.addWidget(self.dataframe_tableview, 10)
-        layout.addLayout(hbox1)
-        layout.addWidget(self.scanfiles_button)
-        widget.setLayout(layout)                
-        #
-        return widget
+#         self.dataframe_path = QtWidgets.QLineEdit()
+#         self.load_dataframe = QtWidgets.QPushButton("Select dataframe")
+#         self.load_dataframe.clicked.connect(self.load_data)
+#         self.dataframe_tableview = QtWidgets.QTableView()
+#         self.dataframe_tableview.setSortingEnabled(True)
+#         
+#         loaded_datasets_listview = QtWidgets.QListView()
+#         self._loaded_datasets_model = QtGui.QStandardItemModel()
+#         loaded_datasets_listview.setModel(self._loaded_datasets_model)
+#         #
+#         self._clear_metadata_button = app_framework.ClickableQLabel('Clear all')
+# ###        self.connect(self._clear_metadata_button, QtCore.SIGNAL('clicked()'), self._uncheck_all_datasets)                
+#         self._markall_button = app_framework.ClickableQLabel('Mark all')
+# ###        self.connect(self._markall_button, QtCore.SIGNAL('clicked()'), self._check_all_datasets)  
+#         self.scanfiles_button = QtWidgets.QPushButton("Scan files")
+#         self.scanfiles_button.clicked.connect(self.scan_files)
+#               
+#         # Layout widgets.
+#         hbox1 = QtWidgets.QHBoxLayout()
+#         hbox1.addWidget(self._clear_metadata_button)
+#         hbox1.addWidget(self._markall_button)
+#         hbox1.addStretch(10)
+#         #
+#         layout = QtWidgets.QVBoxLayout()
+# #         layout.addWidget(loaded_datasets_listview, 10)
+#         layout.addWidget(self.dataframe_path)
+#         layout.addWidget(self.load_dataframe)
+#         layout.addWidget(self.dataframe_tableview, 10)
+#         layout.addLayout(hbox1)
+#         layout.addWidget(self.scanfiles_button)
+#         widget.setLayout(layout)                
+#         #
+#         return widget
  
     def source_dir_browse(self):
         """ """
@@ -195,7 +241,7 @@ class ScannerActivity(app_framework.ActivityBase):
         model = PandasModel(dataframe[['file_name']])
         self.sourcefiles_tableview.setModel(model)
 
-        self.sourcefiles_tableview.resizeColumnsToContents()
+#         self.sourcefiles_tableview.resizeColumnsToContents()
             
     def scan_files(self):
         """ """
