@@ -6,11 +6,8 @@ import datetime
 import threading
 import app_framework
 
-# Set up python path to the cloudedbats_dsp/dsp4bats lib.
-import sys
-# sys.path.append('../cloudedbats_dsp')
-sys.path.append('../../cloudedbats_dsp')
-import dsp4bats
+# Github repository included as a github submodule.
+from cloudedbats_dsp import dsp4bats
 
 class WaveFileScanner():
     """ Used for screening of content of loaded datasets. """
