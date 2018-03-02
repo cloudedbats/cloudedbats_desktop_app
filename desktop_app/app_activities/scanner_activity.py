@@ -10,6 +10,7 @@ import pandas as pd
 from PyQt5 import QtGui
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
+
 import app_framework
 import app_core
 
@@ -1073,7 +1074,7 @@ class PandasModel(QtCore.QAbstractTableModel):
 #         graphtool = app_framework.ToolManager().get_tool_by_name('Graph plotter')
 #         graphtool.clear_plot_data()
 #         # Set up plot data for this type.
-# ###        self._graph_plot_data = toolbox_utils.GraphPlotData(
+# ###        self._graph_plot_data = app_utils.GraphPlotData(
 # ###                        title = 'Parameter values in sequence', 
 # ###                        y_type = 'float',
 # ###                        x_label = 'Sequence position in dataset(s)',
@@ -1123,7 +1124,7 @@ class PandasModel(QtCore.QAbstractTableModel):
 # #         graphtool = tool_manager.ToolManager().get_tool_by_name('Graph plotter')
 # #         graphtool.clear_plot_data()
 # #         # Set up plot data for this type.
-# # ###        self._graph_plot_data = toolbox_utils.GraphPlotData(
+# # ###        self._graph_plot_data = app_utils.GraphPlotData(
 # # ###                        title = 'Parameter values per date', 
 # # ###                        x_type = 'date',
 # # ###                        y_type = 'float',

@@ -6,6 +6,7 @@
 
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
+
 import app_framework
 
 class LogTool(app_framework.ToolBase):

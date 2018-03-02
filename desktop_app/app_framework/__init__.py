@@ -1,17 +1,17 @@
 
-from .patterns import singleton
+from app_utils.patterns import singleton
+
+from app_utils.app_logging import Logging
 
 from .utils_qt import *
 
-from .app_logging import Logging
-
 from .tool_base import ToolBase
 
-from .tool_manager import ToolManager
+from app_tools.tool_manager import ToolManager
 
 from .activity_base import ActivityBase
 
-from .activity_manager import ActivityManager
+from app_activities.activity_manager import ActivityManager
 
 from .main_window import MainWindow
 

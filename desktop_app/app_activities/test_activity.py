@@ -5,6 +5,7 @@
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
 from PyQt5 import QtWidgets
+
 import app_framework
 
 class TestActivity(app_framework.ActivityBase):

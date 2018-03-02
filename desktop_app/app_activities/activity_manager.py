@@ -26,6 +26,9 @@ class ActivityManager(object):
         self._activitylist.append(app_activities.StartActivity('Welcome', self._parent))
         self._activitylist.append(app_activities.ScannerActivity('Wave file scanner', self._parent))
 #         self._activitylist.append(app_activities.TestActivity('Test activity (template)', self._parent))
+
+#         self._activitylist.append(template_activity.TemplateActivity('(Activity template)', self._parent))
+#         self._activitylist.append(app_activities.TestActivity('Test activity (template)', self._parent))
     
     def show_activity_by_name(self, object_name):
         """ Makes an activity visible. """

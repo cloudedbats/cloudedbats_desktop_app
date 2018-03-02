@@ -9,9 +9,9 @@ import codecs
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 
-import app_core
 import app_framework
 import app_tools
+import app_utils
 
 class MainWindow(QtWidgets.QMainWindow):
     """
@@ -42,7 +42,7 @@ class MainWindow(QtWidgets.QMainWindow):
                              time.strftime('%Y-%m-%d %H:%M:%S') )
         self._logfile.write('')
         self._logtool = None # Should be initiated later.
-        app_framework.Logging().set_log_target(self)
+        app_utils.Logging().set_log_target(self)
         # Setup main window.
         self._createActions()
         self._createMenu()
@@ -94,7 +94,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # Load resources when the main event loop has started.
 #         if app_framework.ToolboxSettings().get_value('Resources:Load at startup'):
 #             QtCore.QTimer.singleShot(10, app_framework.ToolboxResources().loadAllResources)
-#         QtCore.QTimer.singleShot(100, self._loadResources)
+        QtCore.QTimer.singleShot(1000, self._loadResources)
+#        self._loadResources()
+        
+    def _loadResources(self):
+        """ """
+        pass
         
     def closeEvent(self, event):
         """ Called on application shutdown. """
@@ -154,8 +159,8 @@ class MainWindow(QtWidgets.QMainWindow):
         dock.setObjectName('Activities and tools selector')
         dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea)
         dock.setFeatures(QtWidgets.QDockWidget.NoDockWidgetFeatures)
-        # dock.setFeatures(QtGui.QDockWidget.DockWidgetFloatable | 
-        #                  QtGui.QDockWidget.DockWidgetMovable)
+        # dock.setFeatures(QtWidgets.QDockWidget.DockWidgetFloatable | 
+        #                  QtWidgets.QDockWidget.DockWidgetMovable)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
         # Widget to create space and layout for two groupboxes.
         content = QtWidgets.QWidget()
@@ -166,7 +171,7 @@ class MainWindow(QtWidgets.QMainWindow):
         dock.setWidget(widget)        
         # Add scroll.
         mainscroll = QtWidgets.QScrollArea()
-        ### mainscroll.setFrameShape(QtGui.QFrame.NoFrame)
+        ### mainscroll.setFrameShape(QtWidgets.QFrame.NoFrame)
         mainscroll.setWidget(content)
         mainscroll.setWidgetResizable(True)
         mainlayout = QtWidgets.QVBoxLayout()
@@ -213,15 +218,12 @@ class MainWindow(QtWidgets.QMainWindow):
             showhidehbox.addWidget(button_hide)
             showhidehbox.addStretch(10)
             toolsvbox.addLayout(showhidehbox)
-#             self.connect(button, QtCore.SIGNAL('clicked()'), tool.show_tool) 
             button.label_clicked.connect(tool.show_tool)
-#             self.connect(button_hide, QtCore.SIGNAL('clicked()'), tool.hide_tool) 
             button_hide.label_clicked.connect(tool.hide_tool)
         #
         # Button to hide all tools.
         button = app_framework.ClickableQLabel(' (Hide all)')
         toolsvbox.addWidget(button)
-#         self.connect(button, QtCore.SIGNAL('clicked()'), self._hideAllTools) 
         button.label_clicked.connect(self._hideAllTools)
         #
         toolsvbox.addStretch(10)
@@ -258,7 +260,7 @@ class MainWindow(QtWidgets.QMainWindow):
         stacked layout, QStackedLayout, where the pages are selected from
         the activities group box. 
         """
-###        self._activityheader = QtGui.QLabel('<b>Activity not selected...</b>", self)
+###        self._activityheader = QtWidgets.QLabel('<b>Activity not selected...</b>", self)
 ###        self._activityheader.setAlignment(QtCore.Qt.AlignHCenter)
         self._activitystack = QtWidgets.QStackedLayout()        
         # Layout widgets.
@@ -286,15 +288,19 @@ class MainWindow(QtWidgets.QMainWindow):
     def write_to_log(self, message):
         """ Log to file and to the log tool when available. """
 #        self.console.addItem(message)
-        self._logfile.write(message + '\r\n')
-        self._logfile.flush()        
-        # Search for the console tool. Note: Not available during startup.
-        if not self._logtool:
-            for tool in self._toolmanager.get_tool_list():
-                if type(tool) == app_tools.LogTool:
-                    self._logtool = tool
-        # Log message.                   
-        if self._logtool: self._logtool.write_to_log(message)
+        try:
+            self._logfile.write(message + '\r\n')
+            self._logfile.flush()        
+            # Search for the console tool. Note: Not available during startup.
+            if not self._logtool:
+                for tool in self._toolmanager.get_tool_list():
+                    if type(tool) == app_tools.LogTool:
+                        self._logtool = tool
+            # Log message.                   
+            if self._logtool: self._logtool.write_to_log(message)
+        #
+        except Exception as e:
+            print('Exception (write_to_log):', e)
 
 #     def _loadResources(self):
 #         """ """

@@ -7,9 +7,9 @@
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 
-from matplotlib import path
-from matplotlib import pyplot
-import numpy as np
+# from matplotlib import path
+# from matplotlib import pyplot
+# import numpy as np
  
 # import cartopy.crs as ccrs
 # from cartopy.io.img_tiles import OSM

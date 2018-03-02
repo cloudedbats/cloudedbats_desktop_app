@@ -230,7 +230,7 @@ class ToolboxQTableView(QtWidgets.QTableView):
     def __init__(self, parent = None, filter_column_index = None):
         """ """
         QtWidgets.QTableView.__init__(self, parent)
-# TODO:        self._tablemodel = ToolboxTableModel(modeldata = app_core.DatasetTable()) 
+####        self._tablemodel = ToolboxTableModel(modeldata = plankton_core.DatasetTable()) 
         self._selectionmodel = None # Created below.
         # Connect models.
         if filter_column_index is None:
@@ -253,7 +253,7 @@ class ToolboxQTableView(QtWidgets.QTableView):
         # Default setup for tables.
         self.setAlternatingRowColors(True)
         self.setHorizontalScrollMode(QtWidgets.QAbstractItemView.ScrollPerPixel)
-        #self.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        #self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.setSelectionMode(QtWidgets.QAbstractItemView.ContiguousSelection)
 #         self.verticalHeader().setDefaultSectionSize(18)
            
@@ -267,15 +267,20 @@ class ToolboxQTableView(QtWidgets.QTableView):
     def resetModel(self):
         """ Used to repaint. """
         if self._tablemodel:
-            self._tablemodel.reset()
+            self._tablemodel.beginResetModel()
+#           pass
+            self._tablemodel.endResetModel()
           
     def getTableModel(self):
         """ """
         return self._tablemodel.getModeldata()
-          
+        
     def setTableModel(self, tablemodeldata):
         """ """
-        self._tablemodel.setModeldata(tablemodeldata)
+        if self._tablemodel:
+            self._tablemodel.beginResetModel()
+            self._tablemodel.setModeldata(tablemodeldata)
+            self._tablemodel.endResetModel()
           
     def getSelectionModel(self):
         """ """
@@ -318,7 +323,10 @@ class ToolboxTableModel(QtCore.QAbstractTableModel):
     def setModeldata(self, tablemodeldata):
         """ """
         self._modeldata = tablemodeldata
-        self.reset() 
+#         self.reset() 
+#         self.beginResetModel();
+# #         self._modeldata.clear();
+#         self.endResetModel(); 
 
     def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
         """ Overridden abstract method. """
@@ -345,38 +353,44 @@ class ToolboxEditableQTableView( QtWidgets.QTableView):
         instance of ToolboxEditableTableModel.  """
     def __init__(self, parent = None):
         """ """
-        QtWidgets.QTableView.__init__(self, parent)
-        self._selectionmodel = None
-         
-        # Default setup for tables.
-        self.setAlternatingRowColors(True)
-        self.setHorizontalScrollMode(QtWidgets.QAbstractItemView.ScrollPerPixel)
-        #self.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        self.setSelectionMode(QtWidgets.QAbstractItemView.ContiguousSelection)
-        # Default model, data and selection        
-        self._tablemodel = ToolboxEditableTableModel()
-        self.setModel(self._tablemodel)
-        self._selectionmodel = QtCore.QItemSelectionModel(self._tablemodel)
-        self.setSelectionModel(self._selectionmodel)
-        self.resizeColumnsToContents()
+        try:
+            QtWidgets.QTableView.__init__(self, parent)
+            self._selectionmodel = None
+             
+            # Default setup for tables.
+            self.setAlternatingRowColors(True)
+            self.setHorizontalScrollMode(QtWidgets.QAbstractItemView.ScrollPerPixel)
+            #self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+            self.setSelectionMode(QtWidgets.QAbstractItemView.ContiguousSelection)
+            # Default model, data and selection        
+            self._tablemodel = ToolboxEditableTableModel()
+            self.setModel(self._tablemodel)
+            self._selectionmodel = QtCore.QItemSelectionModel(self._tablemodel)
+            self.setSelectionModel(self._selectionmodel)
+            self.resizeColumnsToContents()
+        except Exception as e:
+            print('DEBUG, Exception: ', e)
+            raise
  
     def clearModel(self):
         """ """
-        if self._tablemodel.getModeldata():
-            self._tablemodel.getModeldata().clear()
+        try:
+            if self._tablemodel.getModeldata():
+                self._tablemodel.getModeldata().clear()
+        except Exception as e:
+            print('DEBUG, Exception: ', e)
+            raise
          
-    def resetModel(self):
-        """ Used to repaint. """
-        if self._tablemodel:
-            self._tablemodel.reset()
-          
     def getTableModel(self):
         """ """
         return self._tablemodel.getModeldata()
           
     def setTableModel(self, tablemodeldata):
         """ """
-        self._tablemodel.setModeldata(tablemodeldata)
+        if self._tablemodel:
+            self._tablemodel.beginResetModel()
+            self._tablemodel.setModeldata(tablemodeldata)
+            self._tablemodel.endResetModel()
           
     def getSelectionModel(self):
         """ """
@@ -387,21 +401,33 @@ class ToolboxEditableTableModel(QtCore.QAbstractTableModel):
     """ Table model for editing. """
     def __init__(self, modeldata = None):
         """ """
-        self._modeldata = modeldata
-        # Initialize parent.
-        QtCore.QAbstractTableModel.__init__(self)
+        try:
+            self._modeldata = modeldata
+            # Initialize parent.
+            QtCore.QAbstractTableModel.__init__(self)
+        except Exception as e:
+            print('DEBUG, Exception: ', e)
+            raise
         
     def rowCount(self, parent=QtCore.QModelIndex()):
         """ Overridden abstract method. """
-        if self._modeldata == None:
-            return 0
-        return self._modeldata.get_row_count()
+        try:
+            if self._modeldata == None:
+                return 0
+            return self._modeldata.get_row_count()
+        except Exception as e:
+            print('DEBUG, Exception: ', e)
+            raise
 
     def columnCount(self, parent=QtCore.QModelIndex()):
         """ Overridden abstract method. """
-        if self._modeldata == None:
-            return 0
-        return self._modeldata.get_column_count()
+        try:
+            if self._modeldata == None:
+                return 0
+            return self._modeldata.get_column_count()
+        except Exception as e:
+            print('DEBUG, Exception: ', e)
+            raise
 
     def getModeldata(self):
         """ """
@@ -410,39 +436,55 @@ class ToolboxEditableTableModel(QtCore.QAbstractTableModel):
     def setModeldata(self, tablemodeldata):
         """ """
         self._modeldata = tablemodeldata
-        self.reset() 
 
     def headerData(self, section, orientation, role = QtCore.Qt.DisplayRole):
         """ Overridden abstract method. """
-        if self._modeldata == None:
+        try:
+            if self._modeldata == None:
+                return QtCore.QVariant()
+            if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+                return QtCore.QVariant(str(self._modeldata.get_header_item(section)))
+            if orientation == QtCore.Qt.Vertical and role == QtCore.Qt.DisplayRole:
+                return QtCore.QVariant(str(section + 1))
             return QtCore.QVariant()
-        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
-            return QtCore.QVariant(str(self._modeldata.get_header_item(section)))
-        if orientation == QtCore.Qt.Vertical and role == QtCore.Qt.DisplayRole:
-            return QtCore.QVariant(str(section + 1))
-        return QtCore.QVariant()
+        except Exception as e:
+            print('DEBUG, Exception: ', e)
+            raise
 
     def data(self, index=QtCore.QModelIndex(), role = QtCore.Qt.DisplayRole):
         """ Overridden abstract method. """
-        if self._modeldata == None:
+        try:
+            if self._modeldata == None:
+                return QtCore.QVariant()
+            # Also for editing.
+            if (role == QtCore.Qt.DisplayRole) or (role == QtCore.Qt.EditRole):
+                if index.isValid():
+                    return QtCore.QVariant(str(self._modeldata.get_data_item(index.row(), index.column())))
             return QtCore.QVariant()
-        # Also for editing.
-        if (role == QtCore.Qt.DisplayRole) or (role == QtCore.Qt.EditRole):
-            if index.isValid():
-                return QtCore.QVariant(str(self._modeldata.get_data_item(index.row(), index.column())))
-        return QtCore.QVariant()
+        except Exception as e:
+            print('DEBUG, Exception: ', e)
+            raise
 
     def setData(self, index, value, role = QtCore.Qt.EditRole):
         """ Overridden abstract method. For editing. """
-        if role == QtCore.Qt.EditRole:
-            self._modeldata.set_data_item(index.row(), index.column(), str(value.toString()))
-            self.dataChanged.emit(index, index)
-            return True
-        return False
+        try:
+            if role == QtCore.Qt.EditRole:
+#                 self._modeldata.set_data_item(index.row(), index.column(), str(value.toString()))
+                self._modeldata.set_data_item(index.row(), index.column(), value)
+                self.dataChanged.emit(index, index)
+                return True
+            return False
+        except Exception as e:
+            print('DEBUG, Exception: ', e)
+            raise
 
     def flags(self, index):
         """ Overridden abstract method. For editing. """
-        return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+        try:
+            return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+        except Exception as e:
+            print('DEBUG, Exception: ', e)
+            raise
 
 
 

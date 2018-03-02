@@ -4,10 +4,10 @@
 # Copyright (c) 2018 Arnold Andreasson 
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
-import app_framework
 import app_tools
+import app_utils
 
-@app_framework.singleton
+@app_utils.singleton
 class ToolManager(object):
     """
     The tool manager is used to set up available tools. 
