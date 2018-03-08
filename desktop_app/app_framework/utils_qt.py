@@ -8,6 +8,7 @@
 This module contains customized GUI-related classes.
 """
 
+import pandas as pd
 from PyQt5 import QtGui
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
@@ -231,6 +232,7 @@ class ToolboxQTableView(QtWidgets.QTableView):
         """ """
         QtWidgets.QTableView.__init__(self, parent)
 ####        self._tablemodel = ToolboxTableModel(modeldata = plankton_core.DatasetTable()) 
+        self._tablemodel = PandasModel() 
         self._selectionmodel = None # Created below.
         # Connect models.
         if filter_column_index is None:
@@ -239,6 +241,9 @@ class ToolboxQTableView(QtWidgets.QTableView):
             self._selectionmodel = QtCore.QItemSelectionModel(self._tablemodel) 
             self.setSelectionModel(self._selectionmodel)
             self.resizeColumnsToContents()
+
+            pass
+
         else:
             """ Use this method if the default model should be replaced by a filtered model. """
             # Filter proxy model.
@@ -253,7 +258,7 @@ class ToolboxQTableView(QtWidgets.QTableView):
         # Default setup for tables.
         self.setAlternatingRowColors(True)
         self.setHorizontalScrollMode(QtWidgets.QAbstractItemView.ScrollPerPixel)
-        #self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.setSelectionMode(QtWidgets.QAbstractItemView.ContiguousSelection)
 #         self.verticalHeader().setDefaultSectionSize(18)
            
@@ -296,56 +301,56 @@ class ToolboxQTableView(QtWidgets.QTableView):
         self.filterproxymodel.setFilterRegExp(filterString)
         
 
-class ToolboxTableModel(QtCore.QAbstractTableModel):
-    """ """
-    def __init__(self, modeldata = None):
-        """ """
-        self._modeldata = modeldata
-        # Initialize parent.
-        QtCore.QAbstractTableModel.__init__(self)
-        
-    def rowCount(self, parent=QtCore.QModelIndex()):
-        """ Overridden abstract method. """
-        if self._modeldata == None:
-            return 0
-        return self._modeldata.get_row_count()
-
-    def columnCount(self, parent=QtCore.QModelIndex()):
-        """ Overridden abstract method. """
-        if self._modeldata == None:
-            return 0
-        return self._modeldata.get_column_count()
-
-    def getModeldata(self):
-        """ """
-        return self._modeldata
-
-    def setModeldata(self, tablemodeldata):
-        """ """
-        self._modeldata = tablemodeldata
-#         self.reset() 
-#         self.beginResetModel();
-# #         self._modeldata.clear();
-#         self.endResetModel(); 
-
-    def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
-        """ Overridden abstract method. """
-        if self._modeldata == None:
-            return QtCore.QVariant()
-        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
-            return QtCore.QVariant(str(self._modeldata.get_header_item(section)))
-        if orientation == QtCore.Qt.Vertical and role == QtCore.Qt.DisplayRole:
-            return QtCore.QVariant(str(section + 1))
-        return QtCore.QVariant()
-
-    def data(self, index=QtCore.QModelIndex(), role=QtCore.Qt.DisplayRole):
-        """ Overridden abstract method. """
-        if self._modeldata == None:
-            return QtCore.QVariant()
-        if role == QtCore.Qt.DisplayRole:
-            if index.isValid():
-                return QtCore.QVariant(str(self._modeldata.get_data_item(index.row(), index.column())))
-        return QtCore.QVariant()
+# class ToolboxTableModel(QtCore.QAbstractTableModel):
+#     """ """
+#     def __init__(self, modeldata = None):
+#         """ """
+#         self._modeldata = modeldata
+#         # Initialize parent.
+#         QtCore.QAbstractTableModel.__init__(self)
+#         
+#     def rowCount(self, parent=QtCore.QModelIndex()):
+#         """ Overridden abstract method. """
+#         if self._modeldata == None:
+#             return 0
+#         return self._modeldata.get_row_count()
+# 
+#     def columnCount(self, parent=QtCore.QModelIndex()):
+#         """ Overridden abstract method. """
+#         if self._modeldata == None:
+#             return 0
+#         return self._modeldata.get_column_count()
+# 
+#     def getModeldata(self):
+#         """ """
+#         return self._modeldata
+# 
+#     def setModeldata(self, tablemodeldata):
+#         """ """
+#         self._modeldata = tablemodeldata
+# #         self.reset() 
+# #         self.beginResetModel();
+# # #         self._modeldata.clear();
+# #         self.endResetModel(); 
+# 
+#     def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
+#         """ Overridden abstract method. """
+#         if self._modeldata == None:
+#             return QtCore.QVariant()
+#         if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+#             return QtCore.QVariant(str(self._modeldata.get_header_item(section)))
+#         if orientation == QtCore.Qt.Vertical and role == QtCore.Qt.DisplayRole:
+#             return QtCore.QVariant(str(section + 1))
+#         return QtCore.QVariant()
+# 
+#     def data(self, index=QtCore.QModelIndex(), role=QtCore.Qt.DisplayRole):
+#         """ Overridden abstract method. """
+#         if self._modeldata == None:
+#             return QtCore.QVariant()
+#         if role == QtCore.Qt.DisplayRole:
+#             if index.isValid():
+#                 return QtCore.QVariant(str(self._modeldata.get_data_item(index.row(), index.column())))
+#         return QtCore.QVariant()
 
 
 class ToolboxEditableQTableView( QtWidgets.QTableView):  
@@ -485,6 +490,65 @@ class ToolboxEditableTableModel(QtCore.QAbstractTableModel):
         except Exception as e:
             print('DEBUG, Exception: ', e)
             raise
+
+
+class PandasModel(QtCore.QAbstractTableModel): 
+    def __init__(self, df = pd.DataFrame(), parent=None): 
+        QtCore.QAbstractTableModel.__init__(self, parent=parent)
+        self._df = df
+    
+    def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
+        if role != QtCore.Qt.DisplayRole:
+            return QtCore.QVariant()
+
+        if orientation == QtCore.Qt.Horizontal:
+            try:
+                return self._df.columns.tolist()[section]
+            except (IndexError, ):
+                return QtCore.QVariant()
+        elif orientation == QtCore.Qt.Vertical:
+            try:
+                # return self.df.index.tolist()
+                return self._df.index.tolist()[section]
+            except (IndexError, ):
+                return QtCore.QVariant()
+    
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if role != QtCore.Qt.DisplayRole:
+            return QtCore.QVariant()
+
+        if not index.isValid():
+            return QtCore.QVariant()
+
+#         return QtCore.QVariant(str(self._df.ix[index.row(), index.column()]))
+        return QtCore.QVariant(str(self._df.iat[index.row(), index.column()])) # More speed (iat).
+    
+    def setData(self, index, value, role):
+        row = self._df.index[index.row()]
+        col = self._df.columns[index.column()]
+        if hasattr(value, 'toPyObject'):
+            # PyQt4 gets a QVariant
+            value = value.toPyObject()
+        else:
+            # PySide gets an unicode
+            dtype = self._df[col].dtype
+            if dtype != object:
+                value = None if value == '' else dtype.type(value)
+        self._df.set_value(row, col, value)
+        return True
+    
+    def rowCount(self, parent=QtCore.QModelIndex()): 
+        return len(self._df.index)
+    
+    def columnCount(self, parent=QtCore.QModelIndex()): 
+        return len(self._df.columns)
+
+    def sort(self, column, order):
+        colname = self._df.columns.tolist()[column]
+        self.layoutAboutToBeChanged.emit()
+        self._df.sort_values(colname, ascending= order == QtCore.Qt.AscendingOrder, inplace=True)
+        self._df.reset_index(inplace=True, drop=True)
+        self.layoutChanged.emit()
 
 
 

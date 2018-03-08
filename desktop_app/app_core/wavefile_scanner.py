@@ -8,6 +8,7 @@ import app_framework
 
 # Github repository included as a github submodule.
 from cloudedbats_dsp import dsp4bats
+from cloudedbats_dsp.dsp4bats import batfiles_scanner
 
 class WaveFileScanner():
     """ Used for screening of content of loaded datasets. """
@@ -76,7 +77,7 @@ class WaveFileScanner():
         app_framework.Logging().log('Wave file scanner started.')
 
          
-        scanner = dsp4bats.BatfilesScanner(
+        scanner = batfiles_scanner.BatfilesScanner(
                     batfiles_dir=source_dir,
                     scanning_results_dir=target_dir,
 #                     batfiles_dir='/home/arnold/Desktop/bats_armstrong',

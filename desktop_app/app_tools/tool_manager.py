@@ -25,7 +25,10 @@ class ToolManager(object):
         """ Tool activator. """
         # The log tool should be loaded before other tools.
         self._toollist.append(app_tools.LogTool('Application log', self._parent))
-        self._toollist.append(app_tools.TemplateTool('Test tool (template)', self._parent))
+        self._toollist.append(app_tools.SpectrogramTool('Spectrogram', self._parent))
+        self._toollist.append(app_tools.CallShapesTool('Call shapes', self._parent))
+        self._toollist.append(app_tools.MetricsPlotTool('Metrics plot', self._parent))
+#        self._toollist.append(app_tools.TemplateTool('Test tool (template)', self._parent))
 
     def get_tool_by_name(self, object_name):
         """ Returns the tool. """
