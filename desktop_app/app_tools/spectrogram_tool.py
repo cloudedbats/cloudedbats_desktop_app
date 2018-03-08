@@ -4,6 +4,9 @@
 # Copyright (c) 2018 Arnold Andreasson 
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
+import time
+import pathlib
+import threading
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui
 from PyQt5 import QtCore
@@ -19,6 +22,7 @@ class SpectrogramTool(app_framework.ToolBase):
     
     def __init__(self, name, parentwidget):
         """ """
+        self._spectrogram_thread = None
         # Initialize parent. Should be called after other 
         # initialization since the base class calls _create_content().
         super(SpectrogramTool, self).__init__(name, parentwidget)
@@ -38,7 +42,7 @@ class SpectrogramTool(app_framework.ToolBase):
         # Add tabs.
         tabWidget = QtWidgets.QTabWidget()
         tabWidget.addTab(self._content_spectrogram(), 'Spectrogram')
-        tabWidget.addTab(self._content_settings(), 'Settings')
+#         tabWidget.addTab(self._content_settings(), 'Settings')
         tabWidget.addTab(self._content_help(), 'Help')
         # 
         layout.addWidget(tabWidget)
@@ -52,6 +56,30 @@ class SpectrogramTool(app_framework.ToolBase):
         self.wavefilepath_button = QtWidgets.QPushButton('Browse...')
         self.wavefilepath_button.clicked.connect(self.wavefile_browse)
 #         self.wavefilepath_button.clicked.connect(self.test_plot)
+        
+        self.windowsize_combo = QtWidgets.QComboBox()
+        self.windowsize_combo.setEditable(False)
+        self.windowsize_combo.setMaximumWidth(300)
+        self.windowsize_combo.addItems(['128', 
+                                        '256', 
+                                        '512', 
+                                        '1024', 
+                                        '2048', 
+                                        '4096', 
+                                        ])
+        self.windowsize_combo.setCurrentIndex(3)
+        self.windowsize_combo.currentIndexChanged.connect(self.plot_spectrogram)
+        self.resolution_combo = QtWidgets.QComboBox()
+        self.resolution_combo.setEditable(False)
+        self.resolution_combo.setMaximumWidth(300)
+        self.resolution_combo.addItems(['None', 
+                                        'Low', 
+                                        'Medium', 
+                                        'High', 
+                                        'Highest', 
+                                       ])
+        self.resolution_combo.setCurrentIndex(1)
+        self.resolution_combo.currentIndexChanged.connect(self.plot_spectrogram)
         
         # Matplotlib figure and canvas for Qt5.
         self._figure = mpl_figure.Figure()
@@ -91,6 +119,15 @@ class SpectrogramTool(app_framework.ToolBase):
         form1.addWidget(self.wavefilepath_edit, gridrow, 1, 1, 13)
         form1.addWidget(self.wavefilepath_button, gridrow, 14, 1, 1)
         gridrow += 1
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addStretch(10)
+        hbox.addWidget(app_framework.RightAlignedQLabel('Window size:'))
+        hbox.addWidget(self.windowsize_combo)
+        hbox.addWidget(app_framework.RightAlignedQLabel('Resolution:'))
+        hbox.addWidget(self.resolution_combo)
+#         hbox.addStretch(10)
+        form1.addLayout(hbox, gridrow, 0, 1, 15)
+        gridrow += 1
         form1.addWidget(self._canvas, gridrow, 0, 15, 15)
         #
         layout = QtWidgets.QVBoxLayout()
@@ -114,52 +151,49 @@ class SpectrogramTool(app_framework.ToolBase):
                 print('DEBUG: ', filename)
                 self.wavefilepath_edit.setText(filename)
                 self.plot_spectrogram()
-        
+    
     
     # === Settings ===
-    def _content_settings(self):
-        """ """
-        widget = QtWidgets.QWidget()
-        #
-        
-        self.image = QtWidgets.QLabel()
-        self.image.setPixmap(QtGui.QPixmap('/home/arnold/Desktop/develop/github_cloudedbats_dsp/dsp4bats/batfiles_done1_results/WurbAA03_20170731T221032+0200_N43.3148W2.0060_TE384_Plot.png'))
-        self.image.setObjectName("image")
-#         self.image.mousePressEvent = self.getPos
- 
-
-        
-        
-        # Active widgets and connections.
-        self._nameedit = QtWidgets.QLineEdit('<Name>')
-        self._emailedit = QtWidgets.QLineEdit('<Email>')
-        self._customerlist = QtWidgets.QListWidget()
-        # Layout.
-        form_layout = QtWidgets.QFormLayout()
-        form_layout.addRow('&Name:', self._nameedit)
-        form_layout.addRow('&Mail:', self._emailedit)
-        form_layout.addRow('&Projects:', self._customerlist)
-        # Test data.
-        self._customerlist.addItem('<First project.>')
-        self._customerlist.addItem('<Second project.>')
-        #
-        # Active widgets and connections.
-        self._testbutton = QtWidgets.QPushButton('Write info to log')
-#         self._testbutton.clicked.connect(self._test)                
-        # Layout.
-        button_layout = QtWidgets.QHBoxLayout()
-        button_layout.addWidget(self._testbutton)
-        button_layout.addStretch(5)
-        #
-        layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(form_layout, 10)
-        
-        layout.addWidget(self.image)
-        
-        layout.addLayout(button_layout)
-        widget.setLayout(layout)                
-        #
-        return widget
+#     def _content_settings(self):
+#         """ """
+#         widget = QtWidgets.QWidget()
+#         #
+#         
+#         self.image = QtWidgets.QLabel()
+#         self.image.setPixmap(QtGui.QPixmap('/home/arnold/Desktop/develop/github_cloudedbats_dsp/dsp4bats/batfiles_done1_results/WurbAA03_20170731T221032+0200_N43.3148W2.0060_TE384_Plot.png'))
+#         self.image.setObjectName("image")
+# #         self.image.mousePressEvent = self.getPos
+#         
+#         # Active widgets and connections.
+#         self._nameedit = QtWidgets.QLineEdit('<Name>')
+#         self._emailedit = QtWidgets.QLineEdit('<Email>')
+#         self._customerlist = QtWidgets.QListWidget()
+#         # Layout.
+#         form_layout = QtWidgets.QFormLayout()
+#         form_layout.addRow('&Name:', self._nameedit)
+#         form_layout.addRow('&Mail:', self._emailedit)
+#         form_layout.addRow('&Projects:', self._customerlist)
+#         # Test data.
+#         self._customerlist.addItem('<First project.>')
+#         self._customerlist.addItem('<Second project.>')
+#         #
+#         # Active widgets and connections.
+#         self._testbutton = QtWidgets.QPushButton('Write info to log')
+# #         self._testbutton.clicked.connect(self._test)                
+#         # Layout.
+#         button_layout = QtWidgets.QHBoxLayout()
+#         button_layout.addWidget(self._testbutton)
+#         button_layout.addStretch(5)
+#         #
+#         layout = QtWidgets.QVBoxLayout()
+#         layout.addLayout(form_layout, 10)
+#         
+#         layout.addWidget(self.image)
+#         
+#         layout.addLayout(button_layout)
+#         widget.setLayout(layout)                
+#         #
+#         return widget
     
     
     # === Help ===
@@ -181,25 +215,58 @@ class SpectrogramTool(app_framework.ToolBase):
         widget.setLayout(layout)                
         #
         return widget
+
+
+    # === Core ===
     
-    
-
-
-
     def plot_spectrogram(self):
-        """ """
-        wave_file = self.wavefilepath_edit.text()
-        # Settings.
-        window_size = 256
-#         window_function = 'kaiser'
-        window_function = 'hann'
-        jumps_per_ms = 2         
-        #
+        """ Use a thread to relese the user. """
+        # Clear.
         self.axes.cla()
-        if wave_file is None:
-            self._canvas.draw()
+        self._canvas.draw()
+        try:
+            # Check if thread is running.
+            if self._spectrogram_thread:
+                if self._spectrogram_thread.is_alive():
+                    print('DEBUG: Stop running thread.')
+                    self._spectrogram_thread._stop()
+            # Use a thread to relese the user.
+            self._spectrogram_thread = threading.Thread(target = self.run_plot_spectrogram, 
+                                                          args=())
+            self._spectrogram_thread.start()
+        except Exception as e:
+            print('EXCEPTION in plot_spectrogram_in_thread: ', e)
+    
+    def run_plot_spectrogram(self):
+        """ """
+        # File.
+        wave_file = self.wavefilepath_edit.text()
+        wave_file_path = pathlib.Path(wave_file)
+        if not wave_file_path.is_file():
+            print('DEBUG: File does not exists: ', wave_file)
             return
-        # Read signal from file. Length 1 sec.
+        # Settings.
+        window_size = int(self.windowsize_combo.currentText())
+        resolution = self.resolution_combo.currentText()
+#         window_size = 1024
+#         resolution = 'Highest'
+        if resolution == 'None':
+            window_function = 'hann'
+            jump = window_size
+        elif resolution == 'Low':
+            window_function = 'hann'
+            jump = int(window_size / 2)
+        elif resolution == 'Medium':
+            window_function = 'black'
+            jump = int(window_size / 4)
+        elif resolution == 'High':
+            window_function = 'blackh'
+            jump = int(window_size / 8)
+        elif resolution == 'Highest':
+            window_function = 'kaiser'
+            jump = int(window_size / 16)
+        #
+        # Read signal from file.
         wave_reader = dsp4bats.WaveFileReader(wave_file)
         sampling_freq = wave_reader.sampling_freq
         signal = np.array([])
@@ -219,7 +286,7 @@ class SpectrogramTool(app_framework.ToolBase):
         dbsf_util = dsp4bats.DbfsSpectrumUtil(window_size=window_size, 
                                                window_function=window_function)
         # Create matrix.
-        jump = int(sampling_freq/1000/jumps_per_ms)
+        ### jump = int(sampling_freq/1000/jumps_per_ms)
         size = int(len(signal_short) / jump)
         matrix = dbsf_util.calc_dbfs_matrix(signal_short, matrix_size=size, jump=jump)
          
@@ -233,6 +300,7 @@ class SpectrogramTool(app_framework.ToolBase):
                           0, max_freq)
                  )
         self.axes.axis('tight')
+        self.axes.set_title(wave_file_path.name)
         self.axes.set_ylabel('Frequency (kHz)')
         self.axes.set_xlabel('Time (s)')
         #ax.set_ylim([0,160])
