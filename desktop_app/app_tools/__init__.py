@@ -7,4 +7,7 @@ from .callshape_tool import CallShapesTool
 
 from .metricsplot_tool import MetricsPlotTool
 
+from .species_tool import SpeciesTool
+
+#
 from .template_tool import TemplateTool

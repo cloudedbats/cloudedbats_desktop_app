@@ -24,11 +24,24 @@ class ActivityManager(object):
     def init_activities(self):
         """ Activity activator. """
         self._activitylist.append(app_activities.StartActivity('Welcome', self._parent))
-        self._activitylist.append(app_activities.ScannerActivity('Wave file scanner', self._parent))
-#         self._activitylist.append(app_activities.TestActivity('Test activity (template)', self._parent))
 
-#         self._activitylist.append(template_activity.TemplateActivity('(Activity template)', self._parent))
-#         self._activitylist.append(app_activities.TestActivity('Test activity (template)', self._parent))
+        self._activitylist.append(app_activities.WorkspacesActivity('Workspaces', self._parent))
+        
+        self._activitylist.append(app_activities.MetadataActivity('Metadata', self._parent))
+        
+        self._activitylist.append(app_activities.ImportActivity('Import', self._parent))
+        
+        self._activitylist.append(app_activities.ScannerActivity('Scanner', self._parent))
+        
+        self._activitylist.append(app_activities.ClassifyActivity('Classify', self._parent))
+        
+        self._activitylist.append(app_activities.OrganizeActivity('Organize', self._parent))
+        
+        self._activitylist.append(app_activities.AnalyseActivity('Analyse', self._parent))
+        
+        self._activitylist.append(app_activities.ExportActivity('Export', self._parent))
+        
+        self._activitylist.append(app_activities.DarwinCoreActivity('Darwin Core', self._parent))
     
     def show_activity_by_name(self, object_name):
         """ Makes an activity visible. """

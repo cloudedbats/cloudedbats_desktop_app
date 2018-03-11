@@ -4,11 +4,9 @@
 # Copyright (c) 2018 Arnold Andreasson 
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
-import time
 import pathlib
 import threading
 from PyQt5 import QtWidgets
-from PyQt5 import QtGui
 from PyQt5 import QtCore
 import numpy as np
 import matplotlib.backends.backend_qt5agg as mpl_backend
@@ -22,7 +20,8 @@ class SpectrogramTool(app_framework.ToolBase):
     
     def __init__(self, name, parentwidget):
         """ """
-        self._spectrogram_thread = None
+        self.spectrogram_thread = None
+        self.spectrogram_thread_active = False
         # Initialize parent. Should be called after other 
         # initialization since the base class calls _create_content().
         super(SpectrogramTool, self).__init__(name, parentwidget)
@@ -69,17 +68,17 @@ class SpectrogramTool(app_framework.ToolBase):
                                         ])
         self.windowsize_combo.setCurrentIndex(3)
         self.windowsize_combo.currentIndexChanged.connect(self.plot_spectrogram)
-        self.resolution_combo = QtWidgets.QComboBox()
-        self.resolution_combo.setEditable(False)
-        self.resolution_combo.setMaximumWidth(300)
-        self.resolution_combo.addItems(['None', 
+        self.overlap_combo = QtWidgets.QComboBox()
+        self.overlap_combo.setEditable(False)
+        self.overlap_combo.setMaximumWidth(300)
+        self.overlap_combo.addItems(['None', 
                                         'Low', 
                                         'Medium', 
                                         'High', 
                                         'Highest', 
                                        ])
-        self.resolution_combo.setCurrentIndex(1)
-        self.resolution_combo.currentIndexChanged.connect(self.plot_spectrogram)
+        self.overlap_combo.setCurrentIndex(2)
+        self.overlap_combo.currentIndexChanged.connect(self.plot_spectrogram)
         
         # Matplotlib figure and canvas for Qt5.
         self._figure = mpl_figure.Figure()
@@ -123,8 +122,8 @@ class SpectrogramTool(app_framework.ToolBase):
         hbox.addStretch(10)
         hbox.addWidget(app_framework.RightAlignedQLabel('Window size:'))
         hbox.addWidget(self.windowsize_combo)
-        hbox.addWidget(app_framework.RightAlignedQLabel('Resolution:'))
-        hbox.addWidget(self.resolution_combo)
+        hbox.addWidget(app_framework.RightAlignedQLabel('Overlap:'))
+        hbox.addWidget(self.overlap_combo)
 #         hbox.addStretch(10)
         form1.addLayout(hbox, gridrow, 0, 1, 15)
         gridrow += 1
@@ -226,14 +225,17 @@ class SpectrogramTool(app_framework.ToolBase):
         self._canvas.draw()
         try:
             # Check if thread is running.
-            if self._spectrogram_thread:
-                if self._spectrogram_thread.is_alive():
-                    print('DEBUG: Stop running thread.')
-                    self._spectrogram_thread._stop()
+            if self.spectrogram_thread:
+#                 while self.spectrogram_thread.is_alive():
+#                     #print('DEBUG: Stop running thread.')
+                self.spectrogram_thread_active = False
+                threading.Timer(0.5, self.plot_spectrogram)
+                    
             # Use a thread to relese the user.
-            self._spectrogram_thread = threading.Thread(target = self.run_plot_spectrogram, 
+            self.spectrogram_thread_active = True
+            self.spectrogram_thread = threading.Thread(target = self.run_plot_spectrogram, 
                                                           args=())
-            self._spectrogram_thread.start()
+            self.spectrogram_thread.start()
         except Exception as e:
             print('EXCEPTION in plot_spectrogram_in_thread: ', e)
     
@@ -247,25 +249,32 @@ class SpectrogramTool(app_framework.ToolBase):
             return
         # Settings.
         window_size = int(self.windowsize_combo.currentText())
-        resolution = self.resolution_combo.currentText()
+        overlap = self.overlap_combo.currentText()
 #         window_size = 1024
 #         resolution = 'Highest'
-        if resolution == 'None':
+        window_function = 'hann'
+        jump = int(window_size / 2)
+        if overlap == 'None':
             window_function = 'hann'
             jump = window_size
-        elif resolution == 'Low':
+        elif overlap == 'Low':
+            window_function = 'hann'
+            jump = int(window_size / 1.33) 
+        elif overlap == 'Medium':
+#             window_function = 'black'
             window_function = 'hann'
             jump = int(window_size / 2)
-        elif resolution == 'Medium':
-            window_function = 'black'
-            jump = int(window_size / 4)
-        elif resolution == 'High':
+        elif overlap == 'High':
             window_function = 'blackh'
-            jump = int(window_size / 8)
-        elif resolution == 'Highest':
+#             window_function = 'hann'
+            jump = int(window_size / 4)
+        elif overlap == 'Highest':
             window_function = 'kaiser'
-            jump = int(window_size / 16)
+#             window_function = 'hann'
+            jump = int(window_size / 8)
         #
+        if not self.spectrogram_thread_active:
+            return
         # Read signal from file.
         wave_reader = dsp4bats.WaveFileReader(wave_file)
         sampling_freq = wave_reader.sampling_freq
@@ -281,15 +290,22 @@ class SpectrogramTool(app_framework.ToolBase):
         #
         # Cut part from 1 sec signal.
         signal_short = signal[int(pos_in_sec_from * sampling_freq):int(pos_in_sec_to * sampling_freq)]
-         
+        # 
+        if not self.spectrogram_thread_active:
+            return
         # Create util.
         dbsf_util = dsp4bats.DbfsSpectrumUtil(window_size=window_size, 
                                                window_function=window_function)
+        #
+        if not self.spectrogram_thread_active:
+            return
         # Create matrix.
         ### jump = int(sampling_freq/1000/jumps_per_ms)
         size = int(len(signal_short) / jump)
         matrix = dbsf_util.calc_dbfs_matrix(signal_short, matrix_size=size, jump=jump)
-         
+        #
+        if not self.spectrogram_thread_active:
+            return
         # Plot.
         max_freq = sampling_freq / 1000 / 2 # kHz and Nyquist.
         ###f, ax = plt.subplots(figsize=(15, 5))
@@ -304,6 +320,9 @@ class SpectrogramTool(app_framework.ToolBase):
         self.axes.set_ylabel('Frequency (kHz)')
         self.axes.set_xlabel('Time (s)')
         #ax.set_ylim([0,160])
+        #
+        if not self.spectrogram_thread_active:
+            return
         #
         self._canvas.draw()
     

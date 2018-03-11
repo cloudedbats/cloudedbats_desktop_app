@@ -1,10 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding:utf-8 -*-
-#
-# Copyright (c) 2010-2016 SMHI, Swedish Meteorological and Hydrological Institute 
+# Project: http://cloudedbats.org
+# Copyright (c) 2018 Arnold Andreasson 
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
-#
-from __future__ import unicode_literals
 
 import pandas as pd
 from PyQt5 import QtGui
@@ -36,29 +34,19 @@ class ScannerActivity(app_framework.ActivityBase):
     def _create_content(self):
         """ """
         content = self._create_scrollable_content()
-        contentLayout = QtWidgets.QVBoxLayout()
-        content.setLayout(contentLayout)
+        layout = QtWidgets.QVBoxLayout()
         # Add activity name at top.
         self._activityheader = app_framework.HeaderQLabel()
         self._activityheader.setText('<h2>' + self.objectName() + '</h2>')
-        contentLayout.addWidget(self._activityheader)
-        # Add content to the activity.
-        contentLayout.addWidget(self._content_scanner_tabs())
-    
-    def _content_scanner_tabs(self):
-        """ """
-        # Active widgets and connections.
-        selectdatabox = QtWidgets.QGroupBox('', self)
+        layout.addWidget(self._activityheader)
+        # Add tabs.
         tabWidget = QtWidgets.QTabWidget()
         tabWidget.addTab(self._content_scanner(), 'Scanner')
         tabWidget.addTab(self._content_adv_settings(), 'Advanced settings')
         tabWidget.addTab(self._content_help(), 'Help')
-        # Layout widgets.
-        layout = QtWidgets.QVBoxLayout()
+        # 
         layout.addWidget(tabWidget)
-        selectdatabox.setLayout(layout)        
-        #
-        return selectdatabox
+        content.setLayout(layout)
     
     # === Scanner ===
     def _content_scanner(self):

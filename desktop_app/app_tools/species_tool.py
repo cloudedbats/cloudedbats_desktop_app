@@ -15,7 +15,7 @@ import matplotlib.figure as mpl_figure
 import app_framework
 from cloudedbats_dsp import dsp4bats
 
-class CallShapesTool(app_framework.ToolBase):
+class SpeciesTool(app_framework.ToolBase):
     """ CallShapes plotting tool. Zero Crossing style. """
     
     def __init__(self, name, parentwidget):
@@ -24,7 +24,7 @@ class CallShapesTool(app_framework.ToolBase):
         self.callshape_thread_active = False
         # Initialize parent. Should be called after other 
         # initialization since the base class calls _create_content().
-        super(CallShapesTool, self).__init__(name, parentwidget)
+        super(SpeciesTool, self).__init__(name, parentwidget)
         #
         # Where is the tool allowed to dock in the main window.
         self.setAllowedAreas(QtCore.Qt.RightDockWidgetArea | 
@@ -326,114 +326,3 @@ class CallShapesTool(app_framework.ToolBase):
         #
         self._canvas.draw()
     
-#     # === Core ===
-#     
-#     def plot_spectrogram(self):
-#         """ Use a thread to relese the user. """
-#         # Clear.
-#         self.axes.cla()
-#         self._canvas.draw()
-#         try:
-#             # Check if thread is running.
-#             if scallshapegram_thread:
-# #                 while self.spectrogram_thread.is_alive():
-# #                     #print('DEBUG: Stop running thread.')
-#                 self.spectrogram_thread_active = False
-#                 threading.Timer(0.5, self.plot_spectrogram)
-#                     
-#             # Use a thread to relese the user.
-#             self.spectrogram_thread_active = True
-#             self.spectrogram_thread = threading.Thread(target = self.run_plot_spectrogram, 
-#                                                           args=())
-#             self.spectrogram_thread.start()
-#         except Exception as e:
-#             print('EXCEPTION in plot_spectrogram_in_thread: ', e)
-#     
-#     def run_plot_spectrogram(self):
-#         """ """
-#         # File.
-#         wave_file = self.wavefilepath_edit.text()
-#         wave_file_path = pathlib.Path(wave_file)
-#         if not wave_file_path.is_file():
-#             print('DEBUG: File does not exists: ', wave_file)
-#             return
-#         # Settings.
-#         window_size = int(self.windowsize_combo.currentText())
-#         overlap = self.overlap_combo.currentText()
-# #         window_size = 1024
-# #         resolution = 'Highest'
-#         window_function = 'hann'
-#         jump = int(window_size / 2)
-#         if overlap == 'None':
-#             window_function = 'hann'
-#             jump = window_size
-#         elif overlap == 'Low':
-#             window_function = 'hann'
-#             jump = int(window_size / 1.33) 
-#         elif overlap == 'Medium':
-# #             window_function = 'black'
-#             window_function = 'hann'
-#             jump = int(window_size / 2)
-#         elif overlap == 'High':
-#             window_function = 'blackh'
-# #             window_function = 'hann'
-#             jump = int(window_size / 4)
-#         elif overlap == 'Highest':
-#             window_function = 'kaiser'
-# #             window_function = 'hann'
-#             jump = int(window_size / 8)
-#         #
-#         if not self.spectrogram_thread_active:
-#             return
-#         # Read signal from file.
-#         wave_reader = dsp4bats.WaveFileReader(wave_file)
-#         sampling_freq = wave_reader.sampling_freq
-#         signal = np.array([])
-#         buffer = wave_reader.read_buffer()
-#         while len(buffer) > 0:
-#             signal = np.append(signal, buffer)
-#             buffer = wave_reader.read_buffer()  
-#         wave_reader.close()
-#         #
-#         pos_in_sec_from = 0.0
-#         pos_in_sec_to = len(signal) / sampling_freq        
-#         #
-#         # Cut part from 1 sec signal.
-#         signal_short = signal[int(pos_in_sec_from * sampling_freq):int(pos_in_sec_to * sampling_freq)]
-#         # 
-#         if not self.spectrogram_thread_active:
-#             return
-#         # Create util.
-#         dbsf_util = dsp4bats.DbfsSpectrumUtil(window_size=window_size, 
-#                                                window_function=window_function)
-#         #
-#         if not self.spectrogram_thread_active:
-#             return
-#         # Create matrix.
-#         ### jump = int(sampling_freq/1000/jumps_per_ms)
-#         size = int(len(signal_short) / jump)
-#         matrix = dbsf_util.calc_dbfs_matrix(signal_short, matrix_size=size, jump=jump)
-#         #
-#         if not self.spectrogram_thread_active:
-#             return
-#         # Plot.
-#         max_freq = sampling_freq / 1000 / 2 # kHz and Nyquist.
-#         ###f, ax = plt.subplots(figsize=(15, 5))
-#         self.axes.imshow(matrix.T, 
-#                   cmap='viridis', 
-#                   origin='lower',
-#                   extent=(pos_in_sec_from, pos_in_sec_to, 
-#                           0, max_freq)
-#                  )
-#         self.axes.axis('tight')
-#         self.axes.set_title(wave_file_path.name)
-#         self.axes.set_ylabel('Frequency (kHz)')
-#         self.axes.set_xlabel('Time (s)')
-#         #ax.set_ylim([0,160])
-#         #
-#         if not self.spectrogram_thread_active:
-#             return
-#         #
-#         self._canvas.draw()
-#     
-
