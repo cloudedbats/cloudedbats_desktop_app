@@ -4,8 +4,8 @@
 # Copyright (c) 2018 Arnold Andreasson 
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
-import app_framework
-import app_activities
+from desktop_app import app_framework
+from desktop_app import app_activities
 
 @app_framework.singleton
 class ActivityManager(object):

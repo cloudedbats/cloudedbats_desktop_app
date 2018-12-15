@@ -17,7 +17,7 @@ import matplotlib
 matplotlib.use('Qt5agg')
 
 # CloudedBats desktop application framework.
-import app_framework
+from desktop_app import app_framework
 
 if __name__ == "__main__":
     app_framework.set_version(__version__)

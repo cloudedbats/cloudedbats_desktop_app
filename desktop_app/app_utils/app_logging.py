@@ -5,7 +5,7 @@
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
 import time
-import app_utils
+from desktop_app import app_utils
  
 @app_utils.singleton
 class Logging(object):

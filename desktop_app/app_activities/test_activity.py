@@ -6,7 +6,7 @@
 
 from PyQt5 import QtWidgets
 
-import app_framework
+from desktop_app import app_framework
 
 class TestActivity(app_framework.ActivityBase):
     """

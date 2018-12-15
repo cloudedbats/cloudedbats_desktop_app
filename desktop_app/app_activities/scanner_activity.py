@@ -9,8 +9,8 @@ from PyQt5 import QtGui
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 
-import app_framework
-import app_core
+from desktop_app import app_framework
+from desktop_app import app_core
 
 class ScannerActivity(app_framework.ActivityBase):
     """ Used for screening of content of loaded datasets. """

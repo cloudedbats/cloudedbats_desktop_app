@@ -1,2 +1,2 @@
 
-from app_core.wavefile_scanner import WaveFileScanner
+from desktop_app.app_core.wavefile_scanner import WaveFileScanner

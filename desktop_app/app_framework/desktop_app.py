@@ -17,7 +17,7 @@ import pathlib
 import base64
 from PyQt5 import QtGui
 from PyQt5 import QtWidgets
-import app_framework
+from desktop_app import app_framework
 
 __version__ = '' 
 

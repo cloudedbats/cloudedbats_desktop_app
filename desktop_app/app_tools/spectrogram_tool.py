@@ -12,8 +12,8 @@ import numpy as np
 import matplotlib.backends.backend_qt5agg as mpl_backend
 import matplotlib.figure as mpl_figure
 
-import app_framework
-from cloudedbats_dsp import dsp4bats
+from desktop_app import app_framework
+import dsp4bats
 
 class SpectrogramTool(app_framework.ToolBase):
     """ Spectrogram plotting tool. """
