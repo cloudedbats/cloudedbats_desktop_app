@@ -4,8 +4,8 @@
 # Copyright (c) 2018 Arnold Andreasson 
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
-import app_tools
-import app_utils
+from desktop_app import app_tools
+from desktop_app import app_utils
 
 @app_utils.singleton
 class ToolManager(object):

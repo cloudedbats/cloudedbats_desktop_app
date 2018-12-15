@@ -4,11 +4,11 @@
 import time
 import datetime
 import threading
-import app_framework
+from desktop_app import app_framework
 
 # Github repository included as a github submodule.
-from cloudedbats_dsp import dsp4bats
-from cloudedbats_dsp.dsp4bats import batfiles_scanner
+import dsp4bats
+from dsp4bats import batfiles_scanner
 
 class WaveFileScanner():
     """ Used for screening of content of loaded datasets. """
@@ -17,8 +17,6 @@ class WaveFileScanner():
         """ """
         self.thread_object = None
         self.thread_active = False
-   
-
     
     def get_file_info_as_dataframe(self, 
                                    dir_path):
@@ -62,30 +60,30 @@ class WaveFileScanner():
     def _scan_files(self, source_dir, target_dir, low_freq_hz, high_freq_hz):
         """ """
 #         app_framework.Logging().log('Wave file scanner started.')
-# 
+#  
 #         print(aaa, bbb, ccc, ddd)
-#         
+#          
 #         self.thread_active = True
 #         time.sleep(5)
 #         self.thread_active = False
-# 
+#  
 #         app_framework.Logging().log('Wave file scanner ended.')
-# 
-#         return #####################################################
+ 
+        return #####################################################
 
 
         app_framework.Logging().log('Wave file scanner started.')
 
          
-        scanner = batfiles_scanner.BatfilesScanner(
-                    batfiles_dir=source_dir,
-                    scanning_results_dir=target_dir,
-#                     batfiles_dir='/home/arnold/Desktop/bats_armstrong',
-#                     scanning_results_dir='/home/arnold/Desktop/bats_armstrong_results',
-#                     batfiles_dir='batfiles',
-#                     scanning_results_dir='batfiles_results',
-                    sampling_freq= 500000, #384000, # True sampling frequency (before TE). 
-                    debug=True) # True: Print progress information.
+#         scanner = batfiles_scanner.BatfilesScanner(
+#                     batfiles_dir=source_dir,
+#                     scanning_results_dir=target_dir,
+# #                     batfiles_dir='/home/arnold/Desktop/bats_armstrong',
+# #                     scanning_results_dir='/home/arnold/Desktop/bats_armstrong_results',
+# #                     batfiles_dir='batfiles',
+# #                     scanning_results_dir='batfiles_results',
+#                     sampling_freq= 500000, #384000, # True sampling frequency (before TE). 
+#                     debug=True) # True: Print progress information.
              
         # Get files.
         scanner.create_list_of_files()

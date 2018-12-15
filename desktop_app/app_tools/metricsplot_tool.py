@@ -14,7 +14,7 @@ from PyQt5 import QtCore
 # import cartopy.crs as ccrs
 # from cartopy.io.img_tiles import OSM
 
-import app_framework
+from desktop_app import app_framework
 
 class MetricsPlotTool(app_framework.ToolBase):
     """

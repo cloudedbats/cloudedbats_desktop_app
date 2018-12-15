@@ -9,9 +9,9 @@ import codecs
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 
-import app_framework
-import app_tools
-import app_utils
+from desktop_app import app_framework
+from desktop_app import app_tools
+from desktop_app import app_utils
 
 class MainWindow(QtWidgets.QMainWindow):
     """
