@@ -8,6 +8,8 @@ from PyQt5 import QtWidgets
 from PyQt5 import QtGui
 from PyQt5 import QtCore
 
+import hdf54bats
+import metadata4bats
 from desktop_app import app_framework
 
 class MetadataActivity(app_framework.ActivityBase):

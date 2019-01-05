@@ -30,31 +30,6 @@ class HelpTexts(object):
         self._texts['start_activity'] = """
         <p>&nbsp;</p>
         <h3>Welcome to CloudedBats - Desktop application</h3>
-        <p>
-        The <a href="http://cloudedbats.org">CloudedBats</a>
-        software project is about trying to eleminate the need for desktop
-        applications when working with bat sound and related data. 
-        But the cloud part of CloudedBats is not yet developed, and it will 
-        take some years (probably many) before all detectors have internet connection built in.
-        </p>
-        <p>
-        The functionality in this desktop application is mainly the same that later will be implemented 
-        in the CloudedBats detector software and/or in the cloud.
-        </p>
-        <p>
-        Features include in this version are:
-        <ul>        
-            <li>Automatic extraction of metrics from wave files. 
-            Results are saved as tab separated text files and can be used in, 
-            for example, Excel or R.
-            </li>
-            <li>Visualisation of metrics as diagrams, mainly scatter-plots.
-            </li>
-            <li>Extraction of metadata from Petterson M500X. 
-            (I need this myself, more formats may be added on demand by users.)
-            </li>
-        </ul>
-        </p>
         
         <h4>Usage instructions</h4>
         <p>

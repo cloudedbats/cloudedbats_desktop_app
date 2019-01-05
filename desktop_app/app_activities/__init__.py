@@ -1,7 +1,17 @@
 
 from .start_activity import StartActivity
 
-from .workspaces_activity import WorkspacesActivity
+from desktop_app.app_activities.workspace_activity import WorkspaceActivity
+
+from desktop_app.app_activities.survey_activity import SurveyActivity
+
+from desktop_app.app_activities.event_activity import EventActivity
+
+from desktop_app.app_activities.detector_activity import DetectorActivity
+
+from desktop_app.app_activities.wavefiles_activity import WavefilesActivity
+
+
 
 from .metadata_activity import MetadataActivity
 

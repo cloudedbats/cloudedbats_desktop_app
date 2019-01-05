@@ -1,0 +1,13 @@
+
+pyqt5
+matplotlib
+pandas
+librosa
+pyinstaller
+
+# tables # Use "pip install tables" instead.
+# h5py # Use "pip install h5py" instead.
+
+git+https://github.com/cloudedbats/cloudedbats_dsp
+git+https://github.com/cloudedbats/cloudedbats_hdf5
+git+https://github.com/cloudedbats/cloudedbats_metadata

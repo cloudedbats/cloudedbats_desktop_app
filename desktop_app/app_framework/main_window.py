@@ -234,8 +234,8 @@ class MainWindow(QtWidgets.QMainWindow):
             
             
         
-        # DEBUG: During development...
-        activities[1].show_in_main_window()
+        # TODO: During development...
+        activities[2].show_in_main_window()
         
         
 
