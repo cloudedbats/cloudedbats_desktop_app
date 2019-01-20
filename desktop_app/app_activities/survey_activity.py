@@ -4,6 +4,7 @@
 # Copyright (c) 2018 Arnold Andreasson 
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
+import sys
 import pathlib
 import pandas
 from PyQt5 import QtWidgets
@@ -13,6 +14,7 @@ from PyQt5 import QtCore
 import hdf54bats
 import metadata4bats
 from desktop_app import app_framework
+from desktop_app import app_utils
 
 class SurveyActivity(app_framework.ActivityBase):
     """ """
@@ -44,18 +46,55 @@ class SurveyActivity(app_framework.ActivityBase):
     def _content_survey(self):
         """ """
         widget = QtWidgets.QWidget()
-        # From dir.
+        # Workspace and survey..
         self.workspacedir_edit = QtWidgets.QLineEdit('workspace_1')
         self.survey_combo = QtWidgets.QComboBox()
         self.survey_combo.setEditable(False)
         self.survey_combo.setMinimumWidth(250)
-        self.survey_combo.setMaximumWidth(300)
+#         self.survey_combo.setMaximumWidth(300)
         self.survey_combo.addItems(['survey_1'])
+        # Filters.
+        self.filter_event_combo = QtWidgets.QComboBox()
+        self.filter_event_combo.setEditable(False)
+        self.filter_event_combo.setMinimumWidth(150)
+#         self.filter_event_combo.setMaximumWidth(300)
+        self.filter_event_combo.addItems(['<select event>'])
+        self.filter_detector_combo = QtWidgets.QComboBox()
+        self.filter_detector_combo.setEditable(False)
+        self.filter_detector_combo.setMinimumWidth(150)
+#         self.filter_detector_combo.setMaximumWidth(300)
+        self.filter_detector_combo.addItems(['<select detector>'])
+        self.filter_wave_combo = QtWidgets.QComboBox()
+        self.filter_wave_combo.setEditable(False)
+        self.filter_wave_combo.setMinimumWidth(150)
+#         self.filter_wave_combo.setMaximumWidth(300)
+        self.filter_wave_combo.addItems(['<select wave>'])
+
+        
+        
         
         self.events_tableview = app_framework.ToolboxQTableView()
 #         self.events_tableview = app_framework.SelectableQListView()
 #         self.events_tableview = QtWidgets.QTableView()
 #        self.events_tableview.setSortingEnabled(True)
+        
+        
+        # Filters.
+        self.event_filter_combo = QtWidgets.QComboBox()
+        self.detector_filter_combo = QtWidgets.QComboBox()
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         # Buttons.
         self.name_combo = QtWidgets.QComboBox()
         self.name_combo.setEditable(False)
@@ -66,23 +105,34 @@ class SurveyActivity(app_framework.ActivityBase):
         
         self.refresh_button = QtWidgets.QPushButton('Refresh...')
         self.refresh_button.clicked.connect(self.refresh_event_list)
-        self.add_button = QtWidgets.QPushButton('Add event...')
-        self.add_button.clicked.connect(self.add_event)
-        self.delete_button = QtWidgets.QPushButton('Delete event(s)...')
-        self.delete_button.clicked.connect(self.delete_event)
+        self.add_event_button = QtWidgets.QPushButton('Add event...')
+        self.add_event_button.clicked.connect(self.add_event)
+        self.add_detector_button = QtWidgets.QPushButton('Add event...')
+        self.add_detector_button.clicked.connect(self.add_detector)
+        self.delete_button = QtWidgets.QPushButton('Delete...')
+        self.delete_button.clicked.connect(self.delete_content)
         
         # Layout widgets.
         form1 = QtWidgets.QGridLayout()
         gridrow = 0
         hlayout = QtWidgets.QHBoxLayout()
         hlayout.addWidget(QtWidgets.QLabel('Workspace:'))
-        hlayout.addWidget(self.workspacedir_edit)
+        hlayout.addWidget(self.workspacedir_edit, 7)
         hlayout.addWidget(QtWidgets.QLabel('Survey:'))
-        hlayout.addWidget(self.survey_combo)
-        hlayout.addStretch(10)
+        hlayout.addWidget(self.survey_combo, 10)
+        hlayout.addWidget(self.refresh_button)
+#         hlayout.addStretch(10)
         form1.addLayout(hlayout, gridrow, 0, 1, 15)
         gridrow += 1
-        label = QtWidgets.QLabel('Events in survey:')
+        hlayout = QtWidgets.QHBoxLayout()
+        hlayout.addWidget(QtWidgets.QLabel('Filters:'), 1)
+        hlayout.addWidget(self.filter_event_combo, 10)
+        hlayout.addWidget(self.filter_detector_combo, 10)
+        hlayout.addWidget(self.filter_wave_combo, 10)
+#         hlayout.addStretch(10)
+        form1.addLayout(hlayout, gridrow, 0, 1, 15)
+        gridrow += 1
+        label = QtWidgets.QLabel('Survey content:')
         form1.addWidget(label, gridrow, 0, 1, 1)
         gridrow += 1
         form1.addWidget(self.events_tableview, gridrow, 0, 1, 15)
@@ -94,8 +144,9 @@ class SurveyActivity(app_framework.ActivityBase):
         form1.addLayout(hlayout, gridrow, 0, 1, 15)
         gridrow += 1
         hlayout = QtWidgets.QHBoxLayout()
-        hlayout.addWidget(self.refresh_button)
-        hlayout.addWidget(self.add_button)
+#         hlayout.addWidget(self.refresh_button)
+        hlayout.addWidget(self.add_event_button)
+        hlayout.addWidget(self.add_detector_button)
         hlayout.addWidget(self.delete_button)
         hlayout.addStretch(10)
         form1.addLayout(hlayout, gridrow, 0, 1, 15)
@@ -116,7 +167,7 @@ class SurveyActivity(app_framework.ActivityBase):
         hdf5_path_list = []
         # Combo.
         self.name_combo.clear()
-        for group_path in sorted(survey.get_children(survey_name)):
+        for group_path in sorted(survey.get_children('')):
             print('Group path: ', group_path)
             # Combo.
             self.name_combo.addItem(group_path)
@@ -137,12 +188,24 @@ class SurveyActivity(app_framework.ActivityBase):
             survey_name = str(self.survey_combo.currentText())
             events = hdf54bats.Hdf5Event(dir_path, survey_name)
             name = self.name_edit.text()
-            events.add_event(parents=survey_name, name=name)
+            events.add_event(parents='', name=name)
             self.refresh_event_list()
         except Exception as e:
             print('TODO: ERROR: ', e)
 
-    def delete_event(self):
+    def add_detector(self):
+        """ """
+#         try:
+#             dir_path = str(self.workspacedir_edit.text())
+#             survey_name = str(self.survey_combo.currentText())
+#             events = hdf54bats.Hdf5Event(dir_path, survey_name)
+#             name = self.name_edit.text()
+#             events.add_event(parents='', name=name)
+#             self.refresh_event_list()
+#         except Exception as e:
+#             print('TODO: ERROR: ', e)
+
+    def delete_content(self):
         """ """
         try:
             dir_path = str(self.workspacedir_edit.text())
@@ -186,4 +249,3 @@ class SurveyActivity(app_framework.ActivityBase):
         </p>
         
         """
-
