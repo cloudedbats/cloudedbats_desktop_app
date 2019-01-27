@@ -29,28 +29,12 @@ class ActivityManager(object):
 
         self._activitylist.append(app_activities.SurveyActivity('Survey', self._parent))
 
-        self._activitylist.append(app_activities.EventActivity('Event', self._parent))
-
-        self._activitylist.append(app_activities.DetectorActivity('Detector', self._parent))
-
         self._activitylist.append(app_activities.WavefilesActivity('Wave files', self._parent))
 
 
 
         
-        self._activitylist.append(app_activities.MetadataActivity('   ', self._parent))
-        
-        self._activitylist.append(app_activities.MetadataActivity('(Metadata)', self._parent))
-        
-        self._activitylist.append(app_activities.ImportActivity('(Import)', self._parent))
-        
         self._activitylist.append(app_activities.ScannerActivity('(Scanner)', self._parent))
-        
-        self._activitylist.append(app_activities.ClassifyActivity('(Classify)', self._parent))
-        
-        self._activitylist.append(app_activities.OrganizeActivity('(Organize)', self._parent))
-        
-        self._activitylist.append(app_activities.AnalyseActivity('(Analyse)', self._parent))
         
         self._activitylist.append(app_activities.ExportActivity('(Export)', self._parent))
         

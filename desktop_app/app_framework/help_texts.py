@@ -72,7 +72,7 @@ class HelpTexts(object):
         <p>
         Single file executables are available for Windows, MacOS and Ubuntu (Linux).
         Users who want to run the latest development version can find more 
-        information at the GitHub repository: 
+        information at GitHub: 
         <a href="https://github.com/cloudedbats/cloudedbats_desktop_app">
         https://github.com/cloudedbats/cloudedbats_desktop_app</a>.
         </p>

@@ -1,6 +1,8 @@
 
 from .log_tool import LogTool
 
+from .metadata_tool import MetadataTool
+
 from .spectrogram_tool import SpectrogramTool
 
 from .callshape_tool import CallShapesTool

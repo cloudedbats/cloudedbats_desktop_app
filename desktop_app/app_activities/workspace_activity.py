@@ -544,11 +544,11 @@ class DeleteDialog(QtWidgets.QDialog):
     def __init__(self, parentwidget):
         """ """
         super(DeleteDialog, self).__init__(parentwidget)
-        self.setWindowTitle("Delete datasets and samples")
+        self.setWindowTitle("Delete surveys")
         self._parentwidget = parentwidget
         self.setLayout(self._content())
         self.setMinimumSize(500, 500)
-        self._load_dataset_data()
+        self._load_survey_data()
 #         self._load_sample_data()
         
     def _content(self):
@@ -558,29 +558,29 @@ class DeleteDialog(QtWidgets.QDialog):
         #
         self._main_tab_widget = QtWidgets.QTabWidget(self)
         contentLayout.addWidget(self._main_tab_widget)
-        self._main_tab_widget.addTab(self._dataset_content(), 'Delete datasets')
+        self._main_tab_widget.addTab(self._survey_content(), 'Delete surveys')
 #         self._main_tab_widget.addTab(self._sample_content(), 'Delete samples')
         
         return contentLayout                
 
-    # DATASETS.
+    # surveyS.
     
-    def _dataset_content(self):
+    def _survey_content(self):
         """ """
         widget = QtWidgets.QWidget()
         #  
-        datasets_listview = QtWidgets.QListView()
-        self._datasets_model = QtGui.QStandardItemModel()
-        datasets_listview.setModel(self._datasets_model)
+        surveys_listview = QtWidgets.QListView()
+        self._surveys_model = QtGui.QStandardItemModel()
+        surveys_listview.setModel(self._surveys_model)
 
         clearall_button = app_framework.ClickableQLabel('Clear all')
-        clearall_button.label_clicked.connect(self._uncheck_all_datasets)                
+        clearall_button.label_clicked.connect(self._uncheck_all_surveys)                
         markall_button = app_framework.ClickableQLabel('Mark all')
-        markall_button.label_clicked.connect(self._check_all_datasets)                
+        markall_button.label_clicked.connect(self._check_all_surveys)                
         cancel_button = QtWidgets.QPushButton('Cancel')
         cancel_button.clicked.connect(self.reject) # Close dialog box.               
-        delete_button = QtWidgets.QPushButton('Delete marked dataset(s)')
-        delete_button.clicked.connect(self._delete_marked_datasets)               
+        delete_button = QtWidgets.QPushButton('Delete marked survey(s)')
+        delete_button.clicked.connect(self._delete_marked_surveys)               
         # Layout widgets.
         hbox1 = QtWidgets.QHBoxLayout()
         hbox1.addWidget(clearall_button)
@@ -593,7 +593,7 @@ class DeleteDialog(QtWidgets.QDialog):
         hbox2.addWidget(delete_button)
         #
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(datasets_listview, 10)
+        layout.addWidget(surveys_listview, 10)
         layout.addLayout(hbox1)
         layout.addLayout(hbox2)
         #
@@ -601,10 +601,10 @@ class DeleteDialog(QtWidgets.QDialog):
         #
         return widget                
 
-    def _load_dataset_data(self):
+    def _load_survey_data(self):
         """ """
         try:
-            self._datasets_model.clear()
+            self._surveys_model.clear()
             dir_path = str(self._parentwidget.workspacedir_edit.text())
             ws = hdf54bats.Hdf5Workspace(dir_path)
             h5_list = ws.get_hdf5_list()
@@ -612,41 +612,41 @@ class DeleteDialog(QtWidgets.QDialog):
                 item = QtGui.QStandardItem(h5_file_key)
                 item.setCheckState(QtCore.Qt.Unchecked)
                 item.setCheckable(True)
-                self._datasets_model.appendRow(item)
+                self._surveys_model.appendRow(item)
         #
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
             
-    def _check_all_datasets(self):
+    def _check_all_surveys(self):
         """ """
         try:        
-            for rowindex in range(self._datasets_model.rowCount()):
-                item = self._datasets_model.item(rowindex, 0)
+            for rowindex in range(self._surveys_model.rowCount()):
+                item = self._surveys_model.item(rowindex, 0)
                 item.setCheckState(QtCore.Qt.Checked)
         #
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
             
-    def _uncheck_all_datasets(self):
+    def _uncheck_all_surveys(self):
         """ """
         try:        
-            for rowindex in range(self._datasets_model.rowCount()):
-                item = self._datasets_model.item(rowindex, 0)
+            for rowindex in range(self._surveys_model.rowCount()):
+                item = self._surveys_model.item(rowindex, 0)
                 item.setCheckState(QtCore.Qt.Unchecked)
         #
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 
-    def _delete_marked_datasets(self):
+    def _delete_marked_surveys(self):
         """ """
         try:        
             dir_path = str(self._parentwidget.workspacedir_edit.text())
             ws = hdf54bats.Hdf5Workspace(dir_path)
-            for rowindex in range(self._datasets_model.rowCount()):
-                item = self._datasets_model.item(rowindex, 0)
+            for rowindex in range(self._surveys_model.rowCount()):
+                item = self._surveys_model.item(rowindex, 0)
                 if item.checkState() == QtCore.Qt.Checked:
                     survey_filename = str(item.text())
                     ws.delete_hdf5(survey_filename)
@@ -659,102 +659,3 @@ class DeleteDialog(QtWidgets.QDialog):
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
             self.accept() # Close dialog box.
 
-#     # SAMPLES.
-#     
-#     def _sample_content(self):
-#         """ """  
-#         widget = QtWidgets.QWidget()
-#         #  
-#         samples_listview = QtWidgets.QListView()
-#         self._samples_model = QtGui.QStandardItemModel()
-#         samples_listview.setModel(self._samples_model)
-#         #
-#         clearall_button = app_framework.ClickableQLabel('Clear all')
-#         clearall_button.label_clicked.connect(self._uncheck_all_samples)                
-#         markall_button = app_framework.ClickableQLabel('Mark all')
-#         markall_button.label_clicked.connect(self._check_all_samples)                
-#         delete_button = QtWidgets.QPushButton('Delete marked sample(s)')
-#         delete_button.clicked.connect(self._delete_marked_samples)               
-#         cancel_button = QtWidgets.QPushButton('Cancel')
-#         cancel_button.clicked.connect(self.reject) # Close dialog box.               
-#         # Layout widgets.
-#         hbox1 = QtWidgets.QHBoxLayout()
-#         hbox1.addWidget(clearall_button)
-#         hbox1.addWidget(markall_button)
-#         hbox1.addStretch(10)
-#         #
-#         hbox2 = QtWidgets.QHBoxLayout()
-#         hbox2.addStretch(10)
-#         hbox2.addWidget(delete_button)
-#         hbox2.addWidget(cancel_button)
-#         #
-#         layout = QtWidgets.QVBoxLayout()
-#         layout.addWidget(samples_listview, 10)
-#         layout.addLayout(hbox1)
-#         layout.addLayout(hbox2)
-#         #
-#         widget.setLayout(layout)
-#         #
-#         return widget                
-# 
-#     def _load_sample_data(self):
-#         """ """
-#         try:        
-#             self._samples_model.clear()        
-#             for datasetname in plankton_core.PlanktonCounterManager().get_dataset_names():
-#                 item = QtGui.QStandardItem('Dataset: ' + datasetname)
-#                 self._samples_model.appendRow(item)
-#                 # Samples.
-#                 for samplename in plankton_core.PlanktonCounterManager().get_sample_names(datasetname):
-#                     item = QtGui.QStandardItem(samplename)
-#                     item.setCheckState(QtCore.Qt.Unchecked)
-#                     item.setCheckable(True)
-#                     self._samples_model.appendRow(item)
-#         #
-#         except Exception as e:
-#             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
-#             toolbox_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
-#             
-#     def _check_all_samples(self):
-#         """ """
-#         try:        
-#             for rowindex in range(self._samples_model.rowCount()):
-#                 item = self._samples_model.item(rowindex, 0)
-#                 if item.isCheckable ():
-#                     item.setCheckState(QtCore.Qt.Checked)
-#         #
-#         except Exception as e:
-#             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
-#             toolbox_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
-#             
-#     def _uncheck_all_samples(self):
-#         """ """
-#         try:        
-#             for rowindex in range(self._samples_model.rowCount()):
-#                 item = self._samples_model.item(rowindex, 0)
-#                 if item.isCheckable ():
-#                     item.setCheckState(QtCore.Qt.Unchecked)
-#         #
-#         except Exception as e:
-#             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
-#             toolbox_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
-# 
-#     def _delete_marked_samples(self):
-#         """ """
-#         try:        
-#             datasetname = None
-#             samplename = None
-#             for rowindex in range(self._samples_model.rowCount()):
-#                 item = self._samples_model.item(rowindex, 0)
-#                 if str(item.text()).startswith('Dataset: '):
-#                     datasetname = str(item.text()).replace('Dataset: ', '')
-#                 if item.checkState() == QtCore.Qt.Checked:
-#                     samplename = str(item.text())
-#                     print(samplename)
-#                     plankton_core.PlanktonCounterManager().delete_sample(datasetname, samplename)
-#             #            
-#             self.accept() # Close dialog box.
-#         #
-#         except Exception as e:
-#             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
-#             toolbox_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
