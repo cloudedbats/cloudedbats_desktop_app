@@ -146,7 +146,7 @@ class SurveyActivity(app_framework.ActivityBase):
         self.survey_combo.addItem('<select survey>')
         dir_path = str(self.workspacedir_edit.text())
         ws = hdf54bats.Hdf5Workspace(dir_path)
-        h5_list = ws.get_hdf5_list()
+        h5_list = ws.get_h5_list()
         for h5_file_key in sorted(h5_list.keys()):
             h5_file_dict = h5_list[h5_file_key]
             self.survey_combo.addItem(h5_file_dict['name'])
@@ -338,27 +338,6 @@ class SurveyActivity(app_framework.ActivityBase):
         
         """
 
-### Utility:
-def str_to_valid_ascii(text):
-    """
-        TODO: Move this to utilities.
-    """
-    new_text = []
-    for c in text.lower().replace(' ', '_'):
-        if c in string.ascii_lowercase:
-            new_text.append(c)
-        elif c in string.digits:
-            new_text.append(c)
-        elif c in string.punctuation:
-            new_text.append('_')
-        else:
-            if c == 'å': new_text.append('a')
-            elif c == 'ä': new_text.append('a')
-            elif c == 'ö': new_text.append('o')
-            else: new_text.append('_')
-    
-    return ''.join(new_text)
-
 
 
 class NewEventDialog(QtWidgets.QDialog):
@@ -405,7 +384,7 @@ class NewEventDialog(QtWidgets.QDialog):
     
     def _update_groupname(self, text):
         """ """
-        new_text = str_to_valid_ascii(text)
+        new_text = hdf54bats.str_to_ascii(text)
         if len(new_text) > 0:
             self._eventgroup_edit.setText(new_text)
             self.createevent_button.setEnabled(True)
@@ -487,7 +466,7 @@ class NewDetectorDialog(QtWidgets.QDialog):
 
     def _update_groupname(self, text):
         """ """
-        new_text = str_to_valid_ascii(text)
+        new_text = hdf54bats.str_to_ascii(text)
         if len(new_text) > 0:
             self._detectorgroup_edit.setText(new_text)
             self.createdetector_button.setEnabled(True)
@@ -577,7 +556,7 @@ class RenameDialog(QtWidgets.QDialog):
         if item_name:
 #             dir_path = str(self._parentwidget.workspacedir_edit.text())
 #             ws = hdf54bats.Hdf5Workspace(dir_path)
-#             title = ws.get_hdf5_title(item_name)
+#             title = ws.get_h5_title(item_name)
 #             self._itemname_edit.setText(title)
             self._itemname_edit.setText(item_name)
         else:
@@ -585,7 +564,7 @@ class RenameDialog(QtWidgets.QDialog):
     
     def _update_groupname(self, text):
         """ """
-        new_text = str_to_valid_ascii(text)
+        new_text = hdf54bats.str_to_ascii(text)
         if len(new_text) > 0:
             self._itemgroupname_edit.setText(new_text)
             self.renameitem_button.setEnabled(True)
@@ -677,7 +656,7 @@ class CopyDialog(QtWidgets.QDialog):
         if item_name:
 #             dir_path = str(self._parentwidget.workspacedir_edit.text())
 #             ws = hdf54bats.Hdf5Workspace(dir_path)
-#             title = ws.get_hdf5_title(item_name)
+#             title = ws.get_h5_title(item_name)
 #             self._itemname_edit.setText(title)
             self._itemname_edit.setText(item_name)
         else:
@@ -685,7 +664,7 @@ class CopyDialog(QtWidgets.QDialog):
     
     def _update_groupname(self, text):
         """ """
-        new_text = str_to_valid_ascii(text)
+        new_text = hdf54bats.str_to_ascii(text)
         if len(new_text) > 0:
             self._itemgroupname_edit.setText(new_text)
             self.copyitem_button.setEnabled(True)
@@ -705,7 +684,7 @@ class CopyDialog(QtWidgets.QDialog):
 #             groupname = self._itemgroupname_edit.text()
 #             ws = hdf54bats.Hdf5Workspace(dir_path)
 #             ws.copy_hdf5(name_combo, groupname)
-#             ws.set_hdf5_title(groupname, name)
+#             ws.set_h5_title(groupname, name)
 #             self.update_item_list()
 #             self.accept() # Close dialog box.
 #         except Exception as e:
@@ -801,7 +780,7 @@ class DeleteDialog(QtWidgets.QDialog):
 #             self._items_model.clear()
 #             dir_path = str(self._parentwidget.workspacedir_edit.text())
 #             ws = hdf54bats.Hdf5Workspace(dir_path)
-#             h5_list = ws.get_hdf5_list()
+#             h5_list = ws.get_h5_list()
 #             for h5_file_key in sorted(h5_list.keys()):
 #                 item = QtGui.QStandardItem(h5_file_key)
 #                 item.setCheckState(QtCore.Qt.Unchecked)

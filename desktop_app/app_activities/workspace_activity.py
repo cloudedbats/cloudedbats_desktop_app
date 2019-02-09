@@ -120,7 +120,7 @@ class WorkspaceActivity(app_framework.ActivityBase):
         title_list = []
         h5_path_list = []
         # Table.
-        h5_list = ws.get_hdf5_list()
+        h5_list = ws.get_h5_list()
         for h5_file_key in sorted(h5_list.keys()):
             h5_file_dict = h5_list[h5_file_key]
             print('HDF5 file: ', h5_file_dict)
@@ -251,27 +251,6 @@ class WorkspaceActivity(app_framework.ActivityBase):
         
         """
 
-### Utility:
-def str_to_valid_ascii(text):
-    """
-        TODO: Move this to utilities.
-    """
-    new_text = []
-    for c in text.lower().replace(' ', '_'):
-        if c in string.ascii_lowercase:
-            new_text.append(c)
-        elif c in string.digits:
-            new_text.append(c)
-        elif c in string.punctuation:
-            new_text.append('_')
-        else:
-            if c == 'å': new_text.append('a')
-            elif c == 'ä': new_text.append('a')
-            elif c == 'ö': new_text.append('o')
-            else: new_text.append('_')
-    
-    return ''.join(new_text)
-
 
 
 class NewSurveyDialog(QtWidgets.QDialog):
@@ -285,12 +264,12 @@ class NewSurveyDialog(QtWidgets.QDialog):
 
     def _content(self):
         """ """
-        self._surveyname_edit = QtWidgets.QLineEdit('')
-        self._surveyname_edit.setMinimumWidth(400)
+        self._surveytitle_edit = QtWidgets.QLineEdit('')
+        self._surveytitle_edit.setMinimumWidth(400)
         self._surveyfilename_edit = QtWidgets.QLineEdit('')
         self._surveyfilename_edit.setMinimumWidth(400)
         self._surveyfilename_edit.setEnabled(False)
-        self._surveyname_edit.textChanged.connect(self._update_filename)
+        self._surveytitle_edit.textChanged.connect(self._update_filename)
         cancel_button = QtWidgets.QPushButton('Cancel')
         cancel_button.clicked.connect(self.reject) # Close dialog box.               
         self.createsurvey_button = QtWidgets.QPushButton('Create survey')
@@ -299,7 +278,7 @@ class NewSurveyDialog(QtWidgets.QDialog):
         self.createsurvey_button.setDefault(False)
         # Layout widgets.
         formlayout = QtWidgets.QFormLayout()
-        formlayout.addRow('Survey name:', self._surveyname_edit)
+        formlayout.addRow('Survey title:', self._surveytitle_edit)
         formlayout.addRow('Survey filename:', self._surveyfilename_edit)
         # 
         hbox1 = QtWidgets.QHBoxLayout()
@@ -315,7 +294,7 @@ class NewSurveyDialog(QtWidgets.QDialog):
     
     def _update_filename(self, text):
         """ """
-        new_text = str_to_valid_ascii(text)
+        new_text = hdf54bats.str_to_ascii(text)
         if len(new_text) > 0:
             self._surveyfilename_edit.setText(new_text + '.h5')
             self.createsurvey_button.setEnabled(True)
@@ -329,10 +308,10 @@ class NewSurveyDialog(QtWidgets.QDialog):
         """ """
         try:
             dir_path = str(self._parentwidget.workspacedir_edit.text())
-            name = str(self._surveyname_edit.text())
+            name = str(self._surveytitle_edit.text())
             filename = str(self._surveyfilename_edit.text())
             ws = hdf54bats.Hdf5Workspace(dir_path, create_ws=True)
-            ws.create_hdf5(filename, title=name)
+            ws.create_h5(filename, title=name)
             self.accept() # Close dialog box.
         except Exception as e:
             print('TODO: ERROR: ', e)
@@ -357,12 +336,12 @@ class RenameSurveyDialog(QtWidgets.QDialog):
         self.name_combo.setMinimumWidth(400)
         self.name_combo.currentIndexChanged.connect(self._set_filename)
         
-        self._surveyname_edit = QtWidgets.QLineEdit('')
-        self._surveyname_edit.setMinimumWidth(400)
+        self._surveytitle_edit = QtWidgets.QLineEdit('')
+        self._surveytitle_edit.setMinimumWidth(400)
         self._surveyfilename_edit = QtWidgets.QLineEdit('')
         self._surveyfilename_edit.setMinimumWidth(400)
         self._surveyfilename_edit.setEnabled(False)
-        self._surveyname_edit.textChanged.connect(self._update_filename)
+        self._surveytitle_edit.textChanged.connect(self._update_filename)
         cancel_button = QtWidgets.QPushButton('Cancel')
         cancel_button.clicked.connect(self.reject) # Close dialog box.               
         self.renamesurvey_button = QtWidgets.QPushButton('Rename survey')
@@ -372,7 +351,7 @@ class RenameSurveyDialog(QtWidgets.QDialog):
         # Layout widgets.
         formlayout = QtWidgets.QFormLayout()
         formlayout.addRow('Select survey:', self.name_combo)
-        formlayout.addRow('New name:', self._surveyname_edit)
+        formlayout.addRow('New title:', self._surveytitle_edit)
         formlayout.addRow('New filename:', self._surveyfilename_edit)
         # 
         hbox1 = QtWidgets.QHBoxLayout()
@@ -392,7 +371,7 @@ class RenameSurveyDialog(QtWidgets.QDialog):
         ws = hdf54bats.Hdf5Workspace(dir_path)
         # Combo.
         self.name_combo.clear()
-        h5_list = ws.get_hdf5_list()
+        h5_list = ws.get_h5_list()
         for h5_file_key in sorted(h5_list.keys()):
             h5_file_dict = h5_list[h5_file_key]
             print('HDF5 file: ', h5_file_dict)
@@ -405,14 +384,14 @@ class RenameSurveyDialog(QtWidgets.QDialog):
         if survey_name:
             dir_path = str(self._parentwidget.workspacedir_edit.text())
             ws = hdf54bats.Hdf5Workspace(dir_path)
-            title = ws.get_hdf5_title(survey_name)
-            self._surveyname_edit.setText(title)
+            title = ws.get_h5_title(survey_name)
+            self._surveytitle_edit.setText(title)
         else:
-            self._surveyname_edit.setText('')
+            self._surveytitle_edit.setText('')
     
     def _update_filename(self, text):
         """ """
-        new_text = str_to_valid_ascii(text)
+        new_text = hdf54bats.str_to_ascii(text)
         if len(new_text) > 0:
             self._surveyfilename_edit.setText(new_text + '.h5')
             self.renamesurvey_button.setEnabled(True)
@@ -427,11 +406,11 @@ class RenameSurveyDialog(QtWidgets.QDialog):
         try:
             dir_path = str(self._parentwidget.workspacedir_edit.text())
             name_combo = self.name_combo.currentText()
-            name = self._surveyname_edit.text()
+            name = self._surveytitle_edit.text()
             filename = self._surveyfilename_edit.text()
             ws = hdf54bats.Hdf5Workspace(dir_path)
-            ws.rename_hdf5(name_combo, filename)
-            ws.set_hdf5_title(filename, name)
+            ws.rename_h5(name_combo, filename)
+            ws.set_h5_title(filename, name)
             self.update_survey_list()
             self.accept() # Close dialog box.
         except Exception as e:
@@ -457,12 +436,12 @@ class CopySurveyDialog(QtWidgets.QDialog):
         self.name_combo.setMinimumWidth(400)
         self.name_combo.currentIndexChanged.connect(self._set_filename)
         
-        self._surveyname_edit = QtWidgets.QLineEdit('')
-        self._surveyname_edit.setMinimumWidth(400)
+        self._surveytitle_edit = QtWidgets.QLineEdit('')
+        self._surveytitle_edit.setMinimumWidth(400)
         self._surveyfilename_edit = QtWidgets.QLineEdit('')
         self._surveyfilename_edit.setMinimumWidth(400)
         self._surveyfilename_edit.setEnabled(False)
-        self._surveyname_edit.textChanged.connect(self._update_filename)
+        self._surveytitle_edit.textChanged.connect(self._update_filename)
         cancel_button = QtWidgets.QPushButton('Cancel')
         cancel_button.clicked.connect(self.reject) # Close dialog box.               
         self.copysurvey_button = QtWidgets.QPushButton('Copy survey')
@@ -472,7 +451,7 @@ class CopySurveyDialog(QtWidgets.QDialog):
         # Layout widgets.
         formlayout = QtWidgets.QFormLayout()
         formlayout.addRow('Select survey:', self.name_combo)
-        formlayout.addRow('Copy to name:', self._surveyname_edit)
+        formlayout.addRow('Copy to title:', self._surveytitle_edit)
         formlayout.addRow('Copy to filename:', self._surveyfilename_edit)
         # 
         hbox1 = QtWidgets.QHBoxLayout()
@@ -492,7 +471,7 @@ class CopySurveyDialog(QtWidgets.QDialog):
         ws = hdf54bats.Hdf5Workspace(dir_path)
         # Combo.
         self.name_combo.clear()
-        h5_list = ws.get_hdf5_list()
+        h5_list = ws.get_h5_list()
         for h5_file_key in sorted(h5_list.keys()):
             h5_file_dict = h5_list[h5_file_key]
             print('HDF5 file: ', h5_file_dict)
@@ -505,14 +484,14 @@ class CopySurveyDialog(QtWidgets.QDialog):
         if survey_name:
             dir_path = str(self._parentwidget.workspacedir_edit.text())
             ws = hdf54bats.Hdf5Workspace(dir_path)
-            title = ws.get_hdf5_title(survey_name)
-            self._surveyname_edit.setText(title)
+            title = ws.get_h5_title(survey_name)
+            self._surveytitle_edit.setText(title)
         else:
-            self._surveyname_edit.setText('')
+            self._surveytitle_edit.setText('')
     
     def _update_filename(self, text):
         """ """
-        new_text = str_to_valid_ascii(text)
+        new_text = hdf54bats.str_to_ascii(text)
         if len(new_text) > 0:
             self._surveyfilename_edit.setText(new_text + '.h5')
             self.copysurvey_button.setEnabled(True)
@@ -527,11 +506,11 @@ class CopySurveyDialog(QtWidgets.QDialog):
         try:
             dir_path = str(self._parentwidget.workspacedir_edit.text())
             name_combo = self.name_combo.currentText()
-            name = self._surveyname_edit.text()
+            name = self._surveytitle_edit.text()
             filename = self._surveyfilename_edit.text()
             ws = hdf54bats.Hdf5Workspace(dir_path)
-            ws.copy_hdf5(name_combo, filename)
-            ws.set_hdf5_title(filename, name)
+            ws.copy_h5(name_combo, filename)
+            ws.set_h5_title(filename, name)
             self.update_survey_list()
             self.accept() # Close dialog box.
         except Exception as e:
@@ -607,7 +586,7 @@ class DeleteDialog(QtWidgets.QDialog):
             self._surveys_model.clear()
             dir_path = str(self._parentwidget.workspacedir_edit.text())
             ws = hdf54bats.Hdf5Workspace(dir_path)
-            h5_list = ws.get_hdf5_list()
+            h5_list = ws.get_h5_list()
             for h5_file_key in sorted(h5_list.keys()):
                 item = QtGui.QStandardItem(h5_file_key)
                 item.setCheckState(QtCore.Qt.Unchecked)
@@ -649,7 +628,7 @@ class DeleteDialog(QtWidgets.QDialog):
                 item = self._surveys_model.item(rowindex, 0)
                 if item.checkState() == QtCore.Qt.Checked:
                     survey_filename = str(item.text())
-                    ws.delete_hdf5(survey_filename)
+                    ws.delete_h5(survey_filename)
             #
 #             self._parentwidget._emit_change_notification()
             self.accept() # Close dialog box.

@@ -320,6 +320,6 @@ class MainWindow(QtWidgets.QMainWindow):
         """ """
         about_text = app_framework.HelpTexts().get_text('about')
         about_text = about_text.replace('###version###', 
-                            ' Version: ' + self._version + ' (year.month.bugfix)')
+                            ' Version: ' + self._version)
         
         QtWidgets.QMessageBox.about(self, self.tr('About'), self.tr(about_text))
