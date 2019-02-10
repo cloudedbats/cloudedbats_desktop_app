@@ -14,6 +14,7 @@ import matplotlib.figure as mpl_figure
 
 from desktop_app import app_framework
 import dsp4bats
+import hdf54bats
 
 class SpectrogramTool(app_framework.ToolBase):
     """ Spectrogram plotting tool. """
@@ -33,6 +34,9 @@ class SpectrogramTool(app_framework.ToolBase):
         # Default position. Hide as default.
         self._parent.addDockWidget(QtCore.Qt.RightDockWidgetArea, self)
         self.hide()
+        #
+        self.refresh_survey_list()
+        self.refresh_wavefile_list(0)
 
     def _create_content(self):
         """ """
@@ -50,10 +54,36 @@ class SpectrogramTool(app_framework.ToolBase):
     def _content_spectrogram(self):
         """ """
         widget = QtWidgets.QWidget()
+        
+        # Workspace and survey..
+        self.workspacedir_edit = QtWidgets.QLineEdit('workspace_1')
+        self.workspacedir_edit.textChanged.connect(self.refresh_survey_list)
+        self.survey_combo = QtWidgets.QComboBox()
+        self.survey_combo.setEditable(False)
+        self.survey_combo.setMinimumWidth(250)
+#         self.survey_combo.setMaximumWidth(300)
+        self.survey_combo.addItems(['<select survey>'])
+        self.survey_combo.currentIndexChanged.connect(self.refresh_wavefile_list)
+#         self.survey_combo.setMaximumWidth(300)
+        self.wavefile_combo = QtWidgets.QComboBox()
+        self.wavefile_combo.setEditable(False)
+        self.wavefile_combo.setMinimumWidth(250)
+        self.wavefile_combo.addItems(['<select wavefile>'])
+        self.wavefile_combo.currentIndexChanged.connect(self.plot_spectrogram)
+        
+        self.firstwave_button = QtWidgets.QPushButton('|<')
+        self.firstwave_button.clicked.connect(self.firstwave)
+        self.prevwave_button = QtWidgets.QPushButton('<')
+        self.prevwave_button.clicked.connect(self.prevwave)
+        self.nextwave_button = QtWidgets.QPushButton('>')
+        self.nextwave_button.clicked.connect(self.nextwave)
+        self.lastwave_button = QtWidgets.QPushButton('>|')
+        self.lastwave_button.clicked.connect(self.lastwave)
+
         # Wave file.
-        self.wavefilepath_edit = QtWidgets.QLineEdit('')
-        self.wavefilepath_button = QtWidgets.QPushButton('Browse...')
-        self.wavefilepath_button.clicked.connect(self.wavefile_browse)
+#         self.wavefilepath_edit = QtWidgets.QLineEdit('')
+#         self.wavefilepath_button = QtWidgets.QPushButton('Browse...')
+#         self.wavefilepath_button.clicked.connect(self.wavefile_browse)
 #         self.wavefilepath_button.clicked.connect(self.test_plot)
         
         self.windowsize_combo = QtWidgets.QComboBox()
@@ -85,38 +115,32 @@ class SpectrogramTool(app_framework.ToolBase):
         self._canvas = mpl_backend.FigureCanvasQTAgg(self._figure) 
         self.axes = self._figure.add_subplot(111)       
         self._canvas.show()
-        # Layout widgets.
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self._canvas)
         
         # Layout widgets.
         form1 = QtWidgets.QGridLayout()
         gridrow = 0
-#         label = QtWidgets.QLabel('From directory:')
+        hlayout = QtWidgets.QHBoxLayout()
+        hlayout.addWidget(QtWidgets.QLabel('Workspace:'))
+        hlayout.addWidget(self.workspacedir_edit, 7)
+        hlayout.addWidget(QtWidgets.QLabel('Survey:'))
+        hlayout.addWidget(self.survey_combo, 10)
+#         hlayout.addWidget(self.refresh_button)
+#         hlayout.addStretch(10)
+        form1.addLayout(hlayout, gridrow, 0, 1, 15)
+#         gridrow += 1
+#         label = QtWidgets.QLabel('Wave file:')
 #         form1.addWidget(label, gridrow, 0, 1, 1)
-#         form1.addWidget(self.sourcedir_edit, gridrow, 1, 1, 13)
-#         form1.addWidget(self.sourcedir_button, gridrow, 14, 1, 1)
-#         gridrow += 1
-#         form1.addWidget(self.recursive_checkbox, gridrow, 1, 1, 13)
-#         form1.addWidget(self.sourcecontent_button, gridrow, 14, 1, 1)
-#         gridrow += 1
-#         form1.addWidget(self.sourcefiles_tableview, gridrow, 0, 1, 15)
-# #         form1.addWidget(self.loaded_datasets_listview, gridrow, 0, 1, 15)
-#         gridrow += 1
-# #         form1.addWidget(QtWidgets.QLabel(''), gridrow, 0, 1, 1) # Empty row.
-#         form1.addWidget(app_framework.LeftAlignedQLabel('<b>View in browser:</b>'), gridrow, 0, 1, 1)
-#         gridrow += 1
-# #         form1.addWidget(self.showfileinbrowser_button, gridrow, 0, 1, 1)
-# #         form1.addWidget(self.firstfile_button, gridrow, 1, 1, 1)
-# #         form1.addWidget(self.previousfile_button, gridrow, 2, 1, 1)
-# #         form1.addWidget(self.nextfile_button, gridrow, 3, 1, 1)
-# #         form1.addWidget(self.lastfile_button, gridrow, 4, 1, 1)
-        
+#         form1.addWidget(self.wavefilepath_edit, gridrow, 1, 1, 13)
+#         form1.addWidget(self.wavefilepath_button, gridrow, 14, 1, 1)
         gridrow += 1
-        label = QtWidgets.QLabel('Wave file:')
+        label = QtWidgets.QLabel('Wavefiles:')
         form1.addWidget(label, gridrow, 0, 1, 1)
-        form1.addWidget(self.wavefilepath_edit, gridrow, 1, 1, 13)
-        form1.addWidget(self.wavefilepath_button, gridrow, 14, 1, 1)
+        form1.addWidget(self.wavefile_combo, gridrow, 1, 1, 9)
+        form1.addWidget(self.firstwave_button, gridrow, 10, 1, 1)
+        form1.addWidget(self.prevwave_button, gridrow, 11, 1, 1)
+        form1.addWidget(self.nextwave_button, gridrow, 12, 1, 1)
+        form1.addWidget(self.lastwave_button, gridrow, 13, 1, 1)
+#         form1.addWidget(self.wavefilepath_button, gridrow, 14, 1, 1)
         gridrow += 1
         hbox = QtWidgets.QHBoxLayout()
         hbox.addStretch(10)
@@ -135,65 +159,23 @@ class SpectrogramTool(app_framework.ToolBase):
         #
         return widget        
     
-    def wavefile_browse(self):
-        """ """
-        # Show select file dialog box. Multiple files can be selected.
-        namefilter = 'Wave files (*.wav *.WAV);;All files (*.*)'
-        filenames, _ = QtWidgets.QFileDialog.getOpenFileNames(
-                            self,
-                            'Import sample(s)',
-                            '', # self._last_used_excelfile_name,
-                            namefilter)
-        # Check if user pressed ok or cancel.
-        if filenames:
-            for filename in filenames:
-                print('DEBUG: ', filename)
-                self.wavefilepath_edit.setText(filename)
-                self.plot_spectrogram()
-    
-    
-    # === Settings ===
-#     def _content_settings(self):
+#     def wavefile_browse(self):
 #         """ """
-#         widget = QtWidgets.QWidget()
-#         #
-#         
-#         self.image = QtWidgets.QLabel()
-#         self.image.setPixmap(QtGui.QPixmap('/home/arnold/Desktop/develop/github_cloudedbats_dsp/dsp4bats/batfiles_done1_results/WurbAA03_20170731T221032+0200_N43.3148W2.0060_TE384_Plot.png'))
-#         self.image.setObjectName("image")
-# #         self.image.mousePressEvent = self.getPos
-#         
-#         # Active widgets and connections.
-#         self._nameedit = QtWidgets.QLineEdit('<Name>')
-#         self._emailedit = QtWidgets.QLineEdit('<Email>')
-#         self._customerlist = QtWidgets.QListWidget()
-#         # Layout.
-#         form_layout = QtWidgets.QFormLayout()
-#         form_layout.addRow('&Name:', self._nameedit)
-#         form_layout.addRow('&Mail:', self._emailedit)
-#         form_layout.addRow('&Projects:', self._customerlist)
-#         # Test data.
-#         self._customerlist.addItem('<First project.>')
-#         self._customerlist.addItem('<Second project.>')
-#         #
-#         # Active widgets and connections.
-#         self._testbutton = QtWidgets.QPushButton('Write info to log')
-# #         self._testbutton.clicked.connect(self._test)                
-#         # Layout.
-#         button_layout = QtWidgets.QHBoxLayout()
-#         button_layout.addWidget(self._testbutton)
-#         button_layout.addStretch(5)
-#         #
-#         layout = QtWidgets.QVBoxLayout()
-#         layout.addLayout(form_layout, 10)
-#         
-#         layout.addWidget(self.image)
-#         
-#         layout.addLayout(button_layout)
-#         widget.setLayout(layout)                
-#         #
-#         return widget
-    
+#         # OLD: From file.
+# 
+#         # Show select file dialog box. Multiple files can be selected.
+#         namefilter = 'Wave files (*.wav *.WAV);;All files (*.*)'
+#         filenames, _ = QtWidgets.QFileDialog.getOpenFileNames(
+#                             self,
+#                             'Import sample(s)',
+#                             '', # self._last_used_excelfile_name,
+#                             namefilter)
+#         # Check if user pressed ok or cancel.
+#         if filenames:
+#             for filename in filenames:
+#                 print('DEBUG: ', filename)
+#                 self.wavefilepath_edit.setText(filename)
+#                 self.plot_spectrogram()
     
     # === Help ===
     def _content_help(self):
@@ -216,13 +198,63 @@ class SpectrogramTool(app_framework.ToolBase):
         return widget
 
 
-    # === Core ===
+    # === TODO: Move to Core ===
+    
+    def firstwave(self):
+        """ """
+        self.wavefile_combo.setCurrentIndex(0)
+        
+    def prevwave(self):
+        """ """
+        index = self.wavefile_combo.currentIndex()
+        if index > 0:
+            self.wavefile_combo.setCurrentIndex(index-1)
+    
+    def nextwave(self):
+        """ """
+        index = self.wavefile_combo.currentIndex()
+        maxindex = self.wavefile_combo.count()
+        if index < maxindex:
+            self.wavefile_combo.setCurrentIndex(index+1)
+    
+    def lastwave(self):
+        """ """
+        maxindex = self.wavefile_combo.count()
+        self.wavefile_combo.setCurrentIndex(maxindex-1)
+    
+    def refresh_survey_list(self):
+        """ """
+        self.survey_combo.clear()
+        self.survey_combo.addItem('<select survey>')
+        dir_path = str(self.workspacedir_edit.text())
+        ws = hdf54bats.Hdf5Workspace(dir_path)
+        h5_list = ws.get_h5_list()
+        for h5_file_key in sorted(h5_list.keys()):
+            h5_file_dict = h5_list[h5_file_key]
+            self.survey_combo.addItem(h5_file_dict['name'])
+            
+            self.survey_combo.setCurrentIndex(1)
+
+    def refresh_wavefile_list(self, index):
+        """ """
+        self.wavefile_combo.clear()
+        workspace = str(self.workspacedir_edit.text())
+        survey = str(self.survey_combo.currentText())
+        if survey not in ['', '<select survey>']:
+            h5wavefile = hdf54bats.Hdf5Wavefile(workspace, survey)
+            
+            from_top_node = ''
+            wavefiles_dict = h5wavefile.get_wavefiles(from_top_node)
+            for wave_id in sorted(wavefiles_dict):
+                self.wavefile_combo.addItem(wave_id)
+        else:
+            self.wavefile_combo.clear()
     
     def plot_spectrogram(self):
         """ Use a thread to relese the user. """
         # Clear.
         self.axes.cla()
-        self._canvas.draw()
+#         self._canvas.draw()
         try:
             # Check if thread is running.
             if self.spectrogram_thread:
@@ -230,100 +262,125 @@ class SpectrogramTool(app_framework.ToolBase):
 #                     #print('DEBUG: Stop running thread.')
                 self.spectrogram_thread_active = False
                 threading.Timer(0.5, self.plot_spectrogram)
-                    
-            # Use a thread to relese the user.
-            self.spectrogram_thread_active = True
-            self.spectrogram_thread = threading.Thread(target = self.run_plot_spectrogram, 
-                                                          args=())
-            self.spectrogram_thread.start()
+            else:
+                # Use a thread to relese the user.
+                self.spectrogram_thread_active = True
+                self.spectrogram_thread = threading.Thread(target = self.run_plot_spectrogram, 
+                                                           args=())
+                self.spectrogram_thread.start()
         except Exception as e:
             print('EXCEPTION in plot_spectrogram_in_thread: ', e)
     
     def run_plot_spectrogram(self):
         """ """
-        # File.
-        wave_file = self.wavefilepath_edit.text()
-        wave_file_path = pathlib.Path(wave_file)
-        if not wave_file_path.is_file():
-            print('DEBUG: File does not exists: ', wave_file)
-            return
-        # Settings.
-        window_size = int(self.windowsize_combo.currentText())
-        overlap = self.overlap_combo.currentText()
-#         window_size = 1024
-#         resolution = 'Highest'
-        window_function = 'hann'
-        jump = int(window_size / 2)
-        if overlap == 'None':
-            window_function = 'hann'
-            jump = window_size
-        elif overlap == 'Low':
-            window_function = 'hann'
-            jump = int(window_size / 1.33) 
-        elif overlap == 'Medium':
-#             window_function = 'black'
+        try:
+            # File.
+#             wave_file = self.wavefilepath_edit.text()
+#             wave_file_path = pathlib.Path(wave_file)
+    #         if not wave_file_path.is_file():
+    #             print('DEBUG: File does not exists: ', wave_file)
+    #             return
+            # Settings.
+            window_size = int(self.windowsize_combo.currentText())
+            overlap = self.overlap_combo.currentText()
+    #         window_size = 1024
+    #         resolution = 'Highest'
             window_function = 'hann'
             jump = int(window_size / 2)
-        elif overlap == 'High':
-            window_function = 'blackh'
-#             window_function = 'hann'
-            jump = int(window_size / 4)
-        elif overlap == 'Highest':
-            window_function = 'kaiser'
-#             window_function = 'hann'
-            jump = int(window_size / 8)
-        #
-        if not self.spectrogram_thread_active:
-            return
-        # Read signal from file.
-        wave_reader = dsp4bats.WaveFileReader(wave_file)
-        sampling_freq = wave_reader.sampling_freq
-        signal = np.array([])
-        buffer = wave_reader.read_buffer()
-        while len(buffer) > 0:
-            signal = np.append(signal, buffer)
-            buffer = wave_reader.read_buffer()  
-        wave_reader.close()
-        #
-        pos_in_sec_from = 0.0
-        pos_in_sec_to = len(signal) / sampling_freq        
-        #
-        # Cut part from 1 sec signal.
-        signal_short = signal[int(pos_in_sec_from * sampling_freq):int(pos_in_sec_to * sampling_freq)]
-        # 
-        if not self.spectrogram_thread_active:
-            return
-        # Create util.
-        dbsf_util = dsp4bats.DbfsSpectrumUtil(window_size=window_size, 
-                                               window_function=window_function)
-        #
-        if not self.spectrogram_thread_active:
-            return
-        # Create matrix.
-        ### jump = int(sampling_freq/1000/jumps_per_ms)
-        size = int(len(signal_short) / jump)
-        matrix = dbsf_util.calc_dbfs_matrix(signal_short, matrix_size=size, jump=jump)
-        #
-        if not self.spectrogram_thread_active:
-            return
-        # Plot.
-        max_freq = sampling_freq / 1000 / 2 # kHz and Nyquist.
-        ###f, ax = plt.subplots(figsize=(15, 5))
-        self.axes.imshow(matrix.T, 
-                  cmap='viridis', 
-                  origin='lower',
-                  extent=(pos_in_sec_from, pos_in_sec_to, 
-                          0, max_freq)
-                 )
-        self.axes.axis('tight')
-        self.axes.set_title(wave_file_path.name)
-        self.axes.set_ylabel('Frequency (kHz)')
-        self.axes.set_xlabel('Time (s)')
-        #ax.set_ylim([0,160])
-        #
-        if not self.spectrogram_thread_active:
-            return
-        #
-        self._canvas.draw()
-    
+            if overlap == 'None':
+                window_function = 'hann'
+                jump = window_size
+            elif overlap == 'Low':
+                window_function = 'hann'
+                jump = int(window_size / 1.33) 
+            elif overlap == 'Medium':
+    #             window_function = 'black'
+                window_function = 'hann'
+                jump = int(window_size / 2)
+            elif overlap == 'High':
+                window_function = 'blackh'
+    #             window_function = 'hann'
+                jump = int(window_size / 4)
+            elif overlap == 'Highest':
+                window_function = 'kaiser'
+    #             window_function = 'hann'
+                jump = int(window_size / 8)
+            #
+            if not self.spectrogram_thread_active:
+                return
+            
+            
+            
+            
+            # Read signal from file.
+    #         wave_reader = dsp4bats.WaveFileReader(wave_file)
+    #         sampling_freq = wave_reader.sampling_freq
+    #         signal = np.array([])
+    #         buffer = wave_reader.read_buffer()
+    #         while len(buffer) > 0:
+    #             signal = np.append(signal, buffer)
+    #             buffer = wave_reader.read_buffer()  
+    #         wave_reader.close()
+            
+            
+            workspace = str(self.workspacedir_edit.text())
+            survey = str(self.survey_combo.currentText())
+            wavefile_id = str(self.wavefile_combo.currentText())
+            h5wavefile = hdf54bats.Hdf5Wavefile(workspace, survey)
+            signal = h5wavefile.get_wavefile(wavefile_id)
+            
+
+            sampling_freq = 384000
+            
+            if len(signal) > (10 * sampling_freq):
+                signal = signal[0:10 * sampling_freq]
+                print('Warning: Signal truncated to 10 sec.')
+            
+            
+            #
+            pos_in_sec_from = 0.0
+            pos_in_sec_to = len(signal) / sampling_freq        
+            #
+            # Cut part from 1 sec signal.
+            signal_short = signal[int(pos_in_sec_from * sampling_freq):int(pos_in_sec_to * sampling_freq)]
+            # 
+            if not self.spectrogram_thread_active:
+                return
+            # Create util.
+            dbsf_util = dsp4bats.DbfsSpectrumUtil(window_size=window_size, 
+                                                   window_function=window_function)
+            #
+            if not self.spectrogram_thread_active:
+                return
+            # Create matrix.
+            ### jump = int(sampling_freq/1000/jumps_per_ms)
+            size = int(len(signal_short) / jump)
+            matrix = dbsf_util.calc_dbfs_matrix(signal_short, matrix_size=size, jump=jump)
+            #
+            if not self.spectrogram_thread_active:
+                return
+            # Plot.
+            max_freq = sampling_freq / 1000 / 2 # kHz and Nyquist.
+            ###f, ax = plt.subplots(figsize=(15, 5))
+            self.axes.imshow(matrix.T, 
+                      cmap='viridis', 
+                      origin='lower',
+                      extent=(pos_in_sec_from, pos_in_sec_to, 
+                              0, max_freq)
+                     )
+            self.axes.axis('tight')
+#             self.axes.set_title(wave_file_path.name)
+            self.axes.set_title(wavefile_id)
+            self.axes.set_ylabel('Frequency (kHz)')
+            self.axes.set_xlabel('Time (s)')
+            #ax.set_ylim([0,160])
+            #
+            if not self.spectrogram_thread_active:
+                return
+            #
+            self._canvas.draw()
+            
+        finally:
+            self.spectrogram_thread = None
+
     

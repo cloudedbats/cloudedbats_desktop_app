@@ -475,8 +475,11 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                         
                         file_name = metadata['file_name']
                         title = file_name
-                        datetime_str = metadata['datetime_str'][0:15]
-                        name = 'wave_' + hdf54bats.str_to_ascii(datetime_str)
+                        if 'datetime_str' in metadata:
+                            datetime_str = metadata['datetime_str'][0:15]
+                            name = 'wave_' + hdf54bats.str_to_ascii(datetime_str)
+                        else:
+                            name = metadata['file_stem'].lower()
                         
                         self._parentwidget._write_to_status_bar('- Busy: Importing: ' + file_name)
                     
