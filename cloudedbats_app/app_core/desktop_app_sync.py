@@ -22,8 +22,9 @@ class DesktopAppSync(QtCore.QObject):
         super().__init__()
         #
         self.load_last_used()
-        self.set_workspace(self.workspace)
-        self.set_selected_survey(self.survey)
+        self.update_survey_dict()
+#         self.set_workspace(self.workspace)
+#         self.set_selected_survey(self.survey)
     
     def clear(self):
         """ """
@@ -38,6 +39,8 @@ class DesktopAppSync(QtCore.QObject):
         self.update_survey_dict()
         # Emit signal after a short delay.
         QtCore.QTimer.singleShot(100, self._emit_workspace_changed)
+        #
+        self.save_last_used()
     
     def get_workspace(self):
         """ """
@@ -48,6 +51,8 @@ class DesktopAppSync(QtCore.QObject):
         self.survey = survey
         # Emit signal after a short delay.
         QtCore.QTimer.singleShot(100, self._emit_survey_changed)
+        #
+        self.save_last_used()
      
     def get_selected_survey(self):
         """ """

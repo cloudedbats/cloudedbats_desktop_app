@@ -30,6 +30,8 @@ class SurveyActivity(app_framework.ActivityBase):
         # Use sync object for workspaces and surveys. 
         app_core.DesktopAppSync().workspace_changed.connect(self.refresh_survey_list)
         app_core.DesktopAppSync().survey_changed.connect(self.refresh_survey_list)
+        #
+        self.refresh_survey_list()
     
     def _create_content(self):
         """ """
