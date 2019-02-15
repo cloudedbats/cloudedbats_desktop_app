@@ -1,6 +1,0 @@
-[submodule "cloudedbats_dsp"]
-	path = cloudedbats_dsp
-	url = https://github.com/cloudedbats/cloudedbats_dsp.git
-[submodule "desktop_app/cloudedbats_dsp"]
-	path = desktop_app/cloudedbats_dsp
-	url = https://github.com/cloudedbats/cloudedbats_dsp.git
