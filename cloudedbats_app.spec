@@ -27,5 +27,5 @@ exe = EXE(pyz,
           upx=True,
           runtime_tmpdir=None,
           console=False, 
-          icon='cloudedbats_config/images/cloudedbats_icon.png'
+          icon='cloudedbats_app_config/images/cloudedbats_icon.png'
           )
