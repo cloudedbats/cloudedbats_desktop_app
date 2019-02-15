@@ -13,9 +13,9 @@ from PyQt5 import QtGui
 from PyQt5 import QtCore
 
 import hdf54bats
-import metadata4bats
 from cloudedbats_app import app_framework
 from cloudedbats_app import app_utils
+from cloudedbats_app import app_core
 
 class WorkspaceActivity(app_framework.ActivityBase):
     """ """
@@ -27,8 +27,8 @@ class WorkspaceActivity(app_framework.ActivityBase):
         # initialization since the base class calls _create_content().
         super(WorkspaceActivity, self).__init__(name, parentwidget)
         
-        # Initiate data.
-        self.refresh_survey_list()
+        # Use sync object for workspaces and surveys. 
+        app_core.DesktopAppSync().workspace_changed.connect(self.refresh_survey_list)
     
     def _create_content(self):
         """ """
@@ -52,18 +52,17 @@ class WorkspaceActivity(app_framework.ActivityBase):
         widget = QtWidgets.QWidget()
         # From dir.
         self.workspacedir_edit = QtWidgets.QLineEdit('workspace_1')
-        self.workspacedir_edit.textChanged.connect(self.refresh_survey_list)
+        self.workspacedir_edit.textChanged.connect(self.workspace_changed)
         self.workspacedir_button = QtWidgets.QPushButton('Browse...')
         self.workspacedir_button.clicked.connect(self.workspace_dir_browse)
         
         self.surveys_tableview = app_framework.ToolboxQTableView()
-#         self.surveys_tableview = app_framework.SelectableQListView()
-#         self.surveys_tableview = QtWidgets.QTableView()
-#        self.surveys_tableview.setSortingEnabled(True)
+        self.surveys_tableview.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.surveys_tableview.clicked.connect(self.selected_survey_changed)
         
         # Buttons.
         self.refresh_button = QtWidgets.QPushButton('Refresh...')
-        self.refresh_button.clicked.connect(self.refresh_survey_list)
+        self.refresh_button.clicked.connect(self.workspace_changed)
         self.add_button = QtWidgets.QPushButton('Add survey...')
         self.add_button.clicked.connect(self.add_survey)
         self.rename_button = QtWidgets.QPushButton('Rename survey...')
@@ -112,114 +111,79 @@ class WorkspaceActivity(app_framework.ActivityBase):
         if dirpath:
             self.workspacedir_edit.setText(dirpath)
 
-    def refresh_survey_list(self):
+    def workspace_changed(self):
         """ """
         dir_path = str(self.workspacedir_edit.text())
-        ws = hdf54bats.Hdf5Workspace(dir_path)
-        survey_list = []
-        title_list = []
-        h5_path_list = []
-        # Table.
-        h5_list = ws.get_h5_list()
-        for h5_file_key in sorted(h5_list.keys()):
-            h5_file_dict = h5_list[h5_file_key]
-            print('HDF5 file: ', h5_file_dict)
-            # Table.
-            survey_list.append(h5_file_dict['name'])
-            title_list.append(h5_file_dict['title'])
-            h5_path_list.append(h5_file_dict['f5_filepath'])
+        app_core.DesktopAppSync().set_workspace(dir_path)
+    
+    def refresh_survey_list(self):
+        """ """
+        h5_survey_dict = app_core.DesktopAppSync().get_survey_dict()
+        header = ['h5_file', 'h5_title', 'h5_filepath']
+        rows = []
+        for key in sorted(h5_survey_dict):
+            h5_dict = h5_survey_dict[key]
+            row = []
+            for head in header:
+                row.append(h5_dict.get(head, ''))
+            rows.append(row)
         #
-#         dataframe = pandas.DataFrame(survey_list, hdf5_path_list, columns=['survey', 'hdf5_path'])
-        dataframe = pandas.DataFrame({'survey_file': survey_list, 
-                                      'survey_title': title_list, 
-                                      'h5_path': h5_path_list})
-        model = app_framework.PandasModel(dataframe[['survey_title', 'survey_file', 'h5_path']])
+        df = pandas.DataFrame(rows, columns=header)
+        model = app_framework.PandasModel(df)
         self.surveys_tableview.setModel(model)
         self.surveys_tableview.resizeColumnsToContents()
-        
-#         model = app_framework.PandasModel(dataframe[
-#         ['file_stem', 'file_name', 'detector_id', 'datetime', 'datetime_str', 'latitude_dd',
-#         'longitude_dd', 'latlong_str', 'rec_type', 'frame_rate_hz',
-#         'file_frame_rate_hz', 'is_te', 'comments', 'dir_path', 
-#         'file_path', 'abs_file_path']
-#                                                     ])
-#         self.sourcefiles_tableview.setModel(model)
-        
+    
+    def selected_survey_changed(self):
+        """ """
+        try:
+            modelIndex = self.surveys_tableview.currentIndex()
+            if modelIndex.isValid():
+                h5_survey = self.surveys_tableview.model().index(modelIndex.row(), 0).data()
+                app_core.DesktopAppSync().set_selected_survey(h5_survey)
+        except:
+            pass
+    
     def add_survey(self):
         """ """
         try:        
             my_dialog = NewSurveyDialog(self)
             if my_dialog.exec_():
-                self.refresh_survey_list()
+                self.workspace_changed()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
-
+    
     def rename_survey(self):
         """ """
         try:        
             my_dialog = RenameSurveyDialog(self)
             if my_dialog.exec_():
-                self.refresh_survey_list()
+                self.workspace_changed()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
-
+    
     def copy_survey(self):
         """ """
         try:        
             my_dialog = CopySurveyDialog(self)
             if my_dialog.exec_():
-                self.refresh_survey_list()
+                self.workspace_changed()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
-        
+    
     def delete_survey(self):
         """ """
         try:        
             dialog = DeleteDialog(self)
             if dialog.exec_():
-                self.refresh_survey_list()
+                self.workspace_changed()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
-
-
-#         try:
-#             dir_path = str(self.workspacedir_edit.text())
-#             name_combo = self.name_combo.currentText()
-#             ws = hdf54bats.Hdf5Workspace(dir_path)
-#             ws.delete_hdf5(name_combo)
-#             self.refresh_survey_list()
-#         except Exception as e:
-#             print('TODO: ERROR: ', e)
-
-        
-#         scanner = app_core.WaveFileScanner()
-#         dataframe = scanner.get_file_info_as_dataframe(dir_path)
-#                 
-# #         model = app_framework.PandasModel(dataframe[['file_name', 'file_path', 'frame_rate_hz']])
-#         model = app_framework.PandasModel(dataframe[
-#         ['file_stem', 'file_name', 'detector_id', 'datetime', 'datetime_str', 'latitude_dd',
-#         'longitude_dd', 'latlong_str', 'rec_type', 'frame_rate_hz',
-#         'file_frame_rate_hz', 'is_te', 'comments', 'dir_path', 
-#         'file_path', 'abs_file_path']
-#                                                     ])
-#         self.sourcefiles_tableview.setModel(model)
-#         
-#         
-# #        ['detector_id', 'datetime', 'datetime_str', 'latitude_dd',
-# #        'longitude_dd', 'latlong_str', 'rec_type', 'frame_rate_hz',
-# #        'file_frame_rate_hz', 'is_te', 'comments', 'dir_path', 'file_name',
-# #        'file_path', 'file_stem', 'abs_file_path']
-#         
-#         
-#         
-# 
-#         self.sourcefiles_tableview.resizeColumnsToContents()
-
-
+    
+    
     # === Help ===
     def _content_help(self):
         """ """
@@ -250,7 +214,6 @@ class WorkspaceActivity(app_framework.ActivityBase):
         </p>
         
         """
-
 
 
 class NewSurveyDialog(QtWidgets.QDialog):
@@ -307,7 +270,7 @@ class NewSurveyDialog(QtWidgets.QDialog):
     def _create_survey(self):
         """ """
         try:
-            dir_path = str(self._parentwidget.workspacedir_edit.text())
+            dir_path = app_core.DesktopAppSync().get_workspace()
             name = str(self._surveytitle_edit.text())
             filename = str(self._surveyfilename_edit.text())
             ws = hdf54bats.Hdf5Workspace(dir_path, create_ws=True)
@@ -367,22 +330,23 @@ class RenameSurveyDialog(QtWidgets.QDialog):
     
     def update_survey_list(self):
         """ """
-        dir_path = str(self._parentwidget.workspacedir_edit.text())
-        ws = hdf54bats.Hdf5Workspace(dir_path)
-        # Combo.
+        selected_survey = app_core.DesktopAppSync().get_selected_survey()
+        survey_dict = app_core.DesktopAppSync().get_survey_dict()
         self.name_combo.clear()
-        h5_list = ws.get_h5_list()
-        for h5_file_key in sorted(h5_list.keys()):
-            h5_file_dict = h5_list[h5_file_key]
-            print('HDF5 file: ', h5_file_dict)
-            # Combo.
-            self.name_combo.addItem(h5_file_dict['name'])
+        index = 0
+        for row_index, h5_key in enumerate(sorted(survey_dict)):
+            h5_dict = survey_dict[h5_key]
+            h5_file = h5_dict['h5_file']
+            self.name_combo.addItem(h5_file)
+            if h5_file == selected_survey:
+                index = row_index
+        self.name_combo.setCurrentIndex(index)
     
     def _set_filename(self, _index):
         """ """
         survey_name = str(self.name_combo.currentText())
         if survey_name:
-            dir_path = str(self._parentwidget.workspacedir_edit.text())
+            dir_path = app_core.DesktopAppSync().get_workspace()
             ws = hdf54bats.Hdf5Workspace(dir_path)
             title = ws.get_h5_title(survey_name)
             self._surveytitle_edit.setText(title)
@@ -404,14 +368,14 @@ class RenameSurveyDialog(QtWidgets.QDialog):
     def _rename_survey(self):
         """ """
         try:
-            dir_path = str(self._parentwidget.workspacedir_edit.text())
+            dir_path = app_core.DesktopAppSync().get_workspace()
             name_combo = self.name_combo.currentText()
             name = self._surveytitle_edit.text()
             filename = self._surveyfilename_edit.text()
             ws = hdf54bats.Hdf5Workspace(dir_path)
             ws.rename_h5(name_combo, filename)
             ws.set_h5_title(filename, name)
-            self.update_survey_list()
+#             self.update_survey_list()
             self.accept() # Close dialog box.
         except Exception as e:
             print('TODO: ERROR: ', e)
@@ -467,22 +431,23 @@ class CopySurveyDialog(QtWidgets.QDialog):
     
     def update_survey_list(self):
         """ """
-        dir_path = str(self._parentwidget.workspacedir_edit.text())
-        ws = hdf54bats.Hdf5Workspace(dir_path)
-        # Combo.
+        selected_survey = app_core.DesktopAppSync().get_selected_survey()
+        survey_dict = app_core.DesktopAppSync().get_survey_dict()
         self.name_combo.clear()
-        h5_list = ws.get_h5_list()
-        for h5_file_key in sorted(h5_list.keys()):
-            h5_file_dict = h5_list[h5_file_key]
-            print('HDF5 file: ', h5_file_dict)
-            # Combo.
-            self.name_combo.addItem(h5_file_dict['name'])
+        index = 0
+        for row_index, h5_key in enumerate(sorted(survey_dict)):
+            h5_dict = survey_dict[h5_key]
+            h5_file = h5_dict['h5_file']
+            self.name_combo.addItem(h5_file)
+            if h5_file == selected_survey:
+                index = row_index
+        self.name_combo.setCurrentIndex(index)
 
     def _set_filename(self, _index):
         """ """
         survey_name = str(self.name_combo.currentText())
         if survey_name:
-            dir_path = str(self._parentwidget.workspacedir_edit.text())
+            dir_path = app_core.DesktopAppSync().get_workspace()
             ws = hdf54bats.Hdf5Workspace(dir_path)
             title = ws.get_h5_title(survey_name)
             self._surveytitle_edit.setText(title)
@@ -504,14 +469,14 @@ class CopySurveyDialog(QtWidgets.QDialog):
     def _create_survey(self):
         """ """
         try:
-            dir_path = str(self._parentwidget.workspacedir_edit.text())
+            dir_path = app_core.DesktopAppSync().get_workspace()
             name_combo = self.name_combo.currentText()
             name = self._surveytitle_edit.text()
             filename = self._surveyfilename_edit.text()
             ws = hdf54bats.Hdf5Workspace(dir_path)
             ws.copy_h5(name_combo, filename)
             ws.set_h5_title(filename, name)
-            self.update_survey_list()
+#             self.update_survey_list()
             self.accept() # Close dialog box.
         except Exception as e:
             print('TODO: ERROR: ', e)
@@ -584,7 +549,7 @@ class DeleteDialog(QtWidgets.QDialog):
         """ """
         try:
             self._surveys_model.clear()
-            dir_path = str(self._parentwidget.workspacedir_edit.text())
+            dir_path = app_core.DesktopAppSync().get_workspace()
             ws = hdf54bats.Hdf5Workspace(dir_path)
             h5_list = ws.get_h5_list()
             for h5_file_key in sorted(h5_list.keys()):
@@ -622,7 +587,7 @@ class DeleteDialog(QtWidgets.QDialog):
     def _delete_marked_surveys(self):
         """ """
         try:        
-            dir_path = str(self._parentwidget.workspacedir_edit.text())
+            dir_path = app_core.DesktopAppSync().get_workspace()
             ws = hdf54bats.Hdf5Workspace(dir_path)
             for rowindex in range(self._surveys_model.rowCount()):
                 item = self._surveys_model.item(rowindex, 0)

@@ -15,6 +15,7 @@ from PyQt5 import QtCore
 import hdf54bats
 from cloudedbats_app import app_framework
 from cloudedbats_app import app_utils
+from cloudedbats_app import app_core
 
 class SurveyActivity(app_framework.ActivityBase):
     """ """
@@ -26,8 +27,9 @@ class SurveyActivity(app_framework.ActivityBase):
         # initialization since the base class calls _create_content().
         super().__init__(name, parentwidget)
         
-        # Initiate data.
-        self.refresh_survey_list()
+        # Use sync object for workspaces and surveys. 
+        app_core.DesktopAppSync().workspace_changed.connect(self.refresh_survey_list)
+        app_core.DesktopAppSync().survey_changed.connect(self.refresh_survey_list)
     
     def _create_content(self):
         """ """
@@ -50,14 +52,12 @@ class SurveyActivity(app_framework.ActivityBase):
         """ """
         widget = QtWidgets.QWidget()
         # Workspace and survey..
-        self.workspacedir_edit = QtWidgets.QLineEdit('workspace_1')
-        self.workspacedir_edit.textChanged.connect(self.refresh_survey_list)
         self.survey_combo = QtWidgets.QComboBox()
         self.survey_combo.setEditable(False)
         self.survey_combo.setMinimumWidth(250)
 #         self.survey_combo.setMaximumWidth(300)
         self.survey_combo.addItems(['<select survey>'])
-        self.survey_combo.currentIndexChanged.connect(self.refresh_event_list)
+        self.survey_combo.currentIndexChanged.connect(self.survey_changed)
         # Filters.
         self.filter_event_combo = QtWidgets.QComboBox()
         self.filter_event_combo.setEditable(False)
@@ -102,8 +102,6 @@ class SurveyActivity(app_framework.ActivityBase):
         form1 = QtWidgets.QGridLayout()
         gridrow = 0
         hlayout = QtWidgets.QHBoxLayout()
-        hlayout.addWidget(QtWidgets.QLabel('Workspace:'))
-        hlayout.addWidget(self.workspacedir_edit, 7)
         hlayout.addWidget(QtWidgets.QLabel('Survey:'))
         hlayout.addWidget(self.survey_combo, 10)
         hlayout.addWidget(self.refresh_button)
@@ -138,16 +136,32 @@ class SurveyActivity(app_framework.ActivityBase):
         #
         return widget        
     
+    def survey_changed(self):
+        """ """
+        selected_survey = str(self.survey_combo.currentText())
+        app_core.DesktopAppSync().set_selected_survey(selected_survey)
+    
     def refresh_survey_list(self):
         """ """
-        self.survey_combo.clear()
-        self.survey_combo.addItem('<select survey>')
-        dir_path = str(self.workspacedir_edit.text())
-        ws = hdf54bats.Hdf5Workspace(dir_path)
-        h5_list = ws.get_h5_list()
-        for h5_file_key in sorted(h5_list.keys()):
-            h5_file_dict = h5_list[h5_file_key]
-            self.survey_combo.addItem(h5_file_dict['name'])
+        try:
+            self.survey_combo.blockSignals(True)
+            self.survey_combo.clear()
+            self.survey_combo.addItem('<select survey>')
+            selected_survey = app_core.DesktopAppSync().get_selected_survey()
+            survey_dict = app_core.DesktopAppSync().get_survey_dict()
+            index = 0
+            for row_index, h5_key in enumerate(sorted(survey_dict)):
+                h5_dict = survey_dict[h5_key]
+                h5_file = h5_dict['h5_file']
+                self.survey_combo.addItem(h5_file)
+                if h5_file == selected_survey:
+                    index = row_index + 1
+            self.survey_combo.setCurrentIndex(index)
+        finally:
+            self.survey_combo.blockSignals(False)
+        #
+        self.refresh_event_list()
+
     
     def refresh_event_list(self):
         """ """
@@ -156,7 +170,7 @@ class SurveyActivity(app_framework.ActivityBase):
             self.events_tableview.resizeColumnsToContents()
             return
         
-        dir_path = str(self.workspacedir_edit.text())
+        dir_path = app_core.DesktopAppSync().get_workspace()
         survey_name = str(self.survey_combo.currentText())
         if (not dir_path) or (not survey_name):
             self.events_tableview.setModel(app_framework.PandasModel()) # Clear.
@@ -214,7 +228,7 @@ class SurveyActivity(app_framework.ActivityBase):
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 #         try:
-#             dir_path = str(self.workspacedir_edit.text())
+#             dir_path = app_core.DesktopAppSync().get_workspace()
 #             survey_name = str(self.survey_combo.currentText())
 #             events = hdf54bats.Hdf5Event(dir_path, survey_name)
 #             name = self.name_edit.text()
@@ -233,7 +247,7 @@ class SurveyActivity(app_framework.ActivityBase):
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 #         try:
-#             dir_path = str(self.workspacedir_edit.text())
+#             dir_path = app_core.DesktopAppSync().get_workspace()
 #             survey_name = str(self.survey_combo.currentText())
 #             events = hdf54bats.Hdf5Event(dir_path, survey_name)
 #             name = self.name_edit.text()
@@ -252,7 +266,7 @@ class SurveyActivity(app_framework.ActivityBase):
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 #         try:
-#             dir_path = str(self.workspacedir_edit.text())
+#             dir_path = app_core.DesktopAppSync().get_workspace()
 #             survey_name = str(self.survey_combo.currentText())
 #             events = hdf54bats.Hdf5Event(dir_path, survey_name)
 #             name_combo = self.name_combo.currentText()
@@ -273,7 +287,7 @@ class SurveyActivity(app_framework.ActivityBase):
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 #         try:
-#             dir_path = str(self.workspacedir_edit.text())
+#             dir_path = app_core.DesktopAppSync().get_workspace()
 #             survey_name = str(self.survey_combo.currentText())
 #             events = hdf54bats.Hdf5Event(dir_path, survey_name)
 #             name_combo = self.name_combo.currentText()
@@ -294,7 +308,7 @@ class SurveyActivity(app_framework.ActivityBase):
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 #         try:
-#             dir_path = str(self.workspacedir_edit.text())
+#             dir_path = app_core.DesktopAppSync().get_workspace()
 #             survey_name = str(self.survey_combo.currentText())
 #             events = hdf54bats.Hdf5Event(dir_path, survey_name)
 #             name_combo = self.name_combo.currentText()
@@ -347,7 +361,7 @@ class NewEventDialog(QtWidgets.QDialog):
         self._parentwidget = parentwidget
         self.setLayout(self._content())
         #
-        self.dir_path = str(self._parentwidget.workspacedir_edit.text())
+        self.dir_path = app_core.DesktopAppSync().get_workspace()
         self.survey_name = str(self._parentwidget.survey_combo.currentText())
 
     def _content(self):
@@ -415,7 +429,7 @@ class NewDetectorDialog(QtWidgets.QDialog):
         self._parentwidget = parentwidget
         self.setLayout(self._content())
         #
-        self.dir_path = str(self._parentwidget.workspacedir_edit.text())
+        self.dir_path = app_core.DesktopAppSync().get_workspace()
         self.survey_name = str(self._parentwidget.survey_combo.currentText())
         # 
         self.update_event_list()
@@ -497,7 +511,7 @@ class RenameDialog(QtWidgets.QDialog):
         self._parentwidget = parentwidget
         self.setLayout(self._content())
         #
-        self.dir_path = str(self._parentwidget.workspacedir_edit.text())
+        self.dir_path = app_core.DesktopAppSync().get_workspace()
         self.survey_name = str(self._parentwidget.survey_combo.currentText())
         # 
         self.update_item_list()
@@ -552,7 +566,7 @@ class RenameDialog(QtWidgets.QDialog):
         """ """
         item_name = str(self.groupid_combo.currentText())
         if item_name:
-#             dir_path = str(self._parentwidget.workspacedir_edit.text())
+#             dir_path = app_core.DesktopAppSync().get_workspace()
 #             ws = hdf54bats.Hdf5Workspace(dir_path)
 #             title = ws.get_h5_title(item_name)
 #             self._itemname_edit.setText(title)
@@ -597,7 +611,7 @@ class CopyDialog(QtWidgets.QDialog):
         self._parentwidget = parentwidget
         self.setLayout(self._content())
         #
-        self.dir_path = str(self._parentwidget.workspacedir_edit.text())
+        self.dir_path = app_core.DesktopAppSync().get_workspace()
         self.survey_name = str(self._parentwidget.survey_combo.currentText())
         # 
         self.update_item_list()
@@ -652,7 +666,7 @@ class CopyDialog(QtWidgets.QDialog):
         """ """
         item_name = str(self.groupid_combo.currentText())
         if item_name:
-#             dir_path = str(self._parentwidget.workspacedir_edit.text())
+#             dir_path = app_core.DesktopAppSync().get_workspace()
 #             ws = hdf54bats.Hdf5Workspace(dir_path)
 #             title = ws.get_h5_title(item_name)
 #             self._itemname_edit.setText(title)
@@ -676,7 +690,7 @@ class CopyDialog(QtWidgets.QDialog):
         """ """
         self.accept() # Close dialog box.
 #         try:
-#             dir_path = str(self._parentwidget.workspacedir_edit.text())
+#             dir_path = app_core.DesktopAppSync().get_workspace()
 #             name_combo = str(self.name_combo.currentText())
 #             name = self._itemname_edit.text()
 #             groupname = self._itemgroupname_edit.text()
@@ -700,7 +714,7 @@ class DeleteDialog(QtWidgets.QDialog):
         self.setLayout(self._content())
         self.setMinimumSize(500, 500)
         #
-        self.dir_path = str(self._parentwidget.workspacedir_edit.text())
+        self.dir_path = app_core.DesktopAppSync().get_workspace()
         self.survey_name = str(self._parentwidget.survey_combo.currentText())
         #
         self._load_item_data()
@@ -776,7 +790,7 @@ class DeleteDialog(QtWidgets.QDialog):
             
 #             
 #             self._items_model.clear()
-#             dir_path = str(self._parentwidget.workspacedir_edit.text())
+#             dir_path = app_core.DesktopAppSync().get_workspace()
 #             ws = hdf54bats.Hdf5Workspace(dir_path)
 #             h5_list = ws.get_h5_list()
 #             for h5_file_key in sorted(h5_list.keys()):
@@ -814,7 +828,7 @@ class DeleteDialog(QtWidgets.QDialog):
     def _delete_marked_items(self):
         """ """
         try:        
-            dir_path = str(self._parentwidget.workspacedir_edit.text())
+            dir_path = app_core.DesktopAppSync().get_workspace()
             ws = hdf54bats.Hdf5Workspace(dir_path)
             event = hdf54bats.Hdf5Event(self.dir_path, self.survey_name)
             for rowindex in range(self._items_model.rowCount()):
