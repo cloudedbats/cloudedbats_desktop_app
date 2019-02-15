@@ -9,8 +9,10 @@ import codecs
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 
+import cloudedbats_app
 from cloudedbats_app import app_framework
 from cloudedbats_app import app_tools
+from cloudedbats_app import app_activities
 from cloudedbats_app import app_utils
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -35,9 +37,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.toolsmenu = None
         # Load app settings.
         self._ui_settings = QtCore.QSettings()
-        # Logging. Always log to cloudedbats_log.txt. Use the Log tool when  
+        # Logging. Always log to cloudedbats_app_log.txt. Use the Log tool when  
         # it is available.
-        self._logfile = codecs.open('cloudedbats_log.txt', mode = 'w', encoding = 'cp1252')
+        self._logfile = codecs.open('cloudedbats_app_log.txt', mode = 'w', encoding = 'cp1252')
         self._logfile.write('CloudedBats.org ' +
                              time.strftime('%Y-%m-%d %H:%M:%S') )
         self._logfile.write('')
@@ -50,10 +52,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self._activity = None
         self._createCentralWidget()
         # Set up activities and tools.
-        self._toolmanager = app_framework.ToolManager()
+        self._toolmanager = app_tools.ToolManager()
         self._toolmanager.set_parent(self)
         self._toolmanager.init_tools()
-        self._activitymanager = app_framework.ActivityManager()
+        
+        self._activitymanager = app_activities.ActivityManager()
         self._activitymanager.set_parent(self)
         self._activitymanager.init_activities()
         # Add tools to selector.
@@ -89,7 +92,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.resize(size)
         self.move(position)        
         # Tell the user.
-        app_framework.ToolManager().show_tool_by_name('Application log') # Show the log tool if hidden.
+        app_tools.ToolManager().show_tool_by_name('Application log') # Show the log tool if hidden.
 
         # Load resources when the main event loop has started.
 #         if app_framework.ToolboxSettings().get_value('Resources:Load at startup'):
@@ -313,8 +316,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def setVersion(self, version):
         """ """
         self._version = version
-        app_framework.Logging().log('CloudedBats - Desktop application. Version: ' + self._version + '.')
-        app_framework.Logging().log('')
+        app_utils.Logging().log('CloudedBats - Desktop application. Version: ' + self._version + '.')
+        app_utils.Logging().log('')
         
     def _about(self):
         """ """

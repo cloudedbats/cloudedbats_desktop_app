@@ -1,2 +1,3 @@
 
-from cloudedbats_app.app_core.wavefile_scanner import WaveFileScanner
+from .desktop_app_synch import DesktopAppSynch
+from .wavefile_scanner import WaveFileScanner

@@ -13,10 +13,8 @@ from PyQt5 import QtGui
 from PyQt5 import QtCore
 
 import hdf54bats
-import metadata4bats
 from cloudedbats_app import app_framework
 from cloudedbats_app import app_utils
-from hdf54bats.hdf5_detector import Hdf5Detector
 
 class SurveyActivity(app_framework.ActivityBase):
     """ """

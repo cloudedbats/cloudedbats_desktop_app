@@ -13,11 +13,10 @@ from PyQt5 import QtGui
 from PyQt5 import QtCore
 
 import hdf54bats
-import metadata4bats
+import dsp4bats
 from cloudedbats_app import app_framework
 from cloudedbats_app import app_utils
 from cloudedbats_app import app_core
-import dsp4bats
 
 
 class WavefilesActivity(app_framework.ActivityBase):

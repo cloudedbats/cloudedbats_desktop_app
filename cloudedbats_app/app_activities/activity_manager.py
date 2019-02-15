@@ -4,10 +4,10 @@
 # Copyright (c) 2018 Arnold Andreasson 
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
-from cloudedbats_app import app_framework
+from cloudedbats_app import app_utils
 from cloudedbats_app import app_activities
 
-@app_framework.singleton
+@app_utils.singleton
 class ActivityManager(object):
     """ 
     The activity manager is used to set up available activites. 

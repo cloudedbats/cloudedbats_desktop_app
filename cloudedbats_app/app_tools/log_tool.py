@@ -93,6 +93,6 @@ class LogTool(app_framework.ToolBase):
 #        import sys
 #        import subprocess
 #        if sys.platform.startswith('win'):           
-#            subprocess.Popen('cloudedbats_log.txt')
-#            subprocess.call('cloudedbats_log.txt')
+#            subprocess.Popen('cloudedbats_app_log.txt')
+#            subprocess.call('cloudedbats_app_log.txt')
 
