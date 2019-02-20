@@ -29,6 +29,7 @@ class WorkspaceActivity(app_framework.ActivityBase):
         
         # Use sync object for workspaces and surveys. 
         app_core.DesktopAppSync().workspace_changed.connect(self.refresh_survey_list)
+        app_core.DesktopAppSync().survey_changed.connect(self.refresh_survey_list)
         #
         self.refresh_survey_list()
     
@@ -63,7 +64,7 @@ class WorkspaceActivity(app_framework.ActivityBase):
         self.surveys_tableview.clicked.connect(self.selected_survey_changed)
         
         # Buttons.
-        self.refresh_button = QtWidgets.QPushButton('Refresh...')
+        self.refresh_button = QtWidgets.QPushButton('Refresh')
         self.refresh_button.clicked.connect(self.workspace_changed)
         self.add_button = QtWidgets.QPushButton('Add survey...')
         self.add_button.clicked.connect(self.add_survey)
@@ -105,6 +106,7 @@ class WorkspaceActivity(app_framework.ActivityBase):
     def workspace_dir_browse(self):
         """ """
         dirdialog = QtWidgets.QFileDialog(self)
+        dirdialog.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         dirdialog.setFileMode(QtWidgets.QFileDialog.Directory)
         dirdialog.setOptions(QtWidgets.QFileDialog.ShowDirsOnly |
                              QtWidgets.QFileDialog.DontResolveSymlinks)
@@ -120,20 +122,34 @@ class WorkspaceActivity(app_framework.ActivityBase):
     
     def refresh_survey_list(self):
         """ """
-        h5_survey_dict = app_core.DesktopAppSync().get_survey_dict()
-        header = ['h5_file', 'h5_title', 'h5_filepath']
-        rows = []
-        for key in sorted(h5_survey_dict):
-            h5_dict = h5_survey_dict[key]
-            row = []
-            for head in header:
-                row.append(h5_dict.get(head, ''))
-            rows.append(row)
-        #
-        df = pandas.DataFrame(rows, columns=header)
-        model = app_framework.PandasModel(df)
-        self.surveys_tableview.setModel(model)
-        self.surveys_tableview.resizeColumnsToContents()
+        try:
+            self.surveys_tableview.blockSignals(True)
+            h5_survey_dict = app_core.DesktopAppSync().get_survey_dict()
+            h5_selected_survey = app_core.DesktopAppSync().get_selected_survey()
+            header = ['h5_file', 'h5_title', 'h5_filepath']
+            rows = []
+            selected_survey_index = None
+            for index, key in enumerate(sorted(h5_survey_dict)):
+                h5_dict = h5_survey_dict[key]
+                row = []
+                for head in header:
+                    row.append(h5_dict.get(head, ''))
+                rows.append(row)
+                h5_file = h5_dict.get('h5_file', None)
+                if h5_file and (h5_file == h5_selected_survey):
+                    selected_survey_index = index
+            #
+            df = pandas.DataFrame(rows, columns=header)
+            model = app_framework.PandasModel(df)
+            self.surveys_tableview.setModel(model)
+            self.surveys_tableview.resizeColumnsToContents()
+            #
+            if selected_survey_index is not None:
+                qt_index =self.surveys_tableview.model().index(selected_survey_index, 0)
+                self.surveys_tableview.setCurrentIndex(qt_index)
+        finally:
+            self.surveys_tableview.blockSignals(False)
+        
     
     def selected_survey_changed(self):
         """ """
@@ -231,6 +247,9 @@ class NewSurveyDialog(QtWidgets.QDialog):
         """ """
         self._surveytitle_edit = QtWidgets.QLineEdit('')
         self._surveytitle_edit.setMinimumWidth(400)
+        self.auto_checkbox = QtWidgets.QCheckBox('Auto')
+        self.auto_checkbox.setChecked(True)
+        self.auto_checkbox.stateChanged.connect(self.auto_changed)
         self._surveyfilename_edit = QtWidgets.QLineEdit('')
         self._surveyfilename_edit.setMinimumWidth(400)
         self._surveyfilename_edit.setEnabled(False)
@@ -242,9 +261,16 @@ class NewSurveyDialog(QtWidgets.QDialog):
         self.createsurvey_button.setEnabled(False)
         self.createsurvey_button.setDefault(False)
         # Layout widgets.
-        formlayout = QtWidgets.QFormLayout()
-        formlayout.addRow('Survey title:', self._surveytitle_edit)
-        formlayout.addRow('Survey filename:', self._surveyfilename_edit)
+        form1 = QtWidgets.QGridLayout()
+        gridrow = 0
+        label = QtWidgets.QLabel('Survey title:')
+        form1.addWidget(label, gridrow, 0, 1, 1)
+        form1.addWidget(self._surveytitle_edit, gridrow, 1, 1, 9)
+        gridrow += 1
+        label = QtWidgets.QLabel('Survey filename:')
+        form1.addWidget(label, gridrow, 0, 1, 1)
+        form1.addWidget(self._surveyfilename_edit, gridrow, 1, 1, 8)
+        form1.addWidget(self.auto_checkbox, gridrow, 9, 1, 1)
         # 
         hbox1 = QtWidgets.QHBoxLayout()
         hbox1.addStretch(10)
@@ -252,22 +278,31 @@ class NewSurveyDialog(QtWidgets.QDialog):
         hbox1.addWidget(self.createsurvey_button)
         # 
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(formlayout, 10)
+        layout.addLayout(form1, 10)
         layout.addLayout(hbox1)
         # 
         return layout
     
+    def auto_changed(self):
+        """ """
+        check_state = self.auto_checkbox.checkState()
+        if check_state:
+            self._surveyfilename_edit.setEnabled(False)
+        else:
+            self._surveyfilename_edit.setEnabled(True)
+    
     def _update_filename(self, text):
         """ """
-        new_text = hdf54bats.str_to_ascii(text)
-        if len(new_text) > 0:
-            self._surveyfilename_edit.setText(new_text + '.h5')
-            self.createsurvey_button.setEnabled(True)
-            self.createsurvey_button.setDefault(True)
-        else:
-            self._surveyfilename_edit.setText('')
-            self.createsurvey_button.setEnabled(False)
-            self.createsurvey_button.setDefault(False)
+        if self.auto_checkbox.checkState():
+            new_text = hdf54bats.str_to_ascii(text)
+            if len(new_text) > 0:
+                self._surveyfilename_edit.setText(new_text + '.h5')
+                self.createsurvey_button.setEnabled(True)
+                self.createsurvey_button.setDefault(True)
+            else:
+                self._surveyfilename_edit.setText('')
+                self.createsurvey_button.setEnabled(False)
+                self.createsurvey_button.setDefault(False)
 
     def _create_survey(self):
         """ """
@@ -303,6 +338,8 @@ class RenameSurveyDialog(QtWidgets.QDialog):
         
         self._surveytitle_edit = QtWidgets.QLineEdit('')
         self._surveytitle_edit.setMinimumWidth(400)
+        self.auto_checkbox = QtWidgets.QCheckBox('Auto')
+        self.auto_checkbox.setChecked(True)
         self._surveyfilename_edit = QtWidgets.QLineEdit('')
         self._surveyfilename_edit.setMinimumWidth(400)
         self._surveyfilename_edit.setEnabled(False)
@@ -314,10 +351,20 @@ class RenameSurveyDialog(QtWidgets.QDialog):
         self.renamesurvey_button.setEnabled(False)
         self.renamesurvey_button.setDefault(False)
         # Layout widgets.
-        formlayout = QtWidgets.QFormLayout()
-        formlayout.addRow('Select survey:', self.name_combo)
-        formlayout.addRow('New title:', self._surveytitle_edit)
-        formlayout.addRow('New filename:', self._surveyfilename_edit)
+        form1 = QtWidgets.QGridLayout()
+        gridrow = 0
+        label = QtWidgets.QLabel('Select survey:')
+        form1.addWidget(label, gridrow, 0, 1, 1)
+        form1.addWidget(self.name_combo, gridrow, 1, 1, 9)
+        gridrow += 1
+        label = QtWidgets.QLabel('New title:')
+        form1.addWidget(label, gridrow, 0, 1, 1)
+        form1.addWidget(self._surveytitle_edit, gridrow, 1, 1, 9)
+        gridrow += 1
+        label = QtWidgets.QLabel('New filename:')
+        form1.addWidget(label, gridrow, 0, 1, 1)
+        form1.addWidget(self._surveyfilename_edit, gridrow, 1, 1, 8)
+        form1.addWidget(self.auto_checkbox, gridrow, 9, 1, 1)
         # 
         hbox1 = QtWidgets.QHBoxLayout()
         hbox1.addStretch(10)
@@ -325,7 +372,7 @@ class RenameSurveyDialog(QtWidgets.QDialog):
         hbox1.addWidget(self.renamesurvey_button)
         # 
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(formlayout, 10)
+        layout.addLayout(form1, 10)
         layout.addLayout(hbox1)
         # 
         return layout
@@ -355,17 +402,26 @@ class RenameSurveyDialog(QtWidgets.QDialog):
         else:
             self._surveytitle_edit.setText('')
     
+    def auto_changed(self):
+        """ """
+        check_state = self.auto_checkbox.checkState()
+        if check_state:
+            self.detectorgroup_edit.setEnabled(False)
+        else:
+            self.detectorgroup_edit.setEnabled(True)
+    
     def _update_filename(self, text):
         """ """
-        new_text = hdf54bats.str_to_ascii(text)
-        if len(new_text) > 0:
-            self._surveyfilename_edit.setText(new_text + '.h5')
-            self.renamesurvey_button.setEnabled(True)
-            self.renamesurvey_button.setDefault(True)
-        else:
-            self._surveyfilename_edit.setText('')
-            self.renamesurvey_button.setEnabled(False)
-            self.renamesurvey_button.setDefault(False)
+        if self.auto_checkbox.checkState():
+            new_text = hdf54bats.str_to_ascii(text)
+            if len(new_text) > 0:
+                self._surveyfilename_edit.setText(new_text + '.h5')
+                self.renamesurvey_button.setEnabled(True)
+                self.renamesurvey_button.setDefault(True)
+            else:
+                self._surveyfilename_edit.setText('')
+                self.renamesurvey_button.setEnabled(False)
+                self.renamesurvey_button.setDefault(False)
 
     def _rename_survey(self):
         """ """
@@ -404,6 +460,8 @@ class CopySurveyDialog(QtWidgets.QDialog):
         
         self._surveytitle_edit = QtWidgets.QLineEdit('')
         self._surveytitle_edit.setMinimumWidth(400)
+        self.auto_checkbox = QtWidgets.QCheckBox('Auto')
+        self.auto_checkbox.setChecked(True)
         self._surveyfilename_edit = QtWidgets.QLineEdit('')
         self._surveyfilename_edit.setMinimumWidth(400)
         self._surveyfilename_edit.setEnabled(False)
@@ -415,10 +473,20 @@ class CopySurveyDialog(QtWidgets.QDialog):
         self.copysurvey_button.setEnabled(False)
         self.copysurvey_button.setDefault(False)
         # Layout widgets.
-        formlayout = QtWidgets.QFormLayout()
-        formlayout.addRow('Select survey:', self.name_combo)
-        formlayout.addRow('Copy to title:', self._surveytitle_edit)
-        formlayout.addRow('Copy to filename:', self._surveyfilename_edit)
+        form1 = QtWidgets.QGridLayout()
+        gridrow = 0
+        label = QtWidgets.QLabel('Select survey:')
+        form1.addWidget(label, gridrow, 0, 1, 1)
+        form1.addWidget(self.name_combo, gridrow, 1, 1, 9)
+        gridrow += 1
+        label = QtWidgets.QLabel('Copy to title:')
+        form1.addWidget(label, gridrow, 0, 1, 1)
+        form1.addWidget(self._surveytitle_edit, gridrow, 1, 1, 9)
+        gridrow += 1
+        label = QtWidgets.QLabel('Copy to filename:')
+        form1.addWidget(label, gridrow, 0, 1, 1)
+        form1.addWidget(self._surveyfilename_edit, gridrow, 1, 1, 8)
+        form1.addWidget(self.auto_checkbox, gridrow, 9, 1, 1)
         # 
         hbox1 = QtWidgets.QHBoxLayout()
         hbox1.addStretch(10)
@@ -426,7 +494,7 @@ class CopySurveyDialog(QtWidgets.QDialog):
         hbox1.addWidget(self.copysurvey_button)
         # 
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(formlayout, 10)
+        layout.addLayout(form1, 10)
         layout.addLayout(hbox1)
         # 
         return layout
@@ -456,17 +524,26 @@ class CopySurveyDialog(QtWidgets.QDialog):
         else:
             self._surveytitle_edit.setText('')
     
+    def auto_changed(self):
+        """ """
+        check_state = self.auto_checkbox.checkState()
+        if check_state:
+            self._surveyfilename_edit.setEnabled(False)
+        else:
+            self._surveyfilename_edit.setEnabled(True)
+    
     def _update_filename(self, text):
         """ """
-        new_text = hdf54bats.str_to_ascii(text)
-        if len(new_text) > 0:
-            self._surveyfilename_edit.setText(new_text + '.h5')
-            self.copysurvey_button.setEnabled(True)
-            self.copysurvey_button.setDefault(True)
-        else:
-            self._surveyfilename_edit.setText('')
-            self.copysurvey_button.setEnabled(False)
-            self.copysurvey_button.setDefault(False)
+        if self.auto_checkbox.checkState():
+            new_text = hdf54bats.str_to_ascii(text)
+            if len(new_text) > 0:
+                self._surveyfilename_edit.setText(new_text + '.h5')
+                self.copysurvey_button.setEnabled(True)
+                self.copysurvey_button.setDefault(True)
+            else:
+                self._surveyfilename_edit.setText('')
+                self.copysurvey_button.setEnabled(False)
+                self.copysurvey_button.setDefault(False)
 
     def _create_survey(self):
         """ """

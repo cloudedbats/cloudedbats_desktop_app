@@ -53,9 +53,7 @@ class WavefilesActivity(app_framework.ActivityBase):
     def _content_wavefiles(self):
         """ """
         widget = QtWidgets.QWidget()
-        # Workspace and survey..
-        self.workspacedir_edit = QtWidgets.QLineEdit('workspace_1')
-        self.workspacedir_edit.textChanged.connect(self.refresh_survey_list)
+        # Survey..
         self.survey_combo = QtWidgets.QComboBox()
         self.survey_combo.setEditable(False)
         self.survey_combo.setMinimumWidth(250)
@@ -68,24 +66,18 @@ class WavefilesActivity(app_framework.ActivityBase):
         self.detector_combo.setMinimumWidth(250)
         self.detector_combo.addItems(['<select detectors>'])
         self.detector_combo.currentIndexChanged.connect(self.refresh_event_list)
+        
         # Filters.
-        self.filter_event_combo = QtWidgets.QComboBox()
-        self.filter_event_combo.setEditable(False)
-        self.filter_event_combo.setMinimumWidth(150)
-#         self.filter_event_combo.setMaximumWidth(300)
-        self.filter_event_combo.addItems(['<select event>'])
-        self.filter_detector_combo = QtWidgets.QComboBox()
-        self.filter_detector_combo.setEditable(False)
-        self.filter_detector_combo.setMinimumWidth(150)
-#         self.filter_detector_combo.setMaximumWidth(300)
-        self.filter_detector_combo.addItems(['<select detector>'])
+        self.type_filter_combo = QtWidgets.QComboBox()
+        self.type_filter_combo.addItems(['<select>', 'event', 'detector'])
+        self.title_filter_edit = QtWidgets.QLineEdit('')
+        self.clear_filter_button = QtWidgets.QPushButton('Clear')
+#         self.clear_filter_button.clicked.connect(self.clear_filter)
+        
         
         self.events_tableview = app_framework.ToolboxQTableView()
-#         self.surveys_tableview = app_framework.SelectableQListView()
-#         self.surveys_tableview = QtWidgets.QTableView()
-#        self.surveys_tableview.setSortingEnabled(True)
         # Buttons.
-        self.refresh_button = QtWidgets.QPushButton('Refresh...')
+        self.refresh_button = QtWidgets.QPushButton('Refresh')
         self.refresh_button.clicked.connect(self.refresh_event_list)
         self.add_button = QtWidgets.QPushButton('Import wavefile...')
         self.add_button.clicked.connect(self.import_wavefile)
@@ -98,17 +90,20 @@ class WavefilesActivity(app_framework.ActivityBase):
         form1 = QtWidgets.QGridLayout()
         gridrow = 0
         hlayout = QtWidgets.QHBoxLayout()
-        hlayout.addWidget(QtWidgets.QLabel('Workspace:'))
-        hlayout.addWidget(self.workspacedir_edit, 7)
         hlayout.addWidget(QtWidgets.QLabel('Survey:'))
         hlayout.addWidget(self.survey_combo, 10)
         hlayout.addWidget(self.refresh_button)
 #         hlayout.addStretch(10)
         form1.addLayout(hlayout, gridrow, 0, 1, 15)
         gridrow += 1
-        label = QtWidgets.QLabel('Detectors:')
-        form1.addWidget(label, gridrow, 0, 1, 1)
-        form1.addWidget(self.detector_combo, gridrow, 1, 1, 13)
+        hlayout = QtWidgets.QHBoxLayout()
+        hlayout.addWidget(QtWidgets.QLabel('Type filter:'), 1)
+        hlayout.addWidget(self.type_filter_combo, 5)
+        hlayout.addWidget(QtWidgets.QLabel('Title filter:'), 1)
+        hlayout.addWidget(self.title_filter_edit, 10)
+        hlayout.addWidget(self.clear_filter_button)
+#         hlayout.addStretch(10)
+        form1.addLayout(hlayout, gridrow, 0, 1, 15)
         gridrow += 1
         label = QtWidgets.QLabel('Wavefiles:')
         form1.addWidget(label, gridrow, 0, 1, 1)
@@ -136,81 +131,81 @@ class WavefilesActivity(app_framework.ActivityBase):
     
     def refresh_survey_list(self):
         """ """
-        self.survey_combo.clear()
-        self.survey_combo.addItem('<select survey>')
-        dir_path = str(self.workspacedir_edit.text())
-        ws = hdf54bats.Hdf5Workspace(dir_path)
-        h5_list = ws.get_h5_list()
-        for h5_file_key in sorted(h5_list.keys()):
-            h5_file_dict = h5_list[h5_file_key]
-            self.survey_combo.addItem(h5_file_dict['name'])
-            
-            self.survey_combo.setCurrentIndex(1)
+#         self.survey_combo.clear()
+#         self.survey_combo.addItem('<select survey>')
+#         dir_path = str(self.workspacedir_edit.text())
+#         ws = hdf54bats.Hdf5Workspace(dir_path)
+#         h5_list = ws.get_h5_list()
+#         for h5_file_key in sorted(h5_list.keys()):
+#             h5_file_dict = h5_list[h5_file_key]
+#             self.survey_combo.addItem(h5_file_dict['name'])
+#             
+#             self.survey_combo.setCurrentIndex(1)
     
     def refresh_event_list(self):
         """ """
-        if self.survey_combo.currentIndex() == 0:
-            self.events_tableview.setModel(app_framework.PandasModel()) # Clear.
-            self.events_tableview.resizeColumnsToContents()
-            return
-        
-        dir_path = str(self.workspacedir_edit.text())
-        survey_name = str(self.survey_combo.currentText())
-        if (not dir_path) or (not survey_name):
-            self.events_tableview.setModel(app_framework.PandasModel()) # Clear.
-            self.events_tableview.resizeColumnsToContents()
-            return
-        
-        event = hdf54bats.Hdf5Event(dir_path, survey_name)
-        detector = hdf54bats.Hdf5Detector(dir_path, survey_name)
-        wave = hdf54bats.Hdf5Wavefile(dir_path, survey_name)
-         
-        id_list = []
-        type_list = []
-        event_list = []
-        detector_list = []
-        title_list = []
-        # Combo.
-        for event_group in sorted(event.get_children('')):
-            print('Group path: ', event_group)
-            # Table.
-            id_list.append(event_group)
-            type_list.append('event')
-            event_list.append(event_group)
-            detector_list.append('')
-            title_list.append(event_group)
-             
-            for detector_group in sorted(detector.get_children(event_group)):
-                # Table.
-                id_list.append(detector_group)
-                type_list.append('detector')
-                event_list.append(event_group)
-                detector_list.append(detector_group.split('.')[1])
-                title_list.append(detector_group.split('.')[1])
-                
-                wavefiles = wave.get_wavefiles(from_top_node=detector_group)
-                for wave_id in sorted(wavefiles):
-                    # Table.
-                    id_list.append(wave_id)
-                    type_list.append('wavefile')
-                    event_list.append('')
-                    detector_list.append('')
-                    title_list.append(wavefiles[wave_id])
-
-        #
-#         dataframe = pandas.DataFrame(event_list, hdf5_path_list, columns=['event', 'hdf5_path'])
-        dataframe = pandas.DataFrame({'id': id_list, 
-                                      'type': type_list, 
-                                      'event': event_list, 
-                                      'detector': detector_list, 
-                                      'title': title_list})
-        model = app_framework.PandasModel(dataframe[['id', 
-                                                     'type', 
-#                                                      'event', 
-#                                                      'detector', 
-                                                     'title']])
-        self.events_tableview.setModel(model)
-        self.events_tableview.resizeColumnsToContents()
+#         if self.survey_combo.currentIndex() == 0:
+#             self.events_tableview.setModel(app_framework.PandasModel()) # Clear.
+#             self.events_tableview.resizeColumnsToContents()
+#             return
+#         
+#         dir_path = str(self.workspacedir_edit.text())
+#         survey_name = str(self.survey_combo.currentText())
+#         if (not dir_path) or (not survey_name):
+#             self.events_tableview.setModel(app_framework.PandasModel()) # Clear.
+#             self.events_tableview.resizeColumnsToContents()
+#             return
+#         
+#         event = hdf54bats.Hdf5Event(dir_path, survey_name)
+#         detector = hdf54bats.Hdf5Detector(dir_path, survey_name)
+#         wave = hdf54bats.Hdf5Wavefile(dir_path, survey_name)
+#          
+#         id_list = []
+#         type_list = []
+#         event_list = []
+#         detector_list = []
+#         title_list = []
+#         # Combo.
+#         for event_group in sorted(event.get_children('')):
+#             print('Group path: ', event_group)
+#             # Table.
+#             id_list.append(event_group)
+#             type_list.append('event')
+#             event_list.append(event_group)
+#             detector_list.append('')
+#             title_list.append(event_group)
+#              
+#             for detector_group in sorted(detector.get_children(event_group)):
+#                 # Table.
+#                 id_list.append(detector_group)
+#                 type_list.append('detector')
+#                 event_list.append(event_group)
+#                 detector_list.append(detector_group.split('.')[1])
+#                 title_list.append(detector_group.split('.')[1])
+#                 
+#                 wavefiles = wave.get_wavefiles(from_top_node=detector_group)
+#                 for wave_id in sorted(wavefiles):
+#                     # Table.
+#                     id_list.append(wave_id)
+#                     type_list.append('wavefile')
+#                     event_list.append('')
+#                     detector_list.append('')
+#                     title_list.append(wavefiles[wave_id])
+# 
+#         #
+# #         dataframe = pandas.DataFrame(event_list, hdf5_path_list, columns=['event', 'hdf5_path'])
+#         dataframe = pandas.DataFrame({'id': id_list, 
+#                                       'type': type_list, 
+#                                       'event': event_list, 
+#                                       'detector': detector_list, 
+#                                       'title': title_list})
+#         model = app_framework.PandasModel(dataframe[['id', 
+#                                                      'type', 
+# #                                                      'event', 
+# #                                                      'detector', 
+#                                                      'title']])
+#         self.events_tableview.setModel(model)
+#         self.events_tableview.resizeColumnsToContents()
     
     def import_wavefile(self):
         """ """
