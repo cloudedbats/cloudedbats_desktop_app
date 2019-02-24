@@ -15,6 +15,7 @@ class DesktopAppSync(QtCore.QObject):
     """ """
     workspace_changed = QtCore.pyqtSignal()
     survey_changed = QtCore.pyqtSignal()
+    item_id_changed = QtCore.pyqtSignal()
 
     def __init__(self):
         """ """
@@ -30,6 +31,8 @@ class DesktopAppSync(QtCore.QObject):
         """ """
         self.workspace = 'workspace_1'
         self.survey = ''
+        self.survey_dict = {}
+        self.item_id = ''
         self.survey_dict = {}
     
     def set_workspace(self, workspace=''):
@@ -58,6 +61,36 @@ class DesktopAppSync(QtCore.QObject):
         """ """
         return self.survey
     
+    def set_selected_item_id(self, item_id):
+        """ """
+        self.item_id = item_id
+        # Emit signal after a short delay.
+        QtCore.QTimer.singleShot(100, self._emit_item_id_changed)
+    
+    def get_selected_item_id(self, item_type=''):
+        """ """
+        if item_type == '':
+            return self.item_id
+        #
+        parts = self.item_id.split('.')
+        if item_type == 'event':
+            if len(parts) >= 1:
+                return parts[0]
+            else:
+                return ''
+        elif item_type == 'detector':
+            if len(parts) >= 2:
+                return parts[0] + '.' + parts[1]
+            else:
+                return ''
+        elif item_type == 'wavefile':
+            if len(parts) >= 3:
+                return parts[0] + '.' + parts[1] + '.' + parts[2]
+            else:
+                return ''
+        else:
+            return self.item_id
+    
     def update_survey_dict(self):
         """ """
         ws = hdf54bats.Hdf5Workspace(self.workspace)
@@ -84,6 +117,10 @@ class DesktopAppSync(QtCore.QObject):
     def _emit_survey_changed(self):
         """ """
         self.survey_changed.emit()
+    
+    def _emit_item_id_changed(self):
+        """ """
+        self.item_id_changed.emit()
     
     def save_last_used(self):
         """ """

@@ -29,7 +29,10 @@ class WavefilesActivity(app_framework.ActivityBase):
         # initialization since the base class calls _create_content().
         super().__init__(name, parentwidget)
         
-        # Initiate data.
+        # Use sync object for workspaces and surveys. 
+        app_core.DesktopAppSync().workspace_changed.connect(self.refresh_survey_list)
+        app_core.DesktopAppSync().survey_changed.connect(self.refresh_survey_list)
+        #
         self.refresh_survey_list()
     
     def _create_content(self):
@@ -59,26 +62,31 @@ class WavefilesActivity(app_framework.ActivityBase):
         self.survey_combo.setMinimumWidth(250)
 #         self.survey_combo.setMaximumWidth(300)
         self.survey_combo.addItems(['<select survey>'])
-        self.survey_combo.currentIndexChanged.connect(self.refresh_event_list)
+        self.survey_combo.currentIndexChanged.connect(self.survey_changed)
 #         self.survey_combo.setMaximumWidth(300)
-        self.detector_combo = QtWidgets.QComboBox()
-        self.detector_combo.setEditable(False)
-        self.detector_combo.setMinimumWidth(250)
-        self.detector_combo.addItems(['<select detectors>'])
-        self.detector_combo.currentIndexChanged.connect(self.refresh_event_list)
+#         self.detector_combo = QtWidgets.QComboBox()
+#         self.detector_combo.setEditable(False)
+#         self.detector_combo.setMinimumWidth(250)
+#         self.detector_combo.addItems(['<select detectors>'])
+#         self.detector_combo.currentIndexChanged.connect(self.refresh_wavefile_list)
         
         # Filters.
         self.type_filter_combo = QtWidgets.QComboBox()
-        self.type_filter_combo.addItems(['<select>', 'event', 'detector'])
+        self.type_filter_combo.setMinimumWidth(100)
+        self.type_filter_combo.setMaximumWidth(120)
+        self.type_filter_combo.addItems(['<select>', 'event', 'detector', 'wavefile'])
         self.title_filter_edit = QtWidgets.QLineEdit('')
         self.clear_filter_button = QtWidgets.QPushButton('Clear')
 #         self.clear_filter_button.clicked.connect(self.clear_filter)
         
+        self.wavefiles_tableview = app_framework.ToolboxQTableView()
+#         self.wavefiles_tableview.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.wavefiles_tableview.clicked.connect(self.selected_item_changed)
+        self.wavefiles_tableview.activated.connect(self.selected_item_changed) # When pressing enter on a highlighted row.
         
-        self.events_tableview = app_framework.ToolboxQTableView()
         # Buttons.
         self.refresh_button = QtWidgets.QPushButton('Refresh')
-        self.refresh_button.clicked.connect(self.refresh_event_list)
+        self.refresh_button.clicked.connect(self.refresh_wavefile_list)
         self.add_button = QtWidgets.QPushButton('Import wavefile...')
         self.add_button.clicked.connect(self.import_wavefile)
         self.rename_button = QtWidgets.QPushButton('(Rename wavefile...)')
@@ -108,7 +116,7 @@ class WavefilesActivity(app_framework.ActivityBase):
         label = QtWidgets.QLabel('Wavefiles:')
         form1.addWidget(label, gridrow, 0, 1, 1)
         gridrow += 1
-        form1.addWidget(self.events_tableview, gridrow, 0, 1, 15)
+        form1.addWidget(self.wavefiles_tableview, gridrow, 0, 1, 15)
         gridrow += 1
         hlayout = QtWidgets.QHBoxLayout()
         hlayout.addWidget(self.add_button)
@@ -123,14 +131,43 @@ class WavefilesActivity(app_framework.ActivityBase):
         #
         return widget        
     
-#     def _content_adv_filter(self):
-#         """ """
-#         widget = QtWidgets.QWidget()
-#         #
-#         return widget
+    def survey_changed(self):
+        """ """
+        selected_survey = str(self.survey_combo.currentText())
+        app_core.DesktopAppSync().set_selected_survey(selected_survey)
+    
+    def selected_item_changed(self):
+        """ """
+        try:
+            modelIndex = self.wavefiles_tableview.currentIndex()
+            if modelIndex.isValid():
+                item_id = str(self.wavefiles_tableview.model().index(modelIndex.row(), 0).data())
+                app_core.DesktopAppSync().set_selected_item_id(item_id)
+        except Exception as e:
+#             pass
+            print('Exception: ', e)
     
     def refresh_survey_list(self):
         """ """
+        try:
+            self.survey_combo.blockSignals(True)
+            self.survey_combo.clear()
+            self.survey_combo.addItem('<select survey>')
+            selected_survey = app_core.DesktopAppSync().get_selected_survey()
+            survey_dict = app_core.DesktopAppSync().get_survey_dict()
+            index = 0
+            for row_index, h5_key in enumerate(sorted(survey_dict)):
+                h5_dict = survey_dict[h5_key]
+                h5_file = h5_dict['h5_file']
+                self.survey_combo.addItem(h5_file)
+                if h5_file == selected_survey:
+                    index = row_index + 1
+            self.survey_combo.setCurrentIndex(index)
+        finally:
+            self.survey_combo.blockSignals(False)
+        #
+        self.refresh_wavefile_list()
+
 #         self.survey_combo.clear()
 #         self.survey_combo.addItem('<select survey>')
 #         dir_path = str(self.workspacedir_edit.text())
@@ -142,77 +179,77 @@ class WavefilesActivity(app_framework.ActivityBase):
 #             
 #             self.survey_combo.setCurrentIndex(1)
     
-    def refresh_event_list(self):
+    def refresh_wavefile_list(self):
         """ """
-#         if self.survey_combo.currentIndex() == 0:
-#             self.events_tableview.setModel(app_framework.PandasModel()) # Clear.
-#             self.events_tableview.resizeColumnsToContents()
-#             return
-#         
-#         dir_path = str(self.workspacedir_edit.text())
-#         survey_name = str(self.survey_combo.currentText())
-#         if (not dir_path) or (not survey_name):
-#             self.events_tableview.setModel(app_framework.PandasModel()) # Clear.
-#             self.events_tableview.resizeColumnsToContents()
-#             return
-#         
-#         event = hdf54bats.Hdf5Event(dir_path, survey_name)
-#         detector = hdf54bats.Hdf5Detector(dir_path, survey_name)
-#         wave = hdf54bats.Hdf5Wavefile(dir_path, survey_name)
-#          
-#         id_list = []
-#         type_list = []
-#         event_list = []
-#         detector_list = []
-#         title_list = []
-#         # Combo.
-#         for event_group in sorted(event.get_children('')):
-#             print('Group path: ', event_group)
-#             # Table.
-#             id_list.append(event_group)
-#             type_list.append('event')
-#             event_list.append(event_group)
-#             detector_list.append('')
-#             title_list.append(event_group)
-#              
-#             for detector_group in sorted(detector.get_children(event_group)):
-#                 # Table.
-#                 id_list.append(detector_group)
-#                 type_list.append('detector')
-#                 event_list.append(event_group)
-#                 detector_list.append(detector_group.split('.')[1])
-#                 title_list.append(detector_group.split('.')[1])
-#                 
-#                 wavefiles = wave.get_wavefiles(from_top_node=detector_group)
-#                 for wave_id in sorted(wavefiles):
-#                     # Table.
-#                     id_list.append(wave_id)
-#                     type_list.append('wavefile')
-#                     event_list.append('')
-#                     detector_list.append('')
-#                     title_list.append(wavefiles[wave_id])
-# 
-#         #
-# #         dataframe = pandas.DataFrame(event_list, hdf5_path_list, columns=['event', 'hdf5_path'])
-#         dataframe = pandas.DataFrame({'id': id_list, 
-#                                       'type': type_list, 
-#                                       'event': event_list, 
-#                                       'detector': detector_list, 
-#                                       'title': title_list})
-#         model = app_framework.PandasModel(dataframe[['id', 
-#                                                      'type', 
-# #                                                      'event', 
-# #                                                      'detector', 
-#                                                      'title']])
-#         self.events_tableview.setModel(model)
-#         self.events_tableview.resizeColumnsToContents()
+        if self.survey_combo.currentIndex() == 0:
+            self.wavefiles_tableview.setModel(app_framework.PandasModel()) # Clear.
+            self.wavefiles_tableview.resizeColumnsToContents()
+            return
+         
+        dir_path = app_core.DesktopAppSync().get_workspace()
+        survey_name = str(self.survey_combo.currentText())
+        if (not dir_path) or (not survey_name):
+            self.wavefiles_tableview.setModel(app_framework.PandasModel()) # Clear.
+            self.wavefiles_tableview.resizeColumnsToContents()
+            return
+         
+        event = hdf54bats.Hdf5Event(dir_path, survey_name)
+        detector = hdf54bats.Hdf5Detector(dir_path, survey_name)
+        wave = hdf54bats.Hdf5Wavefile(dir_path, survey_name)
+          
+        id_list = []
+        type_list = []
+        event_list = []
+        detector_list = []
+        title_list = []
+        # Combo.
+        for event_group in sorted(event.get_children('')):
+            print('Group path: ', event_group)
+            # Table.
+            id_list.append(event_group)
+            type_list.append('event')
+            event_list.append(event_group)
+            detector_list.append('')
+            title_list.append(event_group)
+              
+            for detector_group in sorted(detector.get_children(event_group)):
+                # Table.
+                id_list.append(detector_group)
+                type_list.append('detector')
+                event_list.append(event_group)
+                detector_list.append(detector_group.split('.')[1])
+                title_list.append(detector_group.split('.')[1])
+                 
+                wavefiles = wave.get_wavefiles(from_top_node=detector_group)
+                for wave_id in sorted(wavefiles):
+                    # Table.
+                    id_list.append(wave_id)
+                    type_list.append('wavefile')
+                    event_list.append('')
+                    detector_list.append('')
+                    title_list.append(wavefiles[wave_id])
+ 
+        #
+#         dataframe = pandas.DataFrame(event_list, hdf5_path_list, columns=['event', 'hdf5_path'])
+        dataframe = pandas.DataFrame({'id': id_list, 
+                                      'type': type_list, 
+                                      'event': event_list, 
+                                      'detector': detector_list, 
+                                      'title': title_list})
+        model = app_framework.PandasModel(dataframe[['id', 
+                                                     'type', 
+#                                                      'event', 
+#                                                      'detector', 
+                                                     'title']])
+        self.wavefiles_tableview.setModel(model)
+        self.wavefiles_tableview.resizeColumnsToContents()
     
     def import_wavefile(self):
         """ """
         try:        
             my_dialog = ImportWavefileDialog(self)
             if my_dialog.exec_():
-                self.refresh_event_list()
+                self.refresh_wavefile_list()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
@@ -225,7 +262,7 @@ class WavefilesActivity(app_framework.ActivityBase):
         try:        
             dialog = DeleteDialog(self)
             if dialog.exec_():
-                self.refresh_event_list()
+                self.refresh_wavefile_list()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
@@ -272,7 +309,7 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         self._parentwidget = parentwidget
         self.setLayout(self._content())
         #
-        self.dir_path = str(self._parentwidget.workspacedir_edit.text())
+        self.dir_path = app_core.DesktopAppSync().get_workspace()
         self.survey_name = str(self._parentwidget.survey_combo.currentText())
         # 
         self.update_event_list()
@@ -591,7 +628,7 @@ class DeleteDialog(QtWidgets.QDialog):
         self.setLayout(self._content())
         self.setMinimumSize(500, 500)
         #
-        self.dir_path = str(self._parentwidget.workspacedir_edit.text())
+        self.dir_path = app_core.DesktopAppSync().get_workspace()
         self.survey_name = str(self._parentwidget.survey_combo.currentText())
         #
         self._load_item_data()

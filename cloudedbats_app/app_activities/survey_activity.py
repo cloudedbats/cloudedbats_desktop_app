@@ -74,9 +74,13 @@ class SurveyActivity(app_framework.ActivityBase):
         self.filter_detector_combo.addItems(['<select detector>'])
         
         self.events_tableview = app_framework.ToolboxQTableView()
+        self.events_tableview.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.events_tableview.clicked.connect(self.selected_item_changed)
         
         # Filters.
         self.type_filter_combo = QtWidgets.QComboBox()
+        self.type_filter_combo.setMinimumWidth(100)
+        self.type_filter_combo.setMaximumWidth(120)
         self.type_filter_combo.addItems(['<select>', 'event', 'detector'])
         self.title_filter_edit = QtWidgets.QLineEdit('')
         self.clear_filter_button = QtWidgets.QPushButton('Clear')
@@ -141,6 +145,16 @@ class SurveyActivity(app_framework.ActivityBase):
         selected_survey = str(self.survey_combo.currentText())
         app_core.DesktopAppSync().set_selected_survey(selected_survey)
     
+    def selected_item_changed(self):
+        """ """
+        try:
+            modelIndex = self.events_tableview.currentIndex()
+            if modelIndex.isValid():
+                item_id = str(self.events_tableview.model().index(modelIndex.row(), 0).data())
+                app_core.DesktopAppSync().set_selected_item_id(item_id)
+        except:
+            pass
+    
     def refresh_survey_list(self):
         """ """
         try:
@@ -177,7 +191,7 @@ class SurveyActivity(app_framework.ActivityBase):
             return
         
         survey = hdf54bats.Hdf5Survey(dir_path, survey_name)
-        event = hdf54bats.Hdf5Event(dir_path, survey_name)
+#         event = hdf54bats.Hdf5Event(dir_path, survey_name)
         detector = hdf54bats.Hdf5Detector(dir_path, survey_name)
         
         group_id_list = []
@@ -193,7 +207,7 @@ class SurveyActivity(app_framework.ActivityBase):
             type_list.append('event')
             event_list.append(event_group)
             detector_list.append('')
-            title_list.append(event_group)
+#             title_list.append(event_group)
             
             for detector_group in sorted(detector.get_children(event_group)):
                 # Table.
@@ -201,18 +215,22 @@ class SurveyActivity(app_framework.ActivityBase):
                 type_list.append('detector')
                 event_list.append(event_group)
                 detector_list.append(detector_group.split('.')[1])
-                title_list.append(detector_group.split('.')[1])
+#                 title_list.append(detector_group.split('.')[1])
+        # Titles.
+        for group_id in group_id_list:
+            title = detector.get_title(group_id)
+            title_list.append(title)
         #
 #         dataframe = pandas.DataFrame(event_list, hdf5_path_list, columns=['event', 'hdf5_path'])
         dataframe = pandas.DataFrame({'id': group_id_list, 
                                       'type': type_list, 
-                                      'event': event_list, 
-                                      'detector': detector_list, 
+#                                       'event': event_list, 
+#                                       'detector': detector_list, 
                                       'title': title_list})
         model = app_framework.PandasModel(dataframe[['id', 
                                                      'type', 
-                                                     'event', 
-                                                     'detector', 
+#                                                      'event', 
+#                                                      'detector', 
                                                      'title']])
         self.events_tableview.setModel(model)
         self.events_tableview.resizeColumnsToContents()
@@ -297,7 +315,6 @@ class SurveyActivity(app_framework.ActivityBase):
         </p>
         
         """
-
 
 
 class NewEventDialog(QtWidgets.QDialog):
@@ -452,9 +469,14 @@ class NewDetectorDialog(QtWidgets.QDialog):
     def update_event_list(self):
         """ """
         survey = hdf54bats.Hdf5Survey(self.dir_path, self.survey_name)
+        selected_event_id = app_core.DesktopAppSync().get_selected_item_id(item_type='event')
+        index = 0
         self.event_combo.clear()
-        for event_group in sorted(survey.get_children('')):
+        for row_index, event_group in enumerate(sorted(survey.get_children(''))):
             self.event_combo.addItem(event_group)
+            if event_group == selected_event_id:
+                index = row_index # + 1
+        self.event_combo.setCurrentIndex(index)
 
     def auto_changed(self):
         """ """
@@ -565,15 +587,17 @@ class RenameDialog(QtWidgets.QDialog):
     
     def update_groupname(self, text):
         """ """
-        new_text = hdf54bats.str_to_ascii(text)
-        if len(new_text) > 0:
-            self.itemgroupname_edit.setText(new_text)
-            self.renameitem_button.setEnabled(True)
-            self.renameitem_button.setDefault(True)
-        else:
-            self.itemgroupname_edit.setText('')
-            self.renameitem_button.setEnabled(False)
-            self.renameitem_button.setDefault(False)
+        self.renameitem_button.setEnabled(False)
+        self.renameitem_button.setDefault(False)
+#         new_text = hdf54bats.str_to_ascii(text)
+#         if len(new_text) > 0:
+#             self.itemgroupname_edit.setText(new_text)
+#             self.renameitem_button.setEnabled(True)
+#             self.renameitem_button.setDefault(True)
+#         else:
+#             self.itemgroupname_edit.setText('')
+#             self.renameitem_button.setEnabled(False)
+#             self.renameitem_button.setDefault(False)
 
     def rename_item(self):
         """ """
@@ -665,15 +689,17 @@ class CopyDialog(QtWidgets.QDialog):
     
     def update_groupname(self, text):
         """ """
-        new_text = hdf54bats.str_to_ascii(text)
-        if len(new_text) > 0:
-            self.itemgroupname_edit.setText(new_text)
-            self.copyitem_button.setEnabled(True)
-            self.copyitem_button.setDefault(True)
-        else:
-            self.itemgroupname_edit.setText('')
-            self.copyitem_button.setEnabled(False)
-            self.copyitem_button.setDefault(False)
+        self.copyitem_button.setEnabled(False)
+        self.copyitem_button.setDefault(False)
+#         new_text = hdf54bats.str_to_ascii(text)
+#         if len(new_text) > 0:
+#             self.itemgroupname_edit.setText(new_text)
+#             self.copyitem_button.setEnabled(True)
+#             self.copyitem_button.setDefault(True)
+#         else:
+#             self.itemgroupname_edit.setText('')
+#             self.copyitem_button.setEnabled(False)
+#             self.copyitem_button.setDefault(False)
 
     def create_item(self):
         """ """
@@ -833,105 +859,4 @@ class DeleteDialog(QtWidgets.QDialog):
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
             self.accept() # Close dialog box.
-
-
-#     # SAMPLES.
-#     
-#     def sample_content(self):
-#         """ """  
-#         widget = QtWidgets.QWidget()
-#         #  
-#         samples_listview = QtWidgets.QListView()
-#         self.samples_model = QtGui.QStandardItemModel()
-#         samples_listview.setModel(self.samples_model)
-#         #
-#         clearall_button = app_framework.ClickableQLabel('Clear all')
-#         clearall_button.label_clicked.connect(self.uncheck_all_samples)                
-#         markall_button = app_framework.ClickableQLabel('Mark all')
-#         markall_button.label_clicked.connect(self.check_all_samples)                
-#         delete_button = QtWidgets.QPushButton('Delete marked sample(s)')
-#         delete_button.clicked.connect(self.delete_marked_samples)               
-#         cancel_button = QtWidgets.QPushButton('Cancel')
-#         cancel_button.clicked.connect(self.reject) # Close dialog box.               
-#         # Layout widgets.
-#         hbox1 = QtWidgets.QHBoxLayout()
-#         hbox1.addWidget(clearall_button)
-#         hbox1.addWidget(markall_button)
-#         hbox1.addStretch(10)
-#         #
-#         hbox2 = QtWidgets.QHBoxLayout()
-#         hbox2.addStretch(10)
-#         hbox2.addWidget(delete_button)
-#         hbox2.addWidget(cancel_button)
-#         #
-#         layout = QtWidgets.QVBoxLayout()
-#         layout.addWidget(samples_listview, 10)
-#         layout.addLayout(hbox1)
-#         layout.addLayout(hbox2)
-#         #
-#         widget.setLayout(layout)
-#         #
-#         return widget                
-# 
-#     def load_sample_data(self):
-#         """ """
-#         try:        
-#             self.samples_model.clear()        
-#             for datasetname in plankton_core.PlanktonCounterManager().get_dataset_names():
-#                 item = QtGui.QStandardItem('Dataset: ' + datasetname)
-#                 self.samples_model.appendRow(item)
-#                 # Samples.
-#                 for samplename in plankton_core.PlanktonCounterManager().get_sample_names(datasetname):
-#                     item = QtGui.QStandardItem(samplename)
-#                     item.setCheckState(QtCore.Qt.Unchecked)
-#                     item.setCheckable(True)
-#                     self.samples_model.appendRow(item)
-#         #
-#         except Exception as e:
-#             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
-#             toolbox_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
-#             
-#     def check_all_samples(self):
-#         """ """
-#         try:        
-#             for rowindex in range(self.samples_model.rowCount()):
-#                 item = self.samples_model.item(rowindex, 0)
-#                 if item.isCheckable ():
-#                     item.setCheckState(QtCore.Qt.Checked)
-#         #
-#         except Exception as e:
-#             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
-#             toolbox_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
-#             
-#     def uncheck_all_samples(self):
-#         """ """
-#         try:        
-#             for rowindex in range(self.samples_model.rowCount()):
-#                 item = self.samples_model.item(rowindex, 0)
-#                 if item.isCheckable ():
-#                     item.setCheckState(QtCore.Qt.Unchecked)
-#         #
-#         except Exception as e:
-#             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
-#             toolbox_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
-# 
-#     def delete_marked_samples(self):
-#         """ """
-#         try:        
-#             datasetname = None
-#             samplename = None
-#             for rowindex in range(self.samples_model.rowCount()):
-#                 item = self.samples_model.item(rowindex, 0)
-#                 if str(item.text()).startswith('Dataset: '):
-#                     datasetname = str(item.text()).replace('Dataset: ', '')
-#                 if item.checkState() == QtCore.Qt.Checked:
-#                     samplename = str(item.text())
-#                     print(samplename)
-#                     plankton_core.PlanktonCounterManager().delete_sample(datasetname, samplename)
-#             #            
-#             self.accept() # Close dialog box.
-#         #
-#         except Exception as e:
-#             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
-#             toolbox_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 

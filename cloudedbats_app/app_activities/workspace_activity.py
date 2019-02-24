@@ -124,9 +124,17 @@ class WorkspaceActivity(app_framework.ActivityBase):
         """ """
         try:
             self.surveys_tableview.blockSignals(True)
+            selected_workspace = app_core.DesktopAppSync().get_workspace()
             h5_survey_dict = app_core.DesktopAppSync().get_survey_dict()
             h5_selected_survey = app_core.DesktopAppSync().get_selected_survey()
             header = ['h5_file', 'h5_title', 'h5_filepath']
+            #
+            try:
+                self.workspacedir_edit.blockSignals(True)
+                self.workspacedir_edit.setText(selected_workspace)
+            finally:
+                self.workspacedir_edit.blockSignals(False)
+            #
             rows = []
             selected_survey_index = None
             for index, key in enumerate(sorted(h5_survey_dict)):
@@ -340,6 +348,7 @@ class RenameSurveyDialog(QtWidgets.QDialog):
         self._surveytitle_edit.setMinimumWidth(400)
         self.auto_checkbox = QtWidgets.QCheckBox('Auto')
         self.auto_checkbox.setChecked(True)
+        self.auto_checkbox.stateChanged.connect(self.auto_changed)
         self._surveyfilename_edit = QtWidgets.QLineEdit('')
         self._surveyfilename_edit.setMinimumWidth(400)
         self._surveyfilename_edit.setEnabled(False)
@@ -406,9 +415,9 @@ class RenameSurveyDialog(QtWidgets.QDialog):
         """ """
         check_state = self.auto_checkbox.checkState()
         if check_state:
-            self.detectorgroup_edit.setEnabled(False)
+            self._surveyfilename_edit.setEnabled(False)
         else:
-            self.detectorgroup_edit.setEnabled(True)
+            self._surveyfilename_edit.setEnabled(True)
     
     def _update_filename(self, text):
         """ """
@@ -462,6 +471,7 @@ class CopySurveyDialog(QtWidgets.QDialog):
         self._surveytitle_edit.setMinimumWidth(400)
         self.auto_checkbox = QtWidgets.QCheckBox('Auto')
         self.auto_checkbox.setChecked(True)
+        self.auto_checkbox.stateChanged.connect(self.auto_changed)
         self._surveyfilename_edit = QtWidgets.QLineEdit('')
         self._surveyfilename_edit.setMinimumWidth(400)
         self._surveyfilename_edit.setEnabled(False)
