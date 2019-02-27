@@ -212,7 +212,7 @@ class SelectableQListView(QtWidgets.QListView):
                 selectedindexes.append(rowindex)
         #
         return selectedindexes
-
+    
     def getNotSelectedIndexList(self):
         """ """
         selectedindexes = []
@@ -261,21 +261,21 @@ class ToolboxQTableView(QtWidgets.QTableView):
         self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.setSelectionMode(QtWidgets.QAbstractItemView.ContiguousSelection)
 #         self.verticalHeader().setDefaultSectionSize(18)
-           
+    
     def clearModel(self):
         """ """
         if self._tablemodel.getModeldata():
             self._tablemodel.getModeldata().clear()
 #         # Call same method in parent class.
 #         super(ToolboxQTableView, self).clear()
-          
+    
     def resetModel(self):
         """ Used to repaint. """
         if self._tablemodel:
             self._tablemodel.beginResetModel()
 #           pass
             self._tablemodel.endResetModel()
-          
+    
     def getTableModel(self):
         """ """
         return self._tablemodel.getModeldata()
@@ -286,11 +286,20 @@ class ToolboxQTableView(QtWidgets.QTableView):
             self._tablemodel.beginResetModel()
             self._tablemodel.setModeldata(tablemodeldata)
             self._tablemodel.endResetModel()
-          
+            
+            
+            
+#             self._selectionmodel = QtCore.QItemSelectionModel(self._tablemodel) 
+#             self.setSelectionModel(self._selectionmodel)
+#             self.resizeColumnsToContents()
+            
+            
+            
+    
     def getSelectionModel(self):
         """ """
         return self._selectionmodel
-          
+    
     def onFilterTextChanged(self, text):
         """ link the textChanged signal to this method for filtering. 
             In the constructor 'filter_column_index' must be defined. """          

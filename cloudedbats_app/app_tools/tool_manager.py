@@ -27,6 +27,7 @@ class ToolManager(object):
         self._toollist.append(app_tools.LogTool('Application log', self._parent))
         self._toollist.append(app_tools.MetadataTool('Metadata', self._parent))
         self._toollist.append(app_tools.SpectrogramTool('Spectrogram', self._parent))
+        self._toollist.append(app_tools.MapTool('Map', self._parent))
         self._toollist.append(app_tools.CallShapesTool('(Call shapes)', self._parent))
         self._toollist.append(app_tools.MetricsPlotTool('(Metrics plot)', self._parent))
         self._toollist.append(app_tools.SpeciesTool('(Species)', self._parent))

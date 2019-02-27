@@ -5,5 +5,6 @@ from .spectrogram_tool import SpectrogramTool
 from .callshape_tool import CallShapesTool
 from .metricsplot_tool import MetricsPlotTool
 from .species_tool import SpeciesTool
+from .map_tool import MapTool
 from .template_tool import TemplateTool
 from .tool_manager import ToolManager

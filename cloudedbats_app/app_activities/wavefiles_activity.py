@@ -83,6 +83,9 @@ class WavefilesActivity(app_framework.ActivityBase):
 #         self.wavefiles_tableview.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.wavefiles_tableview.clicked.connect(self.selected_item_changed)
         self.wavefiles_tableview.activated.connect(self.selected_item_changed) # When pressing enter on a highlighted row.
+
+#         self.wavefiles_tableview.getSelectionModel().selectionChanged.connect(self.selected_item_changed)
+#         self.wavefiles_tableview.selectionModel().selectionChanged.connect(self.selected_item_changed)
         
         # Buttons.
         self.refresh_button = QtWidgets.QPushButton('Refresh')

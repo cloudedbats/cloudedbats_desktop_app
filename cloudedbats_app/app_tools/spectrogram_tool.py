@@ -40,6 +40,7 @@ class SpectrogramTool(app_framework.ToolBase):
 #         app_core.DesktopAppSync().survey_changed.connect(self.refresh_survey_list)
         app_core.DesktopAppSync().item_id_changed.connect(self.plot_spectrogram)
 
+        self.plot_spectrogram
 #         self.refresh_survey_list()
 #         self.refresh_wavefile_list(0)
 
@@ -130,13 +131,13 @@ class SpectrogramTool(app_framework.ToolBase):
         hlayout = QtWidgets.QHBoxLayout()
         hlayout.addWidget(self.workspacedir_label)
         hlayout.addWidget(self.survey_label)
-        hlayout.addStretch(10)
-        form1.addLayout(hlayout, gridrow, 0, 1, 15)
+        hlayout.addStretch(5)
+        form1.addLayout(hlayout, gridrow, 0, 1, 10)
         gridrow += 1
         hlayout = QtWidgets.QHBoxLayout()
         hlayout.addWidget(self.itemid_label)
-        hlayout.addStretch(10)
-        form1.addLayout(hlayout, gridrow, 0, 1, 15)
+        hlayout.addStretch(5)
+        form1.addLayout(hlayout, gridrow, 0, 1, 10)
 #         hlayout.addWidget(QtWidgets.QLabel('Workspace:'))
 #         hlayout.addWidget(self.workspacedir_edit, 7)
 #         hlayout.addWidget(QtWidgets.QLabel('Survey:'))
@@ -166,9 +167,9 @@ class SpectrogramTool(app_framework.ToolBase):
         hbox.addWidget(app_framework.RightAlignedQLabel('Overlap:'))
         hbox.addWidget(self.overlap_combo)
 #         hbox.addStretch(10)
-        form1.addLayout(hbox, gridrow, 0, 1, 15)
+        form1.addLayout(hbox, gridrow, 0, 1, 10)
         gridrow += 1
-        form1.addWidget(self._canvas, gridrow, 0, 15, 15)
+        form1.addWidget(self._canvas, gridrow, 0, 100, 10)
         #
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(form1)
