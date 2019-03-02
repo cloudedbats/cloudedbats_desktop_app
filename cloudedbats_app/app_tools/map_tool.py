@@ -4,10 +4,6 @@
 # Copyright (c) 2018 Arnold Andreasson 
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
-import time
-import pathlib
-import numpy
-import pandas
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 import matplotlib.backends.backend_qt5agg as mpl_backend
@@ -16,7 +12,6 @@ import matplotlib.figure as mpl_figure
 import geotiler # From https://github.com/wrobell/geotiler 
                 # Example: https://github.com/wrobell/geotiler/blob/master/examples/ex-matplotlib.py 
 #
-import hdf54bats
 from cloudedbats_app import app_framework
 from cloudedbats_app import app_core
 
@@ -63,7 +58,7 @@ class MapTool(app_framework.ToolBase):
         self.workspacedir_label = QtWidgets.QLabel('Workspace: -     ')
         self.survey_label = QtWidgets.QLabel('Survey: -')
         self.itemid_label = QtWidgets.QLabel('Item id: -')
-#         self.title_label = QtWidgets.QLabel('Title: -')
+        self.title_label = QtWidgets.QLabel('Title: -')
         
         # Matplotlib figure and canvas for Qt5.
         self._figure = mpl_figure.Figure()
@@ -87,8 +82,8 @@ class MapTool(app_framework.ToolBase):
         form1.addWidget(self.itemid_label, gridrow, 0, 1, 10)
         gridrow += 1
         form1.addWidget(QtWidgets.QLabel(''), gridrow, 0, 1, 10)
-#         gridrow += 1
-#         form1.addWidget(self.title_label, gridrow, 0, 1, 10)
+        gridrow += 1
+        form1.addWidget(self.title_label, gridrow, 0, 1, 10)
 #         gridrow += 1
 #         form1.addWidget(QtWidgets.QLabel(''), gridrow, 0, 1, 10)
         gridrow += 1
@@ -124,46 +119,53 @@ class MapTool(app_framework.ToolBase):
     
     def update_map(self):
         """ """
-        
         workspace = app_core.DesktopAppSync().get_workspace()
         survey = app_core.DesktopAppSync().get_selected_survey()
         item_id = app_core.DesktopAppSync().get_selected_item_id()
+        item_metadata = app_core.DesktopAppSync().get_metadata_dict()
+        item_title = item_metadata.get('item_title', '')
+        latitude_dd = item_metadata.get('latitude_dd', '')
+        longitude_dd = item_metadata.get('longitude_dd', '')
         #
         if not item_id:
             self.workspacedir_label.setText('Workspace: -     ')
             self.survey_label.setText('Survey: -')
             self.itemid_label.setText('Item id: -')
+            self.title_label.setText('Title: -')
             return
         #
         self.workspacedir_label.setText('Workspace: <b>' + workspace + '</b>   ')
         self.survey_label.setText('Survey: <b>' + survey + '</b>')
         self.itemid_label.setText('Item id: <b>' + item_id + '</b>')
+        self.title_label.setText('Title: <b>' + item_title + '</b>')
         #
         try:
-            time.sleep(0.5)
-            h5wavefile = hdf54bats.Hdf5Wavefile(workspace, survey)
-            title = h5wavefile.get_title(item_id)
-            metadata_dict = h5wavefile.get_user_metadata(item_id)
-            lat_dd = float(metadata_dict.get('latitude_dd', ''))
-            long_dd = float(metadata_dict.get('longitude_dd', ''))
+            lat_dd = float(latitude_dd)
+            long_dd = float(longitude_dd)
         except:
             # Clear.
             self.axes.cla()
             self._canvas.draw()
             return
+         
+        
+        
+        #### Dont use geotiler. Wrong license.
+        return
+        
         
 #         bbox = 11.78560, 46.48083, 11.79067, 46.48283
 #         # Download background map using OpenStreetMap.
 #         mm = geotiler.Map(extent=bbox, zoom=18)
-
+ 
         center = (long_dd, lat_dd)
         # Download background map using OpenStreetMap.
         mm = geotiler.Map(center=center, zoom=9, size=(500,300))
-
+ 
         self.axes.cla()
         img = geotiler.render_map(mm)
         self.axes.imshow(img)
-
+ 
         # Plot custom points.
 #         x0, y0 = 11.78816, 46.48114 # http://www.openstreetmap.org/search?query=46.48114%2C11.78816
 #         x1, y1 = 11.78771, 46.48165 # http://www.openstreetmap.org/search?query=46.48165%2C11.78771
@@ -172,8 +174,8 @@ class MapTool(app_framework.ToolBase):
         points = ((x0, y0), (x1, y1))
         x, y = zip(*(mm.rev_geocode(p) for p in points))
         self.axes.scatter(x, y, c='red', edgecolor='none', s=20, alpha=0.9)
-
-        
+ 
+         
 #         plt.savefig('ex-matplotlib.pdf', bbox_inches='tight')
 #         plt.close()
         self._canvas.draw()

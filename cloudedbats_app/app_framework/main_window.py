@@ -9,11 +9,11 @@ import codecs
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 
-import cloudedbats_app
 from cloudedbats_app import app_framework
 from cloudedbats_app import app_tools
 from cloudedbats_app import app_activities
 from cloudedbats_app import app_utils
+from cloudedbats_app import app_core
 
 class MainWindow(QtWidgets.QMainWindow):
     """
@@ -93,12 +93,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.move(position)        
         # Tell the user.
         app_tools.ToolManager().show_tool_by_name('Application log') # Show the log tool if hidden.
+        #
+        # Sync all windows with selected data.
+        app_core.DesktopAppSync().emit_all_signals()
 
         # Load resources when the main event loop has started.
 #         if app_framework.ToolboxSettings().get_value('Resources:Load at startup'):
 #             QtCore.QTimer.singleShot(10, app_framework.ToolboxResources().loadAllResources)
         QtCore.QTimer.singleShot(1000, self._loadResources)
-#        self._loadResources()
         
     def _loadResources(self):
         """ """

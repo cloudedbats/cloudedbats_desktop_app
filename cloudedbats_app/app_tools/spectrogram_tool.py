@@ -240,58 +240,52 @@ class SpectrogramTool(app_framework.ToolBase):
         maxindex = self.wavefile_combo.count()
         self.wavefile_combo.setCurrentIndex(maxindex-1)
     
-    def refresh_survey_list(self):
-        """ """
-        self.survey_combo.clear()
-        self.survey_combo.addItem('<select survey>')
-        dir_path = str(self.workspacedir_edit.text())
-        ws = hdf54bats.Hdf5Workspace(dir_path)
-        h5_list = ws.get_h5_list()
-        for h5_file_key in sorted(h5_list.keys()):
-            h5_file_dict = h5_list[h5_file_key]
-            self.survey_combo.addItem(h5_file_dict['name'])
-            
-            self.survey_combo.setCurrentIndex(1)
-
-    def refresh_wavefile_list(self, index):
-        """ """
-        self.wavefile_combo.clear()
-        workspace = str(self.workspacedir_edit.text())
-        survey = str(self.survey_combo.currentText())
-        if survey not in ['', '<select survey>']:
-            h5wavefile = hdf54bats.Hdf5Wavefile(workspace, survey)
-            
-            from_top_node = ''
-            wavefiles_dict = h5wavefile.get_wavefiles(from_top_node)
-            for wave_id in sorted(wavefiles_dict):
-                self.wavefile_combo.addItem(wave_id)
-        else:
-            self.wavefile_combo.clear()
+#     def refresh_survey_list(self):
+#         """ """
+#         self.survey_combo.clear()
+#         self.survey_combo.addItem('<select survey>')
+#         dir_path = str(self.workspacedir_edit.text())
+#         ws = hdf54bats.Hdf5Workspace(dir_path)
+#         h5_list = ws.get_h5_list()
+#         for h5_file_key in sorted(h5_list.keys()):
+#             h5_file_dict = h5_list[h5_file_key]
+#             self.survey_combo.addItem(h5_file_dict['name'])
+#             
+#             self.survey_combo.setCurrentIndex(1)
+# 
+#     def refresh_wavefile_list(self, index):
+#         """ """
+#         self.wavefile_combo.clear()
+#         workspace = str(self.workspacedir_edit.text())
+#         survey = str(self.survey_combo.currentText())
+#         if survey not in ['', '<select survey>']:
+#             h5wavefile = hdf54bats.Hdf5Wavefile(workspace, survey)
+#             
+#             from_top_node = ''
+#             wavefiles_dict = h5wavefile.get_wavefiles(from_top_node)
+#             for wave_id in sorted(wavefiles_dict):
+#                 self.wavefile_combo.addItem(wave_id)
+#         else:
+#             self.wavefile_combo.clear()
     
     def plot_spectrogram(self):
         """ Use a thread to relese the user. """
-        # Clear.
-        self.axes.cla()
-#         self._canvas.draw()
-
-#         workspace = str(self.workspacedir_edit.text())
-#         survey = str(self.survey_combo.currentText())
-#         item_id = str(self.wavefile_combo.currentText())
         workspace = app_core.DesktopAppSync().get_workspace()
         survey = app_core.DesktopAppSync().get_selected_survey()
         item_id = app_core.DesktopAppSync().get_selected_item_id(item_type='wavefile')
         if not item_id:
+            # Clear.
+            self.axes.cla()
             self._canvas.draw()
             self.workspacedir_label.setText('Workspace: -     ')
             self.survey_label.setText('Survey: -')
             self.itemid_label.setText('Item id: -')
             return
-        
+        #
         self.workspacedir_label.setText('Workspace: <b>' + workspace + '</b>   ')
         self.survey_label.setText('Survey: <b>' + survey + '</b>')
         self.itemid_label.setText('Item id: <b>' + item_id + '</b>')
-        
-        
+        #
         try:
             # Check if thread is running.
             if self.spectrogram_thread:
@@ -310,25 +304,22 @@ class SpectrogramTool(app_framework.ToolBase):
     
     def run_plot_spectrogram(self, workspace, survey, item_id):
         """ """
-#         # Read signal from file.
-#         wave_reader = dsp4bats.WaveFileReader(wave_file)
-#         sampling_freq = wave_reader.sampling_freq
-#         signal = np.array([])
-#         buffer = wave_reader.read_buffer()
-#         while len(buffer) > 0:
-#             signal = np.append(signal, buffer)
-#             buffer = wave_reader.read_buffer()  
-#         wave_reader.close()
-
-#         workspace = str(self.workspacedir_edit.text())
-#         survey = str(self.survey_combo.currentText())
-#         item_id = str(self.wavefile_combo.currentText())
-        
+        self.axes.cla()
+        #
+        if not self.spectrogram_thread_active:
+            return
+        #
         h5wavefile = hdf54bats.Hdf5Wavefile(workspace, survey)
         signal = h5wavefile.get_wavefile(item_id)
-        title = h5wavefile.get_title(item_id)
+        item_metadata = h5wavefile.get_user_metadata(item_id)
+        item_title = item_metadata.get('item_title', '')
+        sampling_freq_hz = item_metadata.get('file_frame_rate_hz', '')
+        if not sampling_freq_hz:
+            sampling_freq = 384000
+        else:
+            sampling_freq = int(sampling_freq_hz)
         
-        sampling_freq = 384000
+        print('- Framerate: ', sampling_freq)
         
         if len(signal) > (10 * sampling_freq):
             signal = signal[0:10 * sampling_freq]
@@ -367,9 +358,6 @@ class SpectrogramTool(app_framework.ToolBase):
     #             window_function = 'hann'
                 jump = int(window_size / 8)
             #
-            if not self.spectrogram_thread_active:
-                return
-            
             
             
             
@@ -407,7 +395,7 @@ class SpectrogramTool(app_framework.ToolBase):
             self.axes.axis('tight')
 #             self.axes.set_title(wave_file_path.name)
 #             self.axes.set_title(wavefile_id)
-            self.axes.set_title(title)
+            self.axes.set_title(item_title)
             self.axes.set_ylabel('Frequency (kHz)')
             self.axes.set_xlabel('Time (s)')
             #ax.set_ylim([0,160])

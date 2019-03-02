@@ -4,12 +4,12 @@
 # Copyright (c) 2018 Arnold Andreasson 
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
+import time
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 
 from cloudedbats_app import app_framework
 from cloudedbats_app import app_core
-import hdf54bats
 
 class MetadataTool(app_framework.ToolBase):
     """ Metadata tool. """
@@ -108,7 +108,9 @@ class MetadataTool(app_framework.ToolBase):
         workspace = app_core.DesktopAppSync().get_workspace()
         survey = app_core.DesktopAppSync().get_selected_survey()
         item_id = app_core.DesktopAppSync().get_selected_item_id()
+        metadata_dict = app_core.DesktopAppSync().get_metadata_dict()
         #
+        self.metadata_list.clear()
         if not item_id:
             self.workspacedir_label.setText('Workspace: -     ')
             self.survey_label.setText('Survey: -')
@@ -118,18 +120,12 @@ class MetadataTool(app_framework.ToolBase):
         self.workspacedir_label.setText('Workspace: <b>' + workspace + '</b>   ')
         self.survey_label.setText('Survey: <b>' + survey + '</b>')
         self.itemid_label.setText('Item id: <b>' + item_id + '</b>')
+        self.title_label.setText('Title: <b>' + metadata_dict.get('item_title', '') + '</b>')
         #
-        h5wavefile = hdf54bats.Hdf5Wavefile(workspace, survey)        
-        title = h5wavefile.get_title(item_id)
-        metadata_dict = h5wavefile.get_user_metadata(item_id)
-        #
-        self.title_label.setText('Title: <b>' + title + '</b>')
-        self.metadata_list.clear()
-        
         for key in sorted(metadata_dict):
             text = key + ': ' + ' ' * (15 - len(key)) + '\t' + str(metadata_dict.get(key, ''))
             self.metadata_list.addItem(text)
-        
+        #
         return
         
     

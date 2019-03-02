@@ -5,9 +5,6 @@
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
 import sys
-import string
-import pathlib
-import pandas
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui
 from PyQt5 import QtCore
@@ -61,11 +58,12 @@ class WorkspaceActivity(app_framework.ActivityBase):
         
         self.surveys_tableview = app_framework.ToolboxQTableView()
         self.surveys_tableview.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.surveys_tableview.clicked.connect(self.selected_survey_changed)
+#         self.surveys_tableview.clicked.connect(self.selected_survey_changed)
+        self.surveys_tableview.getSelectionModel().selectionChanged.connect(self.selected_survey_changed)
         
         # Buttons.
         self.refresh_button = QtWidgets.QPushButton('Refresh')
-        self.refresh_button.clicked.connect(self.workspace_changed)
+        self.refresh_button.clicked.connect(self.refresh)
         self.add_button = QtWidgets.QPushButton('Add survey...')
         self.add_button.clicked.connect(self.add_survey)
         self.rename_button = QtWidgets.QPushButton('Rename survey...')
@@ -115,6 +113,10 @@ class WorkspaceActivity(app_framework.ActivityBase):
         if dirpath:
             self.workspacedir_edit.setText(dirpath)
 
+    def refresh(self):
+        """ """
+        app_core.DesktopAppSync().refresh()
+    
     def workspace_changed(self):
         """ """
         dir_path = str(self.workspacedir_edit.text())
@@ -124,10 +126,19 @@ class WorkspaceActivity(app_framework.ActivityBase):
         """ """
         try:
             self.surveys_tableview.blockSignals(True)
+            self.surveys_tableview.getSelectionModel().blockSignals(True)
+            #
             selected_workspace = app_core.DesktopAppSync().get_workspace()
-            h5_survey_dict = app_core.DesktopAppSync().get_survey_dict()
+            h5_survey_dict = app_core.DesktopAppSync().get_surveys_dict()
             h5_selected_survey = app_core.DesktopAppSync().get_selected_survey()
+            #
+            dataset_table = app_framework.DatasetTable()
             header = ['h5_file', 'h5_title', 'h5_filepath']
+            dataset_table.set_header(header)
+#             header_cap = []
+#             for item in header:
+#                 header_cap.append(item.capitalize().replace('_', ' '))
+#             dataset_table.set_header(header_cap)
             #
             try:
                 self.workspacedir_edit.blockSignals(True)
@@ -135,21 +146,18 @@ class WorkspaceActivity(app_framework.ActivityBase):
             finally:
                 self.workspacedir_edit.blockSignals(False)
             #
-            rows = []
             selected_survey_index = None
             for index, key in enumerate(sorted(h5_survey_dict)):
                 h5_dict = h5_survey_dict[key]
                 row = []
                 for head in header:
                     row.append(h5_dict.get(head, ''))
-                rows.append(row)
+                dataset_table.append_row(row)
                 h5_file = h5_dict.get('h5_file', None)
                 if h5_file and (h5_file == h5_selected_survey):
                     selected_survey_index = index
             #
-            df = pandas.DataFrame(rows, columns=header)
-            model = app_framework.PandasModel(df)
-            self.surveys_tableview.setModel(model)
+            self.surveys_tableview.setTableModel(dataset_table)
             self.surveys_tableview.resizeColumnsToContents()
             #
             if selected_survey_index is not None:
@@ -157,6 +165,7 @@ class WorkspaceActivity(app_framework.ActivityBase):
                 self.surveys_tableview.setCurrentIndex(qt_index)
         finally:
             self.surveys_tableview.blockSignals(False)
+            self.surveys_tableview.getSelectionModel().blockSignals(False)
         
     
     def selected_survey_changed(self):
@@ -174,7 +183,7 @@ class WorkspaceActivity(app_framework.ActivityBase):
         try:        
             my_dialog = NewSurveyDialog(self)
             if my_dialog.exec_():
-                self.workspace_changed()
+                self.refresh()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
@@ -184,7 +193,7 @@ class WorkspaceActivity(app_framework.ActivityBase):
         try:        
             my_dialog = RenameSurveyDialog(self)
             if my_dialog.exec_():
-                self.workspace_changed()
+                self.refresh()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
@@ -194,7 +203,7 @@ class WorkspaceActivity(app_framework.ActivityBase):
         try:        
             my_dialog = CopySurveyDialog(self)
             if my_dialog.exec_():
-                self.workspace_changed()
+                self.refresh()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
@@ -204,7 +213,7 @@ class WorkspaceActivity(app_framework.ActivityBase):
         try:        
             dialog = DeleteDialog(self)
             if dialog.exec_():
-                self.workspace_changed()
+                self.refresh()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
@@ -315,15 +324,17 @@ class NewSurveyDialog(QtWidgets.QDialog):
     def _create_survey(self):
         """ """
         try:
-            dir_path = app_core.DesktopAppSync().get_workspace()
-            name = str(self._surveytitle_edit.text())
-            filename = str(self._surveyfilename_edit.text())
-            ws = hdf54bats.Hdf5Workspace(dir_path, create_ws=True)
-            ws.create_h5(filename, title=name)
-            self.accept() # Close dialog box.
+            try:
+                dir_path = app_core.DesktopAppSync().get_workspace()
+                name = str(self._surveytitle_edit.text())
+                filename = str(self._surveyfilename_edit.text())
+                ws = hdf54bats.Hdf5Workspace(dir_path, create_ws=True)
+                ws.create_h5(filename, title=name)
+            finally:
+                self.accept() # Close dialog box.
         except Exception as e:
-            print('TODO: ERROR: ', e)
-            self.accept() # Close dialog box.
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 
 
 class RenameSurveyDialog(QtWidgets.QDialog):
@@ -389,7 +400,7 @@ class RenameSurveyDialog(QtWidgets.QDialog):
     def update_survey_list(self):
         """ """
         selected_survey = app_core.DesktopAppSync().get_selected_survey()
-        survey_dict = app_core.DesktopAppSync().get_survey_dict()
+        survey_dict = app_core.DesktopAppSync().get_surveys_dict()
         self.name_combo.clear()
         index = 0
         for row_index, h5_key in enumerate(sorted(survey_dict)):
@@ -402,14 +413,19 @@ class RenameSurveyDialog(QtWidgets.QDialog):
     
     def _set_filename(self, _index):
         """ """
-        survey_name = str(self.name_combo.currentText())
-        if survey_name:
-            dir_path = app_core.DesktopAppSync().get_workspace()
-            ws = hdf54bats.Hdf5Workspace(dir_path)
-            title = ws.get_h5_title(survey_name)
-            self._surveytitle_edit.setText(title)
-        else:
-            self._surveytitle_edit.setText('')
+        try:
+            survey_name = str(self.name_combo.currentText())
+            if survey_name:
+                dir_path = app_core.DesktopAppSync().get_workspace()
+                ws = hdf54bats.Hdf5Workspace(dir_path)
+                title = ws.get_h5_title(survey_name)
+                self._surveytitle_edit.setText(title)
+            else:
+                self._surveytitle_edit.setText('')
+        except Exception as e:
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
+
     
     def auto_changed(self):
         """ """
@@ -431,22 +447,23 @@ class RenameSurveyDialog(QtWidgets.QDialog):
                 self._surveyfilename_edit.setText('')
                 self.renamesurvey_button.setEnabled(False)
                 self.renamesurvey_button.setDefault(False)
-
+    
     def _rename_survey(self):
         """ """
         try:
-            dir_path = app_core.DesktopAppSync().get_workspace()
-            name_combo = self.name_combo.currentText()
-            name = self._surveytitle_edit.text()
-            filename = self._surveyfilename_edit.text()
-            ws = hdf54bats.Hdf5Workspace(dir_path)
-            ws.rename_h5(name_combo, filename)
-            ws.set_h5_title(filename, name)
-#             self.update_survey_list()
-            self.accept() # Close dialog box.
+            try:
+                dir_path = app_core.DesktopAppSync().get_workspace()
+                name_combo = self.name_combo.currentText()
+                name = self._surveytitle_edit.text()
+                filename = self._surveyfilename_edit.text()
+                ws = hdf54bats.Hdf5Workspace(dir_path)
+                ws.rename_h5(name_combo, filename)
+                ws.set_h5_title(filename, name)
+            finally:
+                self.accept() # Close dialog box.
         except Exception as e:
-            print('TODO: ERROR: ', e)
-            self.accept() # Close dialog box.
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 
 
 class CopySurveyDialog(QtWidgets.QDialog):
@@ -512,7 +529,7 @@ class CopySurveyDialog(QtWidgets.QDialog):
     def update_survey_list(self):
         """ """
         selected_survey = app_core.DesktopAppSync().get_selected_survey()
-        survey_dict = app_core.DesktopAppSync().get_survey_dict()
+        survey_dict = app_core.DesktopAppSync().get_surveys_dict()
         self.name_combo.clear()
         index = 0
         for row_index, h5_key in enumerate(sorted(survey_dict)):
@@ -558,18 +575,19 @@ class CopySurveyDialog(QtWidgets.QDialog):
     def _create_survey(self):
         """ """
         try:
-            dir_path = app_core.DesktopAppSync().get_workspace()
-            name_combo = self.name_combo.currentText()
-            name = self._surveytitle_edit.text()
-            filename = self._surveyfilename_edit.text()
-            ws = hdf54bats.Hdf5Workspace(dir_path)
-            ws.copy_h5(name_combo, filename)
-            ws.set_h5_title(filename, name)
-#             self.update_survey_list()
-            self.accept() # Close dialog box.
+            try:
+                dir_path = app_core.DesktopAppSync().get_workspace()
+                name_combo = self.name_combo.currentText()
+                name = self._surveytitle_edit.text()
+                filename = self._surveyfilename_edit.text()
+                ws = hdf54bats.Hdf5Workspace(dir_path)
+                ws.copy_h5(name_combo, filename)
+                ws.set_h5_title(filename, name)
+            finally:
+                self.accept() # Close dialog box.
         except Exception as e:
-            print('TODO: ERROR: ', e)
-            self.accept() # Close dialog box.
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 
 
 class DeleteDialog(QtWidgets.QDialog):
@@ -592,11 +610,8 @@ class DeleteDialog(QtWidgets.QDialog):
         self._main_tab_widget = QtWidgets.QTabWidget(self)
         contentLayout.addWidget(self._main_tab_widget)
         self._main_tab_widget.addTab(self._survey_content(), 'Delete surveys')
-#         self._main_tab_widget.addTab(self._sample_content(), 'Delete samples')
         
-        return contentLayout                
-
-    # surveyS.
+        return contentLayout
     
     def _survey_content(self):
         """ """
@@ -638,11 +653,9 @@ class DeleteDialog(QtWidgets.QDialog):
         """ """
         try:
             self._surveys_model.clear()
-            dir_path = app_core.DesktopAppSync().get_workspace()
-            ws = hdf54bats.Hdf5Workspace(dir_path)
-            h5_list = ws.get_h5_list()
-            for h5_file_key in sorted(h5_list.keys()):
-                item = QtGui.QStandardItem(h5_file_key)
+            surveys_dict = app_core.DesktopAppSync().get_surveys_dict()
+            for h5_file in sorted(surveys_dict.keys()):
+                item = QtGui.QStandardItem(h5_file)
                 item.setCheckState(QtCore.Qt.Unchecked)
                 item.setCheckable(True)
                 self._surveys_model.appendRow(item)
@@ -675,17 +688,17 @@ class DeleteDialog(QtWidgets.QDialog):
 
     def _delete_marked_surveys(self):
         """ """
-        try:        
-            dir_path = app_core.DesktopAppSync().get_workspace()
-            ws = hdf54bats.Hdf5Workspace(dir_path)
-            for rowindex in range(self._surveys_model.rowCount()):
-                item = self._surveys_model.item(rowindex, 0)
-                if item.checkState() == QtCore.Qt.Checked:
-                    survey_filename = str(item.text())
-                    ws.delete_h5(survey_filename)
-            #
-#             self._parentwidget._emit_change_notification()
-            self.accept() # Close dialog box.
+        try:
+            try:        
+                dir_path = app_core.DesktopAppSync().get_workspace()
+                ws = hdf54bats.Hdf5Workspace(dir_path)
+                for rowindex in range(self._surveys_model.rowCount()):
+                    item = self._surveys_model.item(rowindex, 0)
+                    if item.checkState() == QtCore.Qt.Checked:
+                        survey_filename = str(item.text())
+                        ws.delete_h5(survey_filename)
+            finally:
+                self.accept() # Close dialog box.
         #
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)

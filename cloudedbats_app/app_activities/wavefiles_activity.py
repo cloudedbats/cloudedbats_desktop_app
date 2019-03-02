@@ -5,9 +5,7 @@
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
 import sys
-import string
 import numpy as np
-import pandas
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui
 from PyQt5 import QtCore
@@ -80,16 +78,19 @@ class WavefilesActivity(app_framework.ActivityBase):
 #         self.clear_filter_button.clicked.connect(self.clear_filter)
         
         self.wavefiles_tableview = app_framework.ToolboxQTableView()
-#         self.wavefiles_tableview.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.wavefiles_tableview.clicked.connect(self.selected_item_changed)
-        self.wavefiles_tableview.activated.connect(self.selected_item_changed) # When pressing enter on a highlighted row.
-
-#         self.wavefiles_tableview.getSelectionModel().selectionChanged.connect(self.selected_item_changed)
+        self.wavefiles_tableview.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+#         self.wavefiles_tableview.clicked.connect(self.selected_item_changed)
+#         self.wavefiles_tableview.activated.connect(self.selected_item_changed) # When pressing enter on a highlighted row.
+        self.wavefiles_tableview.getSelectionModel().selectionChanged.connect(self.selected_item_changed)
 #         self.wavefiles_tableview.selectionModel().selectionChanged.connect(self.selected_item_changed)
-        
+#         self.wavefiles_tableview.getSelectionModel().currentRowChanged.connect(self.selected_item_changed)
+#         self.wavefiles_tableview.selectionModel().currentRowChanged.connect(self.selected_item_changed)
+#         self.wavefiles_tableview.getSelectionModel().currentChanged.connect(self.selected_item_changed)
+#         self.wavefiles_tableview.selectionModel().currentChanged.connect(self.selected_item_changed)
+
         # Buttons.
         self.refresh_button = QtWidgets.QPushButton('Refresh')
-        self.refresh_button.clicked.connect(self.refresh_wavefile_list)
+        self.refresh_button.clicked.connect(self.refresh)
         self.add_button = QtWidgets.QPushButton('Import wavefile...')
         self.add_button.clicked.connect(self.import_wavefile)
         self.rename_button = QtWidgets.QPushButton('(Rename wavefile...)')
@@ -134,6 +135,10 @@ class WavefilesActivity(app_framework.ActivityBase):
         #
         return widget        
     
+    def refresh(self):
+        """ """
+        app_core.DesktopAppSync().refresh()
+    
     def survey_changed(self):
         """ """
         selected_survey = str(self.survey_combo.currentText())
@@ -157,7 +162,7 @@ class WavefilesActivity(app_framework.ActivityBase):
             self.survey_combo.clear()
             self.survey_combo.addItem('<select survey>')
             selected_survey = app_core.DesktopAppSync().get_selected_survey()
-            survey_dict = app_core.DesktopAppSync().get_survey_dict()
+            survey_dict = app_core.DesktopAppSync().get_surveys_dict()
             index = 0
             for row_index, h5_key in enumerate(sorted(survey_dict)):
                 h5_dict = survey_dict[h5_key]
@@ -170,89 +175,49 @@ class WavefilesActivity(app_framework.ActivityBase):
             self.survey_combo.blockSignals(False)
         #
         self.refresh_wavefile_list()
-
-#         self.survey_combo.clear()
-#         self.survey_combo.addItem('<select survey>')
-#         dir_path = str(self.workspacedir_edit.text())
-#         ws = hdf54bats.Hdf5Workspace(dir_path)
-#         h5_list = ws.get_h5_list()
-#         for h5_file_key in sorted(h5_list.keys()):
-#             h5_file_dict = h5_list[h5_file_key]
-#             self.survey_combo.addItem(h5_file_dict['name'])
-#             
-#             self.survey_combo.setCurrentIndex(1)
     
     def refresh_wavefile_list(self):
         """ """
-        if self.survey_combo.currentIndex() == 0:
-            self.wavefiles_tableview.setModel(app_framework.PandasModel()) # Clear.
+        try:
+            self.wavefiles_tableview.blockSignals(True)
+            self.wavefiles_tableview.getSelectionModel().blockSignals(True)
+            #
+            if self.survey_combo.currentIndex() == 0:
+                self.wavefiles_tableview.clearModel()
+                self.wavefiles_tableview.resizeColumnsToContents()
+                return
+             
+            dir_path = app_core.DesktopAppSync().get_workspace()
+            survey_name = str(self.survey_combo.currentText())
+            if (not dir_path) or (not survey_name):
+                self.wavefiles_tableview.clearModel()
+                self.wavefiles_tableview.resizeColumnsToContents()
+                return
+            #
+            events_dict = app_core.DesktopAppSync().get_events_dict()
+            
+            dataset_table = app_framework.DatasetTable()
+            dataset_table.set_header(['item_id', 'item_type', 'item_title'])
+            for key in events_dict.keys():
+                item_dict = events_dict.get(key, {})
+                row = []
+                row.append(item_dict.get('item_id', ''))
+                row.append(item_dict.get('item_type', ''))
+                row.append(item_dict.get('item_title', ''))
+                dataset_table.append_row(row)
+            #
+            self.wavefiles_tableview.setTableModel(dataset_table)
             self.wavefiles_tableview.resizeColumnsToContents()
-            return
-         
-        dir_path = app_core.DesktopAppSync().get_workspace()
-        survey_name = str(self.survey_combo.currentText())
-        if (not dir_path) or (not survey_name):
-            self.wavefiles_tableview.setModel(app_framework.PandasModel()) # Clear.
-            self.wavefiles_tableview.resizeColumnsToContents()
-            return
-         
-        event = hdf54bats.Hdf5Event(dir_path, survey_name)
-        detector = hdf54bats.Hdf5Detector(dir_path, survey_name)
-        wave = hdf54bats.Hdf5Wavefile(dir_path, survey_name)
-          
-        id_list = []
-        type_list = []
-        event_list = []
-        detector_list = []
-        title_list = []
-        # Combo.
-        for event_group in sorted(event.get_children('')):
-            print('Group path: ', event_group)
-            # Table.
-            id_list.append(event_group)
-            type_list.append('event')
-            event_list.append(event_group)
-            detector_list.append('')
-            title_list.append(event_group)
-              
-            for detector_group in sorted(detector.get_children(event_group)):
-                # Table.
-                id_list.append(detector_group)
-                type_list.append('detector')
-                event_list.append(event_group)
-                detector_list.append(detector_group.split('.')[1])
-                title_list.append(detector_group.split('.')[1])
-                 
-                wavefiles = wave.get_wavefiles(from_top_node=detector_group)
-                for wave_id in sorted(wavefiles):
-                    # Table.
-                    id_list.append(wave_id)
-                    type_list.append('wavefile')
-                    event_list.append('')
-                    detector_list.append('')
-                    title_list.append(wavefiles[wave_id])
- 
-        #
-#         dataframe = pandas.DataFrame(event_list, hdf5_path_list, columns=['event', 'hdf5_path'])
-        dataframe = pandas.DataFrame({'id': id_list, 
-                                      'type': type_list, 
-                                      'event': event_list, 
-                                      'detector': detector_list, 
-                                      'title': title_list})
-        model = app_framework.PandasModel(dataframe[['id', 
-                                                     'type', 
-#                                                      'event', 
-#                                                      'detector', 
-                                                     'title']])
-        self.wavefiles_tableview.setModel(model)
-        self.wavefiles_tableview.resizeColumnsToContents()
+        finally:
+            self.wavefiles_tableview.blockSignals(False)
+            self.wavefiles_tableview.getSelectionModel().blockSignals(False)
     
     def import_wavefile(self):
         """ """
         try:        
             my_dialog = ImportWavefileDialog(self)
             if my_dialog.exec_():
-                self.refresh_wavefile_list()
+                self.refresh()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
@@ -265,7 +230,7 @@ class WavefilesActivity(app_framework.ActivityBase):
         try:        
             dialog = DeleteDialog(self)
             if dialog.exec_():
-                self.refresh_wavefile_list()
+                self.refresh()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
@@ -410,12 +375,15 @@ class ImportWavefileDialog(QtWidgets.QDialog):
     
     def update_event_list(self):
         """ """
-        self.detector_combo.clear()
-        survey = hdf54bats.Hdf5Survey(self.dir_path, self.survey_name)
-        event = hdf54bats.Hdf5Event(self.dir_path, self.survey_name)
-        for event_group in sorted(survey.get_children('')):
-            for detector_group in sorted(event.get_children(event_group)):
-                self.detector_combo.addItem(detector_group)
+        try:
+            self.detector_combo.clear()
+            survey = hdf54bats.Hdf5Survey(self.dir_path, self.survey_name)
+            event = hdf54bats.Hdf5Event(self.dir_path, self.survey_name)
+            for event_group in sorted(survey.get_children('')):
+                for detector_group in sorted(event.get_children(event_group)):
+                    self.detector_combo.addItem(detector_group)
+        except Exception as e:
+            print('EXCEPTION: ', e)
                 
     def source_dir_browse(self):
         """ """
@@ -456,15 +424,6 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         dir_path = str(self.sourcedir_edit.text())
         scanner = app_core.WaveFileScanner()
         dataframe = scanner.get_file_info_as_dataframe(dir_path)
-                
-#         model = app_framework.PandasModel(dataframe[['file_name', 'file_path', 'frame_rate_hz']])
-        model = app_framework.PandasModel(dataframe[
-        ['file_stem', 'file_name', 'detector_id', 'datetime', 'datetime_str', 'latitude_dd',
-        'longitude_dd', 'latlong_str', 'rec_type', 'frame_rate_hz',
-        'file_frame_rate_hz', 'is_te', 'comments', 'dir_path', 
-        'file_path', 'abs_file_path']
-                                                    ])
-#         self.sourcefiles_tableview.setModel(model)
         
         path_array = list(dataframe['abs_file_path'])
         print('abs_file_path: ', path_array)
@@ -476,149 +435,56 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                 item.setCheckable(True)
                 self._items_model.appendRow(item)
 
-        
-#        ['detector_id', 'datetime', 'datetime_str', 'latitude_dd',
-#        'longitude_dd', 'latlong_str', 'rec_type', 'frame_rate_hz',
-#        'file_frame_rate_hz', 'is_te', 'comments', 'dir_path', 'file_name',
-#        'file_path', 'file_stem', 'abs_file_path']
-        
-        
-        
-        
-#         self.sourcefiles_tableview.resizeColumnsToContents()
-
-
     def _import_wavefiles(self):
         """ """
         try:        
-            detectorgroup = self.detector_combo.currentText()
-            self._parentwidget._write_to_status_bar('- Busy: Importing wave files.')
-            
-            h5wavefile = hdf54bats.Hdf5Wavefile(self.dir_path, self.survey_name)
-            wurb_utils = dsp4bats.WurbFileUtils()
-            
-            for rowindex in range(self._items_model.rowCount()):
-                item = self._items_model.item(rowindex, 0)
-                if item.checkState() == QtCore.Qt.Checked:
-                    wave_file_path = str(item.text())
-#                     wave.remove_wavefile(item_id)
-                    
-                    wave_reader = None
-                    try:
-                        metadata = wurb_utils.extract_metadata(wave_file_path)
+            try:
+                detectorgroup = self.detector_combo.currentText()
+                self._parentwidget._write_to_status_bar('- Busy: Importing wave files.')
+                
+                h5wavefile = hdf54bats.Hdf5Wavefile(self.dir_path, self.survey_name)
+                wurb_utils = dsp4bats.WurbFileUtils()
+                
+                for rowindex in range(self._items_model.rowCount()):
+                    item = self._items_model.item(rowindex, 0)
+                    if item.checkState() == QtCore.Qt.Checked:
+                        wave_file_path = str(item.text())
+    #                     wave.remove_wavefile(item_id)
                         
-                        file_name = metadata['file_name']
-                        title = file_name
-                        if 'datetime_str' in metadata:
-                            datetime_str = metadata['datetime_str'][0:15]
-                            name = 'wave_' + hdf54bats.str_to_ascii(datetime_str)
-                        else:
-                            name = metadata['file_stem'].lower()
+                        wave_reader = None
+                        try:
+                            metadata = wurb_utils.extract_metadata(wave_file_path)
+                            
+                            file_name = metadata['file_name']
+                            title = file_name
+                            if 'datetime_str' in metadata:
+                                datetime_str = metadata['datetime_str'][0:15]
+                                name = 'wave_' + hdf54bats.str_to_ascii(datetime_str)
+                            else:
+                                name = metadata['file_stem'].lower()
+                            
+                            self._parentwidget._write_to_status_bar('- Busy: Importing: ' + file_name)
                         
-                        self._parentwidget._write_to_status_bar('- Busy: Importing: ' + file_name)
-                    
-                        wave_reader = dsp4bats.WaveFileReader(wave_file_path)
-                        signal = np.array([], dtype=np.int16)
-                        buffer = wave_reader.read_buffer(convert_to_float=False)
-                        while len(buffer) > 0:
-                            signal = np.append(signal, buffer)
+                            wave_reader = dsp4bats.WaveFileReader(wave_file_path)
+                            signal = np.array([], dtype=np.int16)
                             buffer = wave_reader.read_buffer(convert_to_float=False)
-                    finally:
-                        if wave_reader:
-                            wave_reader.close()
-                
-                    h5wavefile.add_wavefile(detectorgroup, name, title, signal)
+                            while len(buffer) > 0:
+                                signal = np.append(signal, buffer)
+                                buffer = wave_reader.read_buffer(convert_to_float=False)
+                        finally:
+                            if wave_reader:
+                                wave_reader.close()
                     
-                    h5wavefile.set_user_metadata(detectorgroup + '.' + name, metadata)
-                
-            self._parentwidget._write_to_status_bar('')
-            
-#             self._parentwidget._emit_change_notification()
-            self.accept() # Close dialog box.
+                        h5wavefile.add_wavefile(detectorgroup, name, title, signal)
+                        
+                        h5wavefile.set_user_metadata(detectorgroup + '.' + name, metadata)
+            finally:    
+                self._parentwidget._write_to_status_bar('')
+                self.accept() # Close dialog box.
         #
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
-            self.accept() # Close dialog box.
-
-        
-#         try:
-#             self._parentwidget._write_to_status_bar("Importing wave files.")
-#             
-#             h5wavefile = hdf54bats.Hdf5Wavefile(self.dir_path, self.survey_name)
-#             detectorgroup = self.detector_combo.currentText()
-#             
-#             detector_name = str(self._detectorname_edit.text())
-#             
-# #             wave_file = '/home/arnold/Desktop/batfiles/WURB2_20180908T212225+0200_N57.6627E12.6393_TE384_Myotis.wav'
-# 
-# 
-#             wurb_utils = dsp4bats.WurbFileUtils()
-# #             metadata = wurb_utils.extract_metadata(wave_file)
-#             
-#             wurb_utils.find_sound_files(dir_path='/home/arnold/Desktop/batfiles', recursive=True, wurb_files_only=True)            
-#             df = wurb_utils.get_dataframe()
-#             for wave_file in df.abs_file_path:
-#                 self._parentwidget._write_to_status_bar('- Busy: Importing wave files.')
-#                 try:
-#                     metadata = wurb_utils.extract_metadata(wave_file)
-#                     
-#                     file_name = metadata['file_name']
-#                     title = file_name
-#                     datetime_str = metadata['datetime_str'][0:15]
-#                     name = 'wave_' + hdf54bats.str_to_ascii(datetime_str)
-#                     
-#                     self._parentwidget._write_to_status_bar('- Busy: Importing: ' + file_name)
-#                 
-#                     wave_reader = dsp4bats.WaveFileReader(wave_file)
-#                     signal = np.array([], dtype=np.int16)
-#                     buffer = wave_reader.read_buffer(convert_to_float=False)
-#                     while len(buffer) > 0:
-#                         signal = np.append(signal, buffer)
-#                         buffer = wave_reader.read_buffer(convert_to_float=False)
-#                 finally:
-#                     wave_reader.close()
-#                 
-#                 h5wavefile.add_wavefile(detectorgroup, name, title, signal)
-#                 
-#                 h5wavefile.set_user_metadata(detectorgroup + '.' + name, metadata)
-# 
-#             self._parentwidget._write_to_status_bar('')
-
-#             import struct
-#             import wave
-#             waveFile = wave.open(wave_file, 'rb')
-#             print('Frame number: ', waveFile.getnframes())
-#             try:
-#                 signal = np.array([], dtype=np.int16)
-#                 buffer = waveFile.readframes(100000)
-#                 while len(buffer) > 0:
-#                     bufflength = int(len(buffer) / 2)
-#                     struct_format = '<' + str(bufflength) + 'h'
-#                     buffer2 = struct.unpack(struct_format, buffer)
-#                     signal = np.append(signal, np.int16(buffer2))
-#                     buffer = waveFile.readframes(100000)
-#             finally:
-#                 waveFile.close()
-# 
-#             print('Signal size: ', len(signal))
-#             
-# #             wave_data = np.array([1,2,3,4,5,], dtype=np.int16)
-# #             wave_data = np.array(buffer, dtype=np.int16)
-#             
-#             print('DTYPE signal: ', signal.dtype)
-            
-            
-#             detector = hdf54bats.Hdf5Detector(self.dir_path, self.survey_name)
-#             eventgroup = self.detector_combo.currentText()
-#             detectorname = str(self._detectorname_edit.text())
-#             detectorgroup = str(self._detectorgroup_edit.text())
-#             detector.add_detector(parents=eventgroup, name=detectorgroup, title=detectorname)
-            self.accept() # Close dialog box.
-        except Exception as e:
-            self._parentwidget._write_to_status_bar('')
-            print('TODO: ERROR: ', e)
-            self.accept() # Close dialog box.
 
 
 class DeleteDialog(QtWidgets.QDialog):
@@ -728,20 +594,19 @@ class DeleteDialog(QtWidgets.QDialog):
 
     def _delete_marked_items(self):
         """ """
-        try:        
-            wave = hdf54bats.Hdf5Wavefile(self.dir_path, self.survey_name)
-            for rowindex in range(self._items_model.rowCount()):
-                item = self._items_model.item(rowindex, 0)
-                if item.checkState() == QtCore.Qt.Checked:
-                    item_id = str(item.text())
-                    wave.remove_wavefile(item_id)
-            
-#             self._parentwidget._emit_change_notification()
-            self.accept() # Close dialog box.
+        try:
+            try:        
+                wave = hdf54bats.Hdf5Wavefile(self.dir_path, self.survey_name)
+                for rowindex in range(self._items_model.rowCount()):
+                    item = self._items_model.item(rowindex, 0)
+                    if item.checkState() == QtCore.Qt.Checked:
+                        item_id = str(item.text())
+                        wave.remove_wavefile(item_id)
+            finally:
+                self.accept() # Close dialog box.
         #
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
-            self.accept() # Close dialog box.
 
 

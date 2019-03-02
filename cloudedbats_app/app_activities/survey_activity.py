@@ -5,9 +5,6 @@
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
 import sys
-import string
-import pathlib
-import pandas
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui
 from PyQt5 import QtCore
@@ -62,20 +59,21 @@ class SurveyActivity(app_framework.ActivityBase):
         self.survey_combo.addItems(['<select survey>'])
         self.survey_combo.currentIndexChanged.connect(self.survey_changed)
         # Filters.
-        self.filter_event_combo = QtWidgets.QComboBox()
-        self.filter_event_combo.setEditable(False)
-        self.filter_event_combo.setMinimumWidth(150)
-#         self.filter_event_combo.setMaximumWidth(300)
-        self.filter_event_combo.addItems(['<select event>'])
-        self.filter_detector_combo = QtWidgets.QComboBox()
-        self.filter_detector_combo.setEditable(False)
-        self.filter_detector_combo.setMinimumWidth(150)
-#         self.filter_detector_combo.setMaximumWidth(300)
-        self.filter_detector_combo.addItems(['<select detector>'])
+#         self.filter_event_combo = QtWidgets.QComboBox()
+#         self.filter_event_combo.setEditable(False)
+#         self.filter_event_combo.setMinimumWidth(150)
+# #         self.filter_event_combo.setMaximumWidth(300)
+#         self.filter_event_combo.addItems(['<select event>'])
+#         self.filter_detector_combo = QtWidgets.QComboBox()
+#         self.filter_detector_combo.setEditable(False)
+#         self.filter_detector_combo.setMinimumWidth(150)
+# #         self.filter_detector_combo.setMaximumWidth(300)
+#         self.filter_detector_combo.addItems(['<select detector>'])
         
         self.events_tableview = app_framework.ToolboxQTableView()
         self.events_tableview.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.events_tableview.clicked.connect(self.selected_item_changed)
+#         self.events_tableview.clicked.connect(self.selected_item_changed)
+        self.events_tableview.getSelectionModel().selectionChanged.connect(self.selected_item_changed)
         
         # Filters.
         self.type_filter_combo = QtWidgets.QComboBox()
@@ -88,7 +86,7 @@ class SurveyActivity(app_framework.ActivityBase):
         
         # Buttons.
         self.refresh_button = QtWidgets.QPushButton('Refresh')
-        self.refresh_button.clicked.connect(self.refresh_event_list)
+        self.refresh_button.clicked.connect(self.refresh)
         self.add_event_button = QtWidgets.QPushButton('Add event...')
         self.add_event_button.clicked.connect(self.add_event)
         self.add_detector_button = QtWidgets.QPushButton('Add detector...')
@@ -140,6 +138,10 @@ class SurveyActivity(app_framework.ActivityBase):
         #
         return widget        
     
+    def refresh(self):
+        """ """
+        app_core.DesktopAppSync().refresh()
+    
     def survey_changed(self):
         """ """
         selected_survey = str(self.survey_combo.currentText())
@@ -162,7 +164,7 @@ class SurveyActivity(app_framework.ActivityBase):
             self.survey_combo.clear()
             self.survey_combo.addItem('<select survey>')
             selected_survey = app_core.DesktopAppSync().get_selected_survey()
-            survey_dict = app_core.DesktopAppSync().get_survey_dict()
+            survey_dict = app_core.DesktopAppSync().get_surveys_dict()
             index = 0
             for row_index, h5_key in enumerate(sorted(survey_dict)):
                 h5_dict = survey_dict[h5_key]
@@ -178,69 +180,48 @@ class SurveyActivity(app_framework.ActivityBase):
     
     def refresh_event_list(self):
         """ """
-        if self.survey_combo.currentIndex() == 0:
-            self.events_tableview.setModel(app_framework.PandasModel()) # Clear.
-            self.events_tableview.resizeColumnsToContents()
-            return
-        
-        dir_path = app_core.DesktopAppSync().get_workspace()
-        survey_name = str(self.survey_combo.currentText())
-        if (not dir_path) or (not survey_name):
-            self.events_tableview.setModel(app_framework.PandasModel()) # Clear.
-            self.events_tableview.resizeColumnsToContents()
-            return
-        
-        survey = hdf54bats.Hdf5Survey(dir_path, survey_name)
-#         event = hdf54bats.Hdf5Event(dir_path, survey_name)
-        detector = hdf54bats.Hdf5Detector(dir_path, survey_name)
-        
-        group_id_list = []
-        type_list = []
-        event_list = []
-        detector_list = []
-        title_list = []
-        # Combo.
-        for event_group in sorted(survey.get_children('')):
-            print('Group path: ', event_group)
-            # Table.
-            group_id_list.append(event_group)
-            type_list.append('event')
-            event_list.append(event_group)
-            detector_list.append('')
-#             title_list.append(event_group)
+        try:
+            self.events_tableview.blockSignals(True)
+            self.events_tableview.getSelectionModel().blockSignals(True)
+            #
+            if self.survey_combo.currentIndex() == 0:
+                self.events_tableview.clearModel()
+                self.events_tableview.resizeColumnsToContents()
+                return
             
-            for detector_group in sorted(detector.get_children(event_group)):
-                # Table.
-                group_id_list.append(detector_group)
-                type_list.append('detector')
-                event_list.append(event_group)
-                detector_list.append(detector_group.split('.')[1])
-#                 title_list.append(detector_group.split('.')[1])
-        # Titles.
-        for group_id in group_id_list:
-            title = detector.get_title(group_id)
-            title_list.append(title)
-        #
-#         dataframe = pandas.DataFrame(event_list, hdf5_path_list, columns=['event', 'hdf5_path'])
-        dataframe = pandas.DataFrame({'id': group_id_list, 
-                                      'type': type_list, 
-#                                       'event': event_list, 
-#                                       'detector': detector_list, 
-                                      'title': title_list})
-        model = app_framework.PandasModel(dataframe[['id', 
-                                                     'type', 
-#                                                      'event', 
-#                                                      'detector', 
-                                                     'title']])
-        self.events_tableview.setModel(model)
-        self.events_tableview.resizeColumnsToContents()
+            dir_path = app_core.DesktopAppSync().get_workspace()
+            survey_name = str(self.survey_combo.currentText())
+            if (not dir_path) or (not survey_name):
+                self.events_tableview.clearModel()
+                self.events_tableview.resizeColumnsToContents()
+                return
+            #
+            events_dict = app_core.DesktopAppSync().get_events_dict()
+            
+            dataset_table = app_framework.DatasetTable()
+            dataset_table.set_header(['item_id', 'item_type', 'item_title'])
+            for key in events_dict.keys():
+                item_dict = events_dict.get(key, {})
+                item_type = item_dict.get('item_type', '')
+                if item_type in ['event', 'detector']:
+                    row = []
+                    row.append(item_dict.get('item_id', ''))
+                    row.append(item_dict.get('item_type', ''))
+                    row.append(item_dict.get('item_title', ''))
+                    dataset_table.append_row(row)
+            #
+            self.events_tableview.setTableModel(dataset_table)
+            self.events_tableview.resizeColumnsToContents()
+        finally:
+            self.events_tableview.blockSignals(False)
+            self.events_tableview.getSelectionModel().blockSignals(False)
         
     def add_event(self):
         """ """
         try:        
             my_dialog = NewEventDialog(self)
             if my_dialog.exec_():
-                self.refresh_event_list()
+                self.refresh()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
@@ -250,7 +231,7 @@ class SurveyActivity(app_framework.ActivityBase):
         try:        
             my_dialog = NewDetectorDialog(self)
             if my_dialog.exec_():
-                self.refresh_event_list()
+                self.refresh()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
@@ -260,7 +241,7 @@ class SurveyActivity(app_framework.ActivityBase):
         try:        
             my_dialog = RenameDialog(self)
             if my_dialog.exec_():
-                self.refresh_event_list()
+                self.refresh()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
@@ -270,7 +251,7 @@ class SurveyActivity(app_framework.ActivityBase):
         try:        
             my_dialog = CopyDialog(self)
             if my_dialog.exec_():
-                self.refresh_event_list()
+                self.refresh()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
@@ -280,7 +261,7 @@ class SurveyActivity(app_framework.ActivityBase):
         try:        
             dialog = DeleteDialog(self)
             if dialog.exec_():
-                self.refresh_event_list()
+                self.refresh()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
@@ -394,13 +375,12 @@ class NewEventDialog(QtWidgets.QDialog):
         """ """
         try:
             event = hdf54bats.Hdf5Event(self.dir_path, self.survey_name)
-#             detector = hdf54bats.Hdf5Detector(dir_path, survey_name)
             eventtitle = str(self.eventtitle_edit.text())
             eventgroup = str(self.eventgroup_edit.text())
             event.add_event(parents='', name=eventgroup, title=eventtitle)
             self.accept() # Close dialog box.
         except Exception as e:
-            print('TODO: ERROR: ', e)
+            print('EXCEPTION: ', e)
             self.accept() # Close dialog box.
 
 
@@ -417,6 +397,8 @@ class NewDetectorDialog(QtWidgets.QDialog):
         self.survey_name = str(self.parentwidget.survey_combo.currentText())
         # 
         self.update_event_list()
+        #
+        self.detectortitle_edit.setFocus()
 
     def content(self):
         """ """
@@ -463,19 +445,22 @@ class NewDetectorDialog(QtWidgets.QDialog):
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(form1, 10)
         layout.addLayout(hbox1)
-        # 
+        #
         return layout
     
     def update_event_list(self):
         """ """
-        survey = hdf54bats.Hdf5Survey(self.dir_path, self.survey_name)
         selected_event_id = app_core.DesktopAppSync().get_selected_item_id(item_type='event')
+        events_dict = app_core.DesktopAppSync().get_events_dict()
         index = 0
         self.event_combo.clear()
-        for row_index, event_group in enumerate(sorted(survey.get_children(''))):
-            self.event_combo.addItem(event_group)
-            if event_group == selected_event_id:
-                index = row_index # + 1
+        for row_index, key in enumerate(sorted(events_dict.keys())):
+            item_dict = events_dict.get(key, '')
+            item_type = item_dict.get('item_type', '')
+            if item_type == 'event':
+                self.event_combo.addItem(key)
+                if key == selected_event_id:
+                    index = row_index # + 1
         self.event_combo.setCurrentIndex(index)
 
     def auto_changed(self):
@@ -509,7 +494,7 @@ class NewDetectorDialog(QtWidgets.QDialog):
             detector.add_detector(parents=eventgroup, name=detectorgroup, title=detectortitle)
             self.accept() # Close dialog box.
         except Exception as e:
-            print('TODO: ERROR: ', e)
+            print('EXCEPTION: ', e)
             self.accept() # Close dialog box.
 
 
@@ -526,6 +511,8 @@ class RenameDialog(QtWidgets.QDialog):
         self.survey_name = str(self.parentwidget.survey_combo.currentText())
         # 
         self.update_item_list()
+        #
+        self.itemtitle_edit.setFocus()
     
     def content(self):
         """ """
@@ -536,10 +523,10 @@ class RenameDialog(QtWidgets.QDialog):
         
         self.itemtitle_edit = QtWidgets.QLineEdit('')
         self.itemtitle_edit.setMinimumWidth(400)
+        self.itemtitle_edit.textChanged.connect(self.update_groupname)
         self.itemgroupname_edit = QtWidgets.QLineEdit('')
         self.itemgroupname_edit.setMinimumWidth(400)
         self.itemgroupname_edit.setEnabled(False)
-        self.itemtitle_edit.textChanged.connect(self.update_groupname)
         cancel_button = QtWidgets.QPushButton('Cancel')
         cancel_button.clicked.connect(self.reject) # Close dialog box.               
         self.renameitem_button = QtWidgets.QPushButton('Rename item')
@@ -565,13 +552,21 @@ class RenameDialog(QtWidgets.QDialog):
     
     def update_item_list(self):
         """ """
-        survey = hdf54bats.Hdf5Survey(self.dir_path, self.survey_name)
-        event = hdf54bats.Hdf5Event(self.dir_path, self.survey_name)
+        selected_event_id = app_core.DesktopAppSync().get_selected_item_id(item_type='event')
+        selected_detector_id = app_core.DesktopAppSync().get_selected_item_id(item_type='detector')
+        events_dict = app_core.DesktopAppSync().get_events_dict()
+        index = 0
         self.groupid_combo.clear()
-        for event_group in sorted(survey.get_children('')):
-            self.groupid_combo.addItem(event_group)
-            for detector_group in sorted(event.get_children(event_group)):
-                self.groupid_combo.addItem(detector_group)
+        for row_index, key in enumerate(sorted(events_dict.keys())):
+            item_dict = events_dict.get(key, '')
+            item_type = item_dict.get('item_type', '')
+            if item_type in ['event', 'detector']:
+                self.groupid_combo.addItem(key)
+                if key == selected_event_id:
+                    index = row_index # + 1
+                if key == selected_detector_id:
+                    index = row_index # + 1
+        self.groupid_combo.setCurrentIndex(index)
     
     def set_groupname(self, _index):
         """ """
@@ -624,6 +619,8 @@ class CopyDialog(QtWidgets.QDialog):
         self.parentwidget = parentwidget
         self.setLayout(self.content())
         #
+        self.itemtitle_edit.setFocus()
+        #
         self.dir_path = app_core.DesktopAppSync().get_workspace()
         self.survey_name = str(self.parentwidget.survey_combo.currentText())
         # 
@@ -638,10 +635,10 @@ class CopyDialog(QtWidgets.QDialog):
         
         self.itemtitle_edit = QtWidgets.QLineEdit('')
         self.itemtitle_edit.setMinimumWidth(400)
+        self.itemtitle_edit.textChanged.connect(self.update_groupname)
         self.itemgroupname_edit = QtWidgets.QLineEdit('')
         self.itemgroupname_edit.setMinimumWidth(400)
         self.itemgroupname_edit.setEnabled(False)
-        self.itemtitle_edit.textChanged.connect(self.update_groupname)
         cancel_button = QtWidgets.QPushButton('Cancel')
         cancel_button.clicked.connect(self.reject) # Close dialog box.               
         self.copyitem_button = QtWidgets.QPushButton('Copy item')
@@ -667,13 +664,29 @@ class CopyDialog(QtWidgets.QDialog):
     
     def update_item_list(self):
         """ """
-        survey = hdf54bats.Hdf5Survey(self.dir_path, self.survey_name)
-        event = hdf54bats.Hdf5Event(self.dir_path, self.survey_name)
+        selected_event_id = app_core.DesktopAppSync().get_selected_item_id(item_type='event')
+        selected_detector_id = app_core.DesktopAppSync().get_selected_item_id(item_type='detector')
+        events_dict = app_core.DesktopAppSync().get_events_dict()
+        index = 0
         self.groupid_combo.clear()
-        for event_group in sorted(survey.get_children('')):
-            self.groupid_combo.addItem(event_group)
-            for detector_group in sorted(event.get_children(event_group)):
-                self.groupid_combo.addItem(detector_group)
+        for row_index, key in enumerate(sorted(events_dict.keys())):
+            item_dict = events_dict.get(key, '')
+            item_type = item_dict.get('item_type', '')
+            if item_type in ['event', 'detector']:
+                self.groupid_combo.addItem(key)
+                if key == selected_event_id:
+                    index = row_index # + 1
+                if key == selected_detector_id:
+                    index = row_index # + 1
+        self.groupid_combo.setCurrentIndex(index)
+        
+#         survey = hdf54bats.Hdf5Survey(self.dir_path, self.survey_name)
+#         event = hdf54bats.Hdf5Event(self.dir_path, self.survey_name)
+#         self.groupid_combo.clear()
+#         for event_group in sorted(survey.get_children('')):
+#             self.groupid_combo.addItem(event_group)
+#             for detector_group in sorted(event.get_children(event_group)):
+#                 self.groupid_combo.addItem(detector_group)
 
     def set_groupname(self, _index):
         """ """
@@ -788,32 +801,15 @@ class DeleteDialog(QtWidgets.QDialog):
         """ """
         try:
             self.items_model.clear()
-            survey = hdf54bats.Hdf5Survey(self.dir_path, self.survey_name)
-            event = hdf54bats.Hdf5Event(self.dir_path, self.survey_name)
-            for event_group in sorted(survey.get_children('')):
-#                 self.groupid_combo.addItem(event_group)
-                item = QtGui.QStandardItem(event_group)
-                item.setCheckState(QtCore.Qt.Unchecked)
-                item.setCheckable(True)
-                self.items_model.appendRow(item)
-                for detector_group in sorted(event.get_children(event_group)):
-#                     self.groupid_combo.addItem(detector_group)
-                    item = QtGui.QStandardItem(detector_group)
+            events_dict = app_core.DesktopAppSync().get_events_dict()
+            for key in sorted(events_dict.keys()):
+                item_dict = events_dict.get(key, '')
+                item_type = item_dict.get('item_type', '')
+                if item_type in ['event', 'detector']:
+                    item = QtGui.QStandardItem(key)
                     item.setCheckState(QtCore.Qt.Unchecked)
                     item.setCheckable(True)
                     self.items_model.appendRow(item)
-            
-#             
-#             self.items_model.clear()
-#             dir_path = app_core.DesktopAppSync().get_workspace()
-#             ws = hdf54bats.Hdf5Workspace(dir_path)
-#             h5_list = ws.get_h5_list()
-#             for h5_file_key in sorted(h5_list.keys()):
-#                 item = QtGui.QStandardItem(h5_file_key)
-#                 item.setCheckState(QtCore.Qt.Unchecked)
-#                 item.setCheckable(True)
-#                 self.items_model.appendRow(item)
-        #
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
