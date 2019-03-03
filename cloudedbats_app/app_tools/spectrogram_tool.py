@@ -105,7 +105,7 @@ class SpectrogramTool(app_framework.ToolBase):
                                         '2048', 
                                         '4096', 
                                         ])
-        self.windowsize_combo.setCurrentIndex(3)
+        self.windowsize_combo.setCurrentIndex(2)
         self.windowsize_combo.currentIndexChanged.connect(self.plot_spectrogram)
         self.overlap_combo = QtWidgets.QComboBox()
         self.overlap_combo.setEditable(False)
@@ -292,8 +292,15 @@ class SpectrogramTool(app_framework.ToolBase):
 #                 while self.spectrogram_thread.is_alive():
 #                     #print('DEBUG: Stop running thread.')
                 self.spectrogram_thread_active = False
-                threading.Timer(0.5, self.plot_spectrogram)
+##################                threading.Timer(0.5, self.plot_spectrogram)
             else:
+                
+                
+                self.axes.cla()
+                self._canvas.draw()
+
+                
+                
                 # Use a thread to relese the user.
                 self.spectrogram_thread_active = True
                 self.spectrogram_thread = threading.Thread(target = self.run_plot_spectrogram, 
@@ -304,28 +311,31 @@ class SpectrogramTool(app_framework.ToolBase):
     
     def run_plot_spectrogram(self, workspace, survey, item_id):
         """ """
-        self.axes.cla()
-        #
-        if not self.spectrogram_thread_active:
-            return
-        #
-        h5wavefile = hdf54bats.Hdf5Wavefile(workspace, survey)
-        signal = h5wavefile.get_wavefile(item_id)
-        item_metadata = h5wavefile.get_user_metadata(item_id)
-        item_title = item_metadata.get('item_title', '')
-        sampling_freq_hz = item_metadata.get('file_frame_rate_hz', '')
-        if not sampling_freq_hz:
-            sampling_freq = 384000
-        else:
-            sampling_freq = int(sampling_freq_hz)
-        
-        print('- Framerate: ', sampling_freq)
-        
-        if len(signal) > (10 * sampling_freq):
-            signal = signal[0:10 * sampling_freq]
-            print('Warning: Signal truncated to 10 sec.')
-                    
         try:
+            self.axes.cla()
+            #
+            if not self.spectrogram_thread_active:
+                return
+            #
+            h5wavefile = hdf54bats.Hdf5Wavefile(workspace, survey)
+            try:
+                signal = h5wavefile.get_wavefile(item_id, close=False)
+                item_title = h5wavefile.get_title(item_id, close=False)
+                item_metadata = h5wavefile.get_user_metadata(item_id, close=False)
+            finally:
+                h5wavefile.close()
+            sampling_freq_hz = item_metadata.get('file_frame_rate_hz', '')
+            if not sampling_freq_hz:
+                sampling_freq = 384000
+            else:
+                sampling_freq = int(sampling_freq_hz)
+            
+            print('- Framerate: ', sampling_freq)
+            
+            if len(signal) > (10 * sampling_freq):
+                signal = signal[0:10 * sampling_freq]
+                print('Warning: Signal truncated to 10 sec.')
+                    
             # File.
 #             wave_file = self.wavefilepath_edit.text()
 #             wave_file_path = pathlib.Path(wave_file)
@@ -341,22 +351,27 @@ class SpectrogramTool(app_framework.ToolBase):
             jump = int(window_size / 2)
             if overlap == 'None':
                 window_function = 'hann'
-                jump = window_size
+#                 jump = window_size
+                jump = int(sampling_freq / 500)
             elif overlap == 'Low':
                 window_function = 'hann'
-                jump = int(window_size / 1.33) 
+#                 jump = int(window_size / 1.33) 
+                jump = int(sampling_freq / 1000) # 1 ms.
             elif overlap == 'Medium':
     #             window_function = 'black'
                 window_function = 'hann'
-                jump = int(window_size / 2)
+#                 jump = int(window_size / 2)
+                jump = int(sampling_freq / 2000)
             elif overlap == 'High':
-                window_function = 'blackh'
-    #             window_function = 'hann'
-                jump = int(window_size / 4)
+#                 window_function = 'blackh'
+                window_function = 'hann'
+#                 jump = int(window_size / 4)
+                jump = int(sampling_freq / 4000)
             elif overlap == 'Highest':
-                window_function = 'kaiser'
-    #             window_function = 'hann'
-                jump = int(window_size / 8)
+#                 window_function = 'kaiser'
+                window_function = 'hann'
+#                 jump = int(window_size / 8)
+                jump = int(sampling_freq / 8000)
             #
             
             

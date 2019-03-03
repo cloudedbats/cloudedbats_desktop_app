@@ -144,9 +144,12 @@ class SurveyActivity(app_framework.ActivityBase):
     
     def survey_changed(self):
         """ """
-        selected_survey = str(self.survey_combo.currentText())
-        app_core.DesktopAppSync().set_selected_survey(selected_survey)
-    
+        if self.survey_combo.currentIndex() > 0:
+            selected_survey = str(self.survey_combo.currentText())
+            app_core.DesktopAppSync().set_selected_survey(selected_survey)
+        else:
+            app_core.DesktopAppSync().refresh()
+            
     def selected_item_changed(self):
         """ """
         try:
@@ -166,12 +169,14 @@ class SurveyActivity(app_framework.ActivityBase):
             selected_survey = app_core.DesktopAppSync().get_selected_survey()
             survey_dict = app_core.DesktopAppSync().get_surveys_dict()
             index = 0
-            for row_index, h5_key in enumerate(sorted(survey_dict)):
+            row_index = 0
+            for h5_key in sorted(survey_dict):
                 h5_dict = survey_dict[h5_key]
                 h5_file = h5_dict['h5_file']
                 self.survey_combo.addItem(h5_file)
+                row_index += 1
                 if h5_file == selected_survey:
-                    index = row_index + 1
+                    index = row_index
             self.survey_combo.setCurrentIndex(index)
         finally:
             self.survey_combo.blockSignals(False)
@@ -404,6 +409,7 @@ class NewDetectorDialog(QtWidgets.QDialog):
         """ """
         self.event_combo = QtWidgets.QComboBox()
         self.event_combo.setEditable(False)
+        self.event_combo.addItem('<select>')
         self.event_combo.setMinimumWidth(400)
         
         self.detectortitle_edit = QtWidgets.QLineEdit('')
@@ -452,15 +458,18 @@ class NewDetectorDialog(QtWidgets.QDialog):
         """ """
         selected_event_id = app_core.DesktopAppSync().get_selected_item_id(item_type='event')
         events_dict = app_core.DesktopAppSync().get_events_dict()
-        index = 0
         self.event_combo.clear()
-        for row_index, key in enumerate(sorted(events_dict.keys())):
+        self.event_combo.addItem('<select>')
+        index = 0
+        row_index = 0
+        for key in sorted(events_dict.keys()):
             item_dict = events_dict.get(key, '')
             item_type = item_dict.get('item_type', '')
             if item_type == 'event':
                 self.event_combo.addItem(key)
+                row_index += 1
                 if key == selected_event_id:
-                    index = row_index # + 1
+                    index = row_index
         self.event_combo.setCurrentIndex(index)
 
     def auto_changed(self):
@@ -477,22 +486,27 @@ class NewDetectorDialog(QtWidgets.QDialog):
             new_text = hdf54bats.str_to_ascii(text)
             if len(new_text) > 0:
                 self.detectorgroup_edit.setText(new_text)
-                self.createdetector_button.setEnabled(True)
-                self.createdetector_button.setDefault(True)
             else:
                 self.detectorgroup_edit.setText('')
-                self.createdetector_button.setEnabled(False)
-                self.createdetector_button.setDefault(False)
+        #
+        new_id = self.detectorgroup_edit.text()
+        if (len(new_id) > 0) and (self.event_combo.currentIndex() > 0):
+            self.createdetector_button.setEnabled(True)
+            self.createdetector_button.setDefault(True)
+        else:
+            self.createdetector_button.setEnabled(False)
+            self.createdetector_button.setDefault(False)
 
     def create_detector(self):
         """ """
         try:
-            detector = hdf54bats.Hdf5Detector(self.dir_path, self.survey_name)
-            eventgroup = self.event_combo.currentText()
-            detectortitle = str(self.detectortitle_edit.text())
-            detectorgroup = str(self.detectorgroup_edit.text())
-            detector.add_detector(parents=eventgroup, name=detectorgroup, title=detectortitle)
-            self.accept() # Close dialog box.
+            if self.event_combo.currentIndex() > 0:
+                detector = hdf54bats.Hdf5Detector(self.dir_path, self.survey_name)
+                eventgroup = self.event_combo.currentText()
+                detectortitle = str(self.detectortitle_edit.text())
+                detectorgroup = str(self.detectorgroup_edit.text())
+                detector.add_detector(parents=eventgroup, name=detectorgroup, title=detectortitle)
+                self.accept() # Close dialog box.
         except Exception as e:
             print('EXCEPTION: ', e)
             self.accept() # Close dialog box.
@@ -519,6 +533,7 @@ class RenameDialog(QtWidgets.QDialog):
         self.groupid_combo = QtWidgets.QComboBox()
         self.groupid_combo.setEditable(False)
         self.groupid_combo.setMinimumWidth(400)
+        self.groupid_combo.addItem('<select>')
         self.groupid_combo.currentIndexChanged.connect(self.set_groupname)
         
         self.itemtitle_edit = QtWidgets.QLineEdit('')
@@ -555,27 +570,26 @@ class RenameDialog(QtWidgets.QDialog):
         selected_event_id = app_core.DesktopAppSync().get_selected_item_id(item_type='event')
         selected_detector_id = app_core.DesktopAppSync().get_selected_item_id(item_type='detector')
         events_dict = app_core.DesktopAppSync().get_events_dict()
-        index = 0
         self.groupid_combo.clear()
-        for row_index, key in enumerate(sorted(events_dict.keys())):
+        self.groupid_combo.addItem('<select>')
+        index = 0
+        row_index = 0
+        for key in sorted(events_dict.keys()):
             item_dict = events_dict.get(key, '')
             item_type = item_dict.get('item_type', '')
             if item_type in ['event', 'detector']:
                 self.groupid_combo.addItem(key)
+                row_index += 1
                 if key == selected_event_id:
-                    index = row_index # + 1
+                    index = row_index
                 if key == selected_detector_id:
-                    index = row_index # + 1
+                    index = row_index
         self.groupid_combo.setCurrentIndex(index)
     
     def set_groupname(self, _index):
         """ """
         item_name = str(self.groupid_combo.currentText())
-        if item_name:
-#             dir_path = app_core.DesktopAppSync().get_workspace()
-#             ws = hdf54bats.Hdf5Workspace(dir_path)
-#             title = ws.get_h5_title(item_name)
-#             self.itemtitle_edit.setText(title)
+        if item_name and (self.groupid_combo.currentIndex() > 0):
             self.itemtitle_edit.setText(item_name)
         else:
             self.itemtitle_edit.setText('')
@@ -631,6 +645,7 @@ class CopyDialog(QtWidgets.QDialog):
         self.groupid_combo = QtWidgets.QComboBox()
         self.groupid_combo.setEditable(False)
         self.groupid_combo.setMinimumWidth(400)
+        self.groupid_combo.addItem('<select>')
         self.groupid_combo.currentIndexChanged.connect(self.set_groupname)
         
         self.itemtitle_edit = QtWidgets.QLineEdit('')
@@ -667,35 +682,26 @@ class CopyDialog(QtWidgets.QDialog):
         selected_event_id = app_core.DesktopAppSync().get_selected_item_id(item_type='event')
         selected_detector_id = app_core.DesktopAppSync().get_selected_item_id(item_type='detector')
         events_dict = app_core.DesktopAppSync().get_events_dict()
-        index = 0
         self.groupid_combo.clear()
-        for row_index, key in enumerate(sorted(events_dict.keys())):
+        self.groupid_combo.addItem('<select>')
+        index = 0
+        row_index = 0
+        for key in sorted(events_dict.keys()):
             item_dict = events_dict.get(key, '')
             item_type = item_dict.get('item_type', '')
             if item_type in ['event', 'detector']:
                 self.groupid_combo.addItem(key)
+                row_index += 1
                 if key == selected_event_id:
-                    index = row_index # + 1
+                    index = row_index
                 if key == selected_detector_id:
-                    index = row_index # + 1
+                    index = row_index
         self.groupid_combo.setCurrentIndex(index)
         
-#         survey = hdf54bats.Hdf5Survey(self.dir_path, self.survey_name)
-#         event = hdf54bats.Hdf5Event(self.dir_path, self.survey_name)
-#         self.groupid_combo.clear()
-#         for event_group in sorted(survey.get_children('')):
-#             self.groupid_combo.addItem(event_group)
-#             for detector_group in sorted(event.get_children(event_group)):
-#                 self.groupid_combo.addItem(detector_group)
-
     def set_groupname(self, _index):
         """ """
         item_name = str(self.groupid_combo.currentText())
-        if item_name:
-#             dir_path = app_core.DesktopAppSync().get_workspace()
-#             ws = hdf54bats.Hdf5Workspace(dir_path)
-#             title = ws.get_h5_title(item_name)
-#             self.itemtitle_edit.setText(title)
+        if item_name and (self.groupid_combo.currentIndex() > 0):
             self.itemtitle_edit.setText(item_name)
         else:
             self.itemtitle_edit.setText('')

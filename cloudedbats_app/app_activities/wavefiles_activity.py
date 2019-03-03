@@ -141,8 +141,11 @@ class WavefilesActivity(app_framework.ActivityBase):
     
     def survey_changed(self):
         """ """
-        selected_survey = str(self.survey_combo.currentText())
-        app_core.DesktopAppSync().set_selected_survey(selected_survey)
+        if self.survey_combo.currentIndex() > 0:
+            selected_survey = str(self.survey_combo.currentText())
+            app_core.DesktopAppSync().set_selected_survey(selected_survey)
+        else:
+            app_core.DesktopAppSync().refresh()
     
     def selected_item_changed(self):
         """ """

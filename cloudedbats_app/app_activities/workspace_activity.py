@@ -353,6 +353,7 @@ class RenameSurveyDialog(QtWidgets.QDialog):
         self.name_combo = QtWidgets.QComboBox()
         self.name_combo.setEditable(False)
         self.name_combo.setMinimumWidth(400)
+        self.name_combo.addItem('<select>')
         self.name_combo.currentIndexChanged.connect(self._set_filename)
         
         self._surveytitle_edit = QtWidgets.QLineEdit('')
@@ -402,24 +403,22 @@ class RenameSurveyDialog(QtWidgets.QDialog):
         selected_survey = app_core.DesktopAppSync().get_selected_survey()
         survey_dict = app_core.DesktopAppSync().get_surveys_dict()
         self.name_combo.clear()
+        self.name_combo.addItem('<select>')
         index = 0
         for row_index, h5_key in enumerate(sorted(survey_dict)):
             h5_dict = survey_dict[h5_key]
             h5_file = h5_dict['h5_file']
             self.name_combo.addItem(h5_file)
             if h5_file == selected_survey:
-                index = row_index
+                index = row_index + 1
         self.name_combo.setCurrentIndex(index)
     
     def _set_filename(self, _index):
         """ """
         try:
             survey_name = str(self.name_combo.currentText())
-            if survey_name:
-                dir_path = app_core.DesktopAppSync().get_workspace()
-                ws = hdf54bats.Hdf5Workspace(dir_path)
-                title = ws.get_h5_title(survey_name)
-                self._surveytitle_edit.setText(title)
+            if survey_name and (self.name_combo.currentIndex() > 0):
+                self._surveytitle_edit.setText(survey_name)
             else:
                 self._surveytitle_edit.setText('')
         except Exception as e:
@@ -450,20 +449,21 @@ class RenameSurveyDialog(QtWidgets.QDialog):
     
     def _rename_survey(self):
         """ """
-        try:
+        if self.name_combo.currentIndex() > 0:
             try:
-                dir_path = app_core.DesktopAppSync().get_workspace()
-                name_combo = self.name_combo.currentText()
-                name = self._surveytitle_edit.text()
-                filename = self._surveyfilename_edit.text()
-                ws = hdf54bats.Hdf5Workspace(dir_path)
-                ws.rename_h5(name_combo, filename)
-                ws.set_h5_title(filename, name)
-            finally:
-                self.accept() # Close dialog box.
-        except Exception as e:
-            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
-            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
+                try:
+                    dir_path = app_core.DesktopAppSync().get_workspace()
+                    name_combo = self.name_combo.currentText()
+                    name = self._surveytitle_edit.text()
+                    filename = self._surveyfilename_edit.text()
+                    ws = hdf54bats.Hdf5Workspace(dir_path)
+                    ws.rename_h5(name_combo, filename)
+                    ws.set_h5_title(filename, name)
+                finally:
+                    self.accept() # Close dialog box.
+            except Exception as e:
+                debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+                app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 
 
 class CopySurveyDialog(QtWidgets.QDialog):
@@ -482,6 +482,7 @@ class CopySurveyDialog(QtWidgets.QDialog):
         self.name_combo = QtWidgets.QComboBox()
         self.name_combo.setEditable(False)
         self.name_combo.setMinimumWidth(400)
+        self.name_combo.addItem('<select>')
         self.name_combo.currentIndexChanged.connect(self._set_filename)
         
         self._surveytitle_edit = QtWidgets.QLineEdit('')
@@ -531,23 +532,23 @@ class CopySurveyDialog(QtWidgets.QDialog):
         selected_survey = app_core.DesktopAppSync().get_selected_survey()
         survey_dict = app_core.DesktopAppSync().get_surveys_dict()
         self.name_combo.clear()
+        self.name_combo.addItem('<select>')
         index = 0
         for row_index, h5_key in enumerate(sorted(survey_dict)):
             h5_dict = survey_dict[h5_key]
             h5_file = h5_dict['h5_file']
             self.name_combo.addItem(h5_file)
             if h5_file == selected_survey:
-                index = row_index
+                index = row_index + 1
         self.name_combo.setCurrentIndex(index)
 
     def _set_filename(self, _index):
         """ """
         survey_name = str(self.name_combo.currentText())
-        if survey_name:
-            dir_path = app_core.DesktopAppSync().get_workspace()
-            ws = hdf54bats.Hdf5Workspace(dir_path)
-            title = ws.get_h5_title(survey_name)
-            self._surveytitle_edit.setText(title)
+        if survey_name and (self.name_combo.currentIndex() > 0):
+#             surveys_dict = app_core.DesktopAppSync().get_surveys_dict()
+#             title = surveys_dict.get(survey_name, {}).get('h5_title', '')
+            self._surveytitle_edit.setText(survey_name)
         else:
             self._surveytitle_edit.setText('')
     
@@ -574,20 +575,21 @@ class CopySurveyDialog(QtWidgets.QDialog):
 
     def _create_survey(self):
         """ """
-        try:
+        if self.name_combo.currentIndex() > 0:
             try:
-                dir_path = app_core.DesktopAppSync().get_workspace()
-                name_combo = self.name_combo.currentText()
-                name = self._surveytitle_edit.text()
-                filename = self._surveyfilename_edit.text()
-                ws = hdf54bats.Hdf5Workspace(dir_path)
-                ws.copy_h5(name_combo, filename)
-                ws.set_h5_title(filename, name)
-            finally:
-                self.accept() # Close dialog box.
-        except Exception as e:
-            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
-            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
+                try:
+                    dir_path = app_core.DesktopAppSync().get_workspace()
+                    name_combo = self.name_combo.currentText()
+                    name = self._surveytitle_edit.text()
+                    filename = self._surveyfilename_edit.text()
+                    ws = hdf54bats.Hdf5Workspace(dir_path)
+                    ws.copy_h5(name_combo, filename)
+                    ws.set_h5_title(filename, name)
+                finally:
+                    self.accept() # Close dialog box.
+            except Exception as e:
+                debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+                app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 
 
 class DeleteDialog(QtWidgets.QDialog):
