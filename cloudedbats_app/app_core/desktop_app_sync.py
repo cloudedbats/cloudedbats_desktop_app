@@ -60,7 +60,7 @@ class DesktopAppSync(QtCore.QObject):
         print('- SET WORKSPACE: ', workspace)
         
         if self.workspace != workspace:
-#             self.clear()
+            self.clear()
             self.workspace = workspace
             self.update_surveys_dict()
             # Emit signal after a short delay.

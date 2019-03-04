@@ -27,7 +27,6 @@ class SpectrogramTool(app_framework.ToolBase):
         # Initialize parent. Should be called after other 
         # initialization since the base class calls _create_content().
         super(SpectrogramTool, self).__init__(name, parentwidget)
-        #
         # Where is the tool allowed to dock in the main window.
         self.setAllowedAreas(QtCore.Qt.RightDockWidgetArea | 
                              QtCore.Qt.BottomDockWidgetArea)
@@ -39,11 +38,9 @@ class SpectrogramTool(app_framework.ToolBase):
 #         app_core.DesktopAppSync().workspace_changed.connect(self.refresh_survey_list)
 #         app_core.DesktopAppSync().survey_changed.connect(self.refresh_survey_list)
         app_core.DesktopAppSync().item_id_changed.connect(self.plot_spectrogram)
-
-        self.plot_spectrogram
-#         self.refresh_survey_list()
-#         self.refresh_wavefile_list(0)
-
+        #
+#         self.plot_spectrogram()
+    
     def _create_content(self):
         """ """
         content = self._create_scrollable_content()
@@ -61,43 +58,15 @@ class SpectrogramTool(app_framework.ToolBase):
         """ """
         widget = QtWidgets.QWidget()
         
-        # Workspace and survey..
-        self.workspacedir_label = QtWidgets.QLabel('Workspace: -     ')
+#         self.workspacedir_label = QtWidgets.QLabel('Workspace: -     ')
         self.survey_label = QtWidgets.QLabel('Survey: -')
         self.itemid_label = QtWidgets.QLabel('Item id: -')
-#         self.workspacedir_edit = QtWidgets.QLineEdit('workspace_1')
-#         self.workspacedir_edit.textChanged.connect(self.refresh_survey_list)
-#         self.survey_combo = QtWidgets.QComboBox()
-#         self.survey_combo.setEditable(False)
-#         self.survey_combo.setMinimumWidth(250)
-# #         self.survey_combo.setMaximumWidth(300)
-#         self.survey_combo.addItems(['<select survey>'])
-#         self.survey_combo.currentIndexChanged.connect(self.refresh_wavefile_list)
-# #         self.survey_combo.setMaximumWidth(300)
-#         self.wavefile_combo = QtWidgets.QComboBox()
-#         self.wavefile_combo.setEditable(False)
-#         self.wavefile_combo.setMinimumWidth(250)
-#         self.wavefile_combo.addItems(['<select wavefile>'])
-#         self.wavefile_combo.currentIndexChanged.connect(self.plot_spectrogram)
-#         
-#         self.firstwave_button = QtWidgets.QPushButton('|<')
-#         self.firstwave_button.clicked.connect(self.firstwave)
-#         self.prevwave_button = QtWidgets.QPushButton('<')
-#         self.prevwave_button.clicked.connect(self.prevwave)
-#         self.nextwave_button = QtWidgets.QPushButton('>')
-#         self.nextwave_button.clicked.connect(self.nextwave)
-#         self.lastwave_button = QtWidgets.QPushButton('>|')
-#         self.lastwave_button.clicked.connect(self.lastwave)
-
-        # Wave file.
-#         self.wavefilepath_edit = QtWidgets.QLineEdit('')
-#         self.wavefilepath_button = QtWidgets.QPushButton('Browse...')
-#         self.wavefilepath_button.clicked.connect(self.wavefile_browse)
-#         self.wavefilepath_button.clicked.connect(self.test_plot)
+        self.title_label = QtWidgets.QLabel('Title: -')
         
         self.windowsize_combo = QtWidgets.QComboBox()
         self.windowsize_combo.setEditable(False)
-        self.windowsize_combo.setMaximumWidth(300)
+        self.windowsize_combo.setMinimumWidth(80)
+        self.windowsize_combo.setMaximumWidth(150)
         self.windowsize_combo.addItems(['128', 
                                         '256', 
                                         '512', 
@@ -107,93 +76,77 @@ class SpectrogramTool(app_framework.ToolBase):
                                         ])
         self.windowsize_combo.setCurrentIndex(2)
         self.windowsize_combo.currentIndexChanged.connect(self.plot_spectrogram)
-        self.overlap_combo = QtWidgets.QComboBox()
-        self.overlap_combo.setEditable(False)
-        self.overlap_combo.setMaximumWidth(300)
-        self.overlap_combo.addItems(['None', 
-                                        'Low', 
-                                        'Medium', 
-                                        'High', 
-                                        'Highest', 
-                                       ])
-        self.overlap_combo.setCurrentIndex(1)
-        self.overlap_combo.currentIndexChanged.connect(self.plot_spectrogram)
+        
+        self.timeresolution_combo = QtWidgets.QComboBox()
+        self.timeresolution_combo.setEditable(False)
+        self.timeresolution_combo.setMinimumWidth(80)
+        self.timeresolution_combo.setMaximumWidth(150)
+        self.timeresolution_combo.addItems(['2 ms', 
+                                             '1 ms', 
+                                             '1/2 ms', 
+                                             '1/4 ms', 
+                                             '1/8 ms', 
+                                             ])
+        self.timeresolution_combo.setCurrentIndex(1)
+        self.timeresolution_combo.currentIndexChanged.connect(self.plot_spectrogram)
+        
+        self.viewpart_combo = QtWidgets.QComboBox()
+        self.viewpart_combo.setEditable(False)
+        self.viewpart_combo.setMinimumWidth(80)
+        self.viewpart_combo.setMaximumWidth(150)
+        self.viewpart_combo.addItems(['All', 
+                                      '0-1 s', 
+                                      '1-2 s', 
+                                      '2-3 s', 
+                                      '3-4 s', 
+                                      '4-5 s', 
+                                      '5-6 s', 
+                                      '6-7 s', 
+                                      '7-8 s', 
+                                      '8-9 s', 
+                                      '9-10 s', 
+                                      ])
+        self.viewpart_combo.setCurrentIndex(0)
+        self.viewpart_combo.currentIndexChanged.connect(self.plot_spectrogram)
         
         # Matplotlib figure and canvas for Qt5.
         self._figure = mpl_figure.Figure()
         self._canvas = mpl_backend.FigureCanvasQTAgg(self._figure) 
         self.axes = self._figure.add_subplot(111)       
+        self._figure.tight_layout()
         self._canvas.show()
         
         # Layout widgets.
         form1 = QtWidgets.QGridLayout()
         gridrow = 0
         hlayout = QtWidgets.QHBoxLayout()
-        hlayout.addWidget(self.workspacedir_label)
         hlayout.addWidget(self.survey_label)
-        hlayout.addStretch(5)
-        form1.addLayout(hlayout, gridrow, 0, 1, 10)
+        hlayout.addStretch(20)
+        hlayout.addWidget(app_framework.RightAlignedQLabel('FFT window size:'))
+        hlayout.addWidget(self.windowsize_combo)
+        form1.addLayout(hlayout, gridrow, 0, 1, 20)
         gridrow += 1
         hlayout = QtWidgets.QHBoxLayout()
         hlayout.addWidget(self.itemid_label)
-        hlayout.addStretch(5)
-        form1.addLayout(hlayout, gridrow, 0, 1, 10)
-#         hlayout.addWidget(QtWidgets.QLabel('Workspace:'))
-#         hlayout.addWidget(self.workspacedir_edit, 7)
-#         hlayout.addWidget(QtWidgets.QLabel('Survey:'))
-#         hlayout.addWidget(self.survey_combo, 10)
-# #         hlayout.addWidget(self.refresh_button)
-# #         hlayout.addStretch(10)
-#         form1.addLayout(hlayout, gridrow, 0, 1, 15)
-# #         gridrow += 1
-# #         label = QtWidgets.QLabel('Wave file:')
-# #         form1.addWidget(label, gridrow, 0, 1, 1)
-# #         form1.addWidget(self.wavefilepath_edit, gridrow, 1, 1, 13)
-# #         form1.addWidget(self.wavefilepath_button, gridrow, 14, 1, 1)
-#         gridrow += 1
-#         label = QtWidgets.QLabel('Wavefiles:')
-#         form1.addWidget(label, gridrow, 0, 1, 1)
-#         form1.addWidget(self.wavefile_combo, gridrow, 1, 1, 9)
-#         form1.addWidget(self.firstwave_button, gridrow, 10, 1, 1)
-#         form1.addWidget(self.prevwave_button, gridrow, 11, 1, 1)
-#         form1.addWidget(self.nextwave_button, gridrow, 12, 1, 1)
-#         form1.addWidget(self.lastwave_button, gridrow, 13, 1, 1)
-# #         form1.addWidget(self.wavefilepath_button, gridrow, 14, 1, 1)
+        hlayout.addStretch(20)
+        hlayout.addWidget(app_framework.RightAlignedQLabel('Time resolution:'))
+        hlayout.addWidget(self.timeresolution_combo)
+        form1.addLayout(hlayout, gridrow, 0, 1, 20)
         gridrow += 1
-        hbox = QtWidgets.QHBoxLayout()
-        hbox.addStretch(10)
-        hbox.addWidget(app_framework.RightAlignedQLabel('Window size:'))
-        hbox.addWidget(self.windowsize_combo)
-        hbox.addWidget(app_framework.RightAlignedQLabel('Overlap:'))
-        hbox.addWidget(self.overlap_combo)
-#         hbox.addStretch(10)
-        form1.addLayout(hbox, gridrow, 0, 1, 10)
+        hlayout = QtWidgets.QHBoxLayout()
+        hlayout.addWidget(self.title_label)
+        hlayout.addStretch(20)
+        hlayout.addWidget(app_framework.RightAlignedQLabel('View part:'))
+        hlayout.addWidget(self.viewpart_combo)
+        form1.addLayout(hlayout, gridrow, 0, 1, 20)
         gridrow += 1
-        form1.addWidget(self._canvas, gridrow, 0, 100, 10)
+        form1.addWidget(self._canvas, gridrow, 0, 100, 20)
         #
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(form1)
         widget.setLayout(layout)
         #
         return widget        
-    
-#     def wavefile_browse(self):
-#         """ """
-#         # OLD: From file.
-# 
-#         # Show select file dialog box. Multiple files can be selected.
-#         namefilter = 'Wave files (*.wav *.WAV);;All files (*.*)'
-#         filenames, _ = QtWidgets.QFileDialog.getOpenFileNames(
-#                             self,
-#                             'Import sample(s)',
-#                             '', # self._last_used_excelfile_name,
-#                             namefilter)
-#         # Check if user pressed ok or cancel.
-#         if filenames:
-#             for filename in filenames:
-#                 print('DEBUG: ', filename)
-#                 self.wavefilepath_edit.setText(filename)
-#                 self.plot_spectrogram()
     
     # === Help ===
     def _content_help(self):
@@ -277,14 +230,16 @@ class SpectrogramTool(app_framework.ToolBase):
             # Clear.
             self.axes.cla()
             self._canvas.draw()
-            self.workspacedir_label.setText('Workspace: -     ')
+#             self.workspacedir_label.setText('Workspace: -     ')
             self.survey_label.setText('Survey: -')
             self.itemid_label.setText('Item id: -')
+            self.title_label.setText('Title: -')
             return
         #
-        self.workspacedir_label.setText('Workspace: <b>' + workspace + '</b>   ')
+#         self.workspacedir_label.setText('Workspace: <b>' + workspace + '</b>   ')
         self.survey_label.setText('Survey: <b>' + survey + '</b>')
         self.itemid_label.setText('Item id: <b>' + item_id + '</b>')
+#         self.title_label.setText('Title: <b>' + title + '</b>')
         #
         try:
             # Check if thread is running.
@@ -336,49 +291,53 @@ class SpectrogramTool(app_framework.ToolBase):
                 signal = signal[0:10 * sampling_freq]
                 print('Warning: Signal truncated to 10 sec.')
                     
-            # File.
-#             wave_file = self.wavefilepath_edit.text()
-#             wave_file_path = pathlib.Path(wave_file)
-    #         if not wave_file_path.is_file():
-    #             print('DEBUG: File does not exists: ', wave_file)
-    #             return
             # Settings.
             window_size = int(self.windowsize_combo.currentText())
-            overlap = self.overlap_combo.currentText()
-    #         window_size = 1024
-    #         resolution = 'Highest'
+            timeresolution = self.timeresolution_combo.currentText()
             window_function = 'hann'
-            jump = int(window_size / 2)
-            if overlap == 'None':
+            jump = int(sampling_freq / 1000)
+            if timeresolution == '2 ms':
                 window_function = 'hann'
-#                 jump = window_size
                 jump = int(sampling_freq / 500)
-            elif overlap == 'Low':
+            elif timeresolution == '1 ms':
                 window_function = 'hann'
-#                 jump = int(window_size / 1.33) 
                 jump = int(sampling_freq / 1000) # 1 ms.
-            elif overlap == 'Medium':
-    #             window_function = 'black'
+            elif timeresolution == '1/2 ms':
                 window_function = 'hann'
-#                 jump = int(window_size / 2)
                 jump = int(sampling_freq / 2000)
-            elif overlap == 'High':
-#                 window_function = 'blackh'
-                window_function = 'hann'
-#                 jump = int(window_size / 4)
+            elif timeresolution == '1/4 ms':
+                window_function = 'blackh'
                 jump = int(sampling_freq / 4000)
-            elif overlap == 'Highest':
-#                 window_function = 'kaiser'
-                window_function = 'hann'
-#                 jump = int(window_size / 8)
+            elif timeresolution == '1/8 ms':
+                window_function = 'kaiser'
                 jump = int(sampling_freq / 8000)
-            #
             
-            
-            
+            viewpart = self.viewpart_combo.currentText()
+            if viewpart == 'All':
+                pass
+            elif viewpart == '0-1 s':
+                signal = signal[sampling_freq*0:sampling_freq*1]
+            elif viewpart == '1-2 s':
+                signal = signal[sampling_freq*1:sampling_freq*2]
+            elif viewpart == '2-3 s':
+                signal = signal[sampling_freq*2:sampling_freq*3]
+            elif viewpart == '3-4 s':
+                signal = signal[sampling_freq*3:sampling_freq*4]
+            elif viewpart == '4-5 s':
+                signal = signal[sampling_freq*4:sampling_freq*5]
+            elif viewpart == '5-6 s':
+                signal = signal[sampling_freq*5:sampling_freq*6]
+            elif viewpart == '6-7 s':
+                signal = signal[sampling_freq*6:sampling_freq*7]
+            elif viewpart == '7-8 s':
+                signal = signal[sampling_freq*7:sampling_freq*8]
+            elif viewpart == '8-9 s':
+                signal = signal[sampling_freq*8:sampling_freq*9]
+            elif viewpart == '9-10 s':
+                signal = signal[sampling_freq*9:sampling_freq*10]
             #
             pos_in_sec_from = 0.0
-            pos_in_sec_to = len(signal) / sampling_freq        
+            pos_in_sec_to = len(signal) / sampling_freq
             #
             # Cut part from 1 sec signal.
             signal_short = signal[int(pos_in_sec_from * sampling_freq):int(pos_in_sec_to * sampling_freq)]
@@ -387,7 +346,7 @@ class SpectrogramTool(app_framework.ToolBase):
                 return
             # Create util.
             dbsf_util = dsp4bats.DbfsSpectrumUtil(window_size=window_size, 
-                                                   window_function=window_function)
+                                                  window_function=window_function)
             #
             if not self.spectrogram_thread_active:
                 return
@@ -410,7 +369,7 @@ class SpectrogramTool(app_framework.ToolBase):
             self.axes.axis('tight')
 #             self.axes.set_title(wave_file_path.name)
 #             self.axes.set_title(wavefile_id)
-            self.axes.set_title(item_title)
+#             self.axes.set_title(item_title)
             self.axes.set_ylabel('Frequency (kHz)')
             self.axes.set_xlabel('Time (s)')
             #ax.set_ylim([0,160])
