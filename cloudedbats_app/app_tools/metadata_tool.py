@@ -30,7 +30,7 @@ class MetadataTool(app_framework.ToolBase):
         self._parent.addDockWidget(QtCore.Qt.RightDockWidgetArea, self)
         self.hide()
         # Use sync object for workspaces and surveys. 
-        app_core.DesktopAppSync().item_id_changed.connect(self.update_metadata)
+        app_core.DesktopAppSync().item_id_changed_signal.connect(self.update_metadata)
         self.update_metadata()
 
     def _create_content(self):

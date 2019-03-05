@@ -35,9 +35,9 @@ class SpectrogramTool(app_framework.ToolBase):
         self._parent.addDockWidget(QtCore.Qt.RightDockWidgetArea, self)
         self.hide()
         # Use sync object for workspaces and surveys. 
-#         app_core.DesktopAppSync().workspace_changed.connect(self.refresh_survey_list)
-#         app_core.DesktopAppSync().survey_changed.connect(self.refresh_survey_list)
-        app_core.DesktopAppSync().item_id_changed.connect(self.plot_spectrogram)
+#         app_core.DesktopAppSync().workspace_changed_signal.connect(self.refresh_survey_list)
+#         app_core.DesktopAppSync().survey_changed_signal.connect(self.refresh_survey_list)
+        app_core.DesktopAppSync().item_id_changed_signal.connect(self.plot_spectrogram)
         #
 #         self.plot_spectrogram()
     

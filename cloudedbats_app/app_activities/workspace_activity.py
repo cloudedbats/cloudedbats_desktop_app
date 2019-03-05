@@ -5,6 +5,7 @@
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
 import sys
+import time
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui
 from PyQt5 import QtCore
@@ -25,8 +26,8 @@ class WorkspaceActivity(app_framework.ActivityBase):
         super(WorkspaceActivity, self).__init__(name, parentwidget)
         
         # Use sync object for workspaces and surveys. 
-        app_core.DesktopAppSync().workspace_changed.connect(self.refresh_survey_list)
-        app_core.DesktopAppSync().survey_changed.connect(self.refresh_survey_list)
+        app_core.DesktopAppSync().workspace_changed_signal.connect(self.refresh_survey_list)
+        app_core.DesktopAppSync().survey_changed_signal.connect(self.refresh_survey_list)
         #
         self.refresh_survey_list()
     
@@ -120,6 +121,7 @@ class WorkspaceActivity(app_framework.ActivityBase):
     def workspace_changed(self):
         """ """
         dir_path = str(self.workspacedir_edit.text())
+        # Sync.
         app_core.DesktopAppSync().set_workspace(dir_path)
     
     def refresh_survey_list(self):
@@ -127,10 +129,13 @@ class WorkspaceActivity(app_framework.ActivityBase):
         try:
             self.surveys_tableview.blockSignals(True)
             self.surveys_tableview.getSelectionModel().blockSignals(True)
+            self.workspacedir_edit.blockSignals(True)
             #
             selected_workspace = app_core.DesktopAppSync().get_workspace()
             h5_survey_dict = app_core.DesktopAppSync().get_surveys_dict()
             h5_selected_survey = app_core.DesktopAppSync().get_selected_survey()
+            #
+            self.workspacedir_edit.setText(selected_workspace)
             #
             dataset_table = app_framework.DatasetTable()
             header = ['h5_file', 'h5_title', 'h5_filepath']
@@ -140,11 +145,6 @@ class WorkspaceActivity(app_framework.ActivityBase):
 #                 header_cap.append(item.capitalize().replace('_', ' '))
 #             dataset_table.set_header(header_cap)
             #
-            try:
-                self.workspacedir_edit.blockSignals(True)
-                self.workspacedir_edit.setText(selected_workspace)
-            finally:
-                self.workspacedir_edit.blockSignals(False)
             #
             selected_survey_index = None
             for index, key in enumerate(sorted(h5_survey_dict)):
@@ -166,7 +166,7 @@ class WorkspaceActivity(app_framework.ActivityBase):
         finally:
             self.surveys_tableview.blockSignals(False)
             self.surveys_tableview.getSelectionModel().blockSignals(False)
-        
+            self.workspacedir_edit.blockSignals(False)
     
     def selected_survey_changed(self):
         """ """
@@ -174,6 +174,9 @@ class WorkspaceActivity(app_framework.ActivityBase):
             modelIndex = self.surveys_tableview.currentIndex()
             if modelIndex.isValid():
                 h5_survey = self.surveys_tableview.model().index(modelIndex.row(), 0).data()
+                #
+                time.sleep(0.1)
+                # Sync.
                 app_core.DesktopAppSync().set_selected_survey(h5_survey)
         except:
             pass

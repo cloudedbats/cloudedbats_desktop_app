@@ -28,8 +28,8 @@ class WavefilesActivity(app_framework.ActivityBase):
         super().__init__(name, parentwidget)
         
         # Use sync object for workspaces and surveys. 
-        app_core.DesktopAppSync().workspace_changed.connect(self.refresh_survey_list)
-        app_core.DesktopAppSync().survey_changed.connect(self.refresh_survey_list)
+        app_core.DesktopAppSync().workspace_changed_signal.connect(self.refresh_survey_list)
+        app_core.DesktopAppSync().survey_changed_signal.connect(self.refresh_survey_list)
         #
         self.refresh_survey_list()
     
@@ -143,6 +143,7 @@ class WavefilesActivity(app_framework.ActivityBase):
         """ """
         if self.survey_combo.currentIndex() > 0:
             selected_survey = str(self.survey_combo.currentText())
+            # Sync.
             app_core.DesktopAppSync().set_selected_survey(selected_survey)
         else:
             app_core.DesktopAppSync().refresh()
@@ -153,6 +154,7 @@ class WavefilesActivity(app_framework.ActivityBase):
             modelIndex = self.wavefiles_tableview.currentIndex()
             if modelIndex.isValid():
                 item_id = str(self.wavefiles_tableview.model().index(modelIndex.row(), 0).data())
+                # Sync.
                 app_core.DesktopAppSync().set_selected_item_id(item_id)
         except Exception as e:
 #             pass
@@ -186,14 +188,16 @@ class WavefilesActivity(app_framework.ActivityBase):
             self.wavefiles_tableview.getSelectionModel().blockSignals(True)
             #
             if self.survey_combo.currentIndex() == 0:
-                self.wavefiles_tableview.clearModel()
+                dataset_table = app_framework.DatasetTable()
+                self.wavefiles_tableview.setTableModel(dataset_table)
                 self.wavefiles_tableview.resizeColumnsToContents()
                 return
              
             dir_path = app_core.DesktopAppSync().get_workspace()
             survey_name = str(self.survey_combo.currentText())
             if (not dir_path) or (not survey_name):
-                self.wavefiles_tableview.clearModel()
+                dataset_table = app_framework.DatasetTable()
+                self.wavefiles_tableview.setTableModel(dataset_table)
                 self.wavefiles_tableview.resizeColumnsToContents()
                 return
             #

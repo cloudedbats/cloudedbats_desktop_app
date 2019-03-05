@@ -5,6 +5,7 @@
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
 import sys
+import time
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui
 from PyQt5 import QtCore
@@ -26,8 +27,8 @@ class SurveyActivity(app_framework.ActivityBase):
         super().__init__(name, parentwidget)
         
         # Use sync object for workspaces and surveys. 
-        app_core.DesktopAppSync().workspace_changed.connect(self.refresh_survey_list)
-        app_core.DesktopAppSync().survey_changed.connect(self.refresh_survey_list)
+        app_core.DesktopAppSync().workspace_changed_signal.connect(self.refresh_survey_list)
+        app_core.DesktopAppSync().survey_changed_signal.connect(self.refresh_survey_list)
         #
         self.refresh_survey_list()
     
@@ -156,6 +157,7 @@ class SurveyActivity(app_framework.ActivityBase):
             modelIndex = self.events_tableview.currentIndex()
             if modelIndex.isValid():
                 item_id = str(self.events_tableview.model().index(modelIndex.row(), 0).data())
+                # Sync.
                 app_core.DesktopAppSync().set_selected_item_id(item_id)
         except:
             pass
@@ -164,8 +166,14 @@ class SurveyActivity(app_framework.ActivityBase):
         """ """
         try:
             self.survey_combo.blockSignals(True)
+            # Clear combo.
             self.survey_combo.clear()
             self.survey_combo.addItem('<select survey>')
+            # Clear table.
+            dataset_table = app_framework.DatasetTable()
+            self.events_tableview.setTableModel(dataset_table)
+            self.events_tableview.resizeColumnsToContents()
+            # Add to combo.
             selected_survey = app_core.DesktopAppSync().get_selected_survey()
             survey_dict = app_core.DesktopAppSync().get_surveys_dict()
             index = 0
@@ -190,14 +198,16 @@ class SurveyActivity(app_framework.ActivityBase):
             self.events_tableview.getSelectionModel().blockSignals(True)
             #
             if self.survey_combo.currentIndex() == 0:
-                self.events_tableview.clearModel()
+                dataset_table = app_framework.DatasetTable()
+                self.events_tableview.setTableModel(dataset_table)
                 self.events_tableview.resizeColumnsToContents()
                 return
             
             dir_path = app_core.DesktopAppSync().get_workspace()
             survey_name = str(self.survey_combo.currentText())
             if (not dir_path) or (not survey_name):
-                self.events_tableview.clearModel()
+                dataset_table = app_framework.DatasetTable()
+                self.events_tableview.setTableModel(dataset_table)
                 self.events_tableview.resizeColumnsToContents()
                 return
             #

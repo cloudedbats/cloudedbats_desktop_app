@@ -34,7 +34,7 @@ class MapTool(app_framework.ToolBase):
         self._parent.addDockWidget(QtCore.Qt.RightDockWidgetArea, self)
         self.hide()
         # Use sync object for workspaces and surveys. 
-        app_core.DesktopAppSync().item_id_changed.connect(self.update_map)
+        app_core.DesktopAppSync().item_id_changed_signal.connect(self.update_map)
 
         # Map init.
         tilemapbase.init(create=True)
@@ -138,6 +138,13 @@ class MapTool(app_framework.ToolBase):
     
     def update_map(self):
         """ """
+        
+        
+        return
+        
+        
+        
+        
         try:
             workspace = app_core.DesktopAppSync().get_workspace()
             survey = app_core.DesktopAppSync().get_selected_survey()
