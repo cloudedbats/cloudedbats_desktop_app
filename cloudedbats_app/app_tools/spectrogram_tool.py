@@ -5,6 +5,7 @@
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
 import pathlib
+import queue
 import threading
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
@@ -34,12 +35,10 @@ class SpectrogramTool(app_framework.ToolBase):
         # Default position. Hide as default.
         self._parent.addDockWidget(QtCore.Qt.RightDockWidgetArea, self)
         self.hide()
+        # Plot queue. Used to separate threads.
+        self.spectrogram_queue = queue.Queue(maxsize=100)
         # Use sync object for workspaces and surveys. 
-#         app_core.DesktopAppSync().workspace_changed_signal.connect(self.refresh_survey_list)
-#         app_core.DesktopAppSync().survey_changed_signal.connect(self.refresh_survey_list)
         app_core.DesktopAppSync().item_id_changed_signal.connect(self.plot_spectrogram)
-        #
-#         self.plot_spectrogram()
     
     def _create_content(self):
         """ """
@@ -74,7 +73,7 @@ class SpectrogramTool(app_framework.ToolBase):
                                         '2048', 
                                         '4096', 
                                         ])
-        self.windowsize_combo.setCurrentIndex(2)
+        self.windowsize_combo.setCurrentIndex(3)
         self.windowsize_combo.currentIndexChanged.connect(self.plot_spectrogram)
         
         self.timeresolution_combo = QtWidgets.QComboBox()
@@ -167,109 +166,70 @@ class SpectrogramTool(app_framework.ToolBase):
         widget.setLayout(layout)                
         #
         return widget
-
-
-    # === TODO: Move to Core ===
-    
-    def firstwave(self):
-        """ """
-        self.wavefile_combo.setCurrentIndex(0)
-        
-    def prevwave(self):
-        """ """
-        index = self.wavefile_combo.currentIndex()
-        if index > 0:
-            self.wavefile_combo.setCurrentIndex(index-1)
-    
-    def nextwave(self):
-        """ """
-        index = self.wavefile_combo.currentIndex()
-        maxindex = self.wavefile_combo.count()
-        if index < maxindex:
-            self.wavefile_combo.setCurrentIndex(index+1)
-    
-    def lastwave(self):
-        """ """
-        maxindex = self.wavefile_combo.count()
-        self.wavefile_combo.setCurrentIndex(maxindex-1)
-    
-#     def refresh_survey_list(self):
-#         """ """
-#         self.survey_combo.clear()
-#         self.survey_combo.addItem('<select survey>')
-#         dir_path = str(self.workspacedir_edit.text())
-#         ws = hdf54bats.Hdf5Workspace(dir_path)
-#         h5_list = ws.get_h5_list()
-#         for h5_file_key in sorted(h5_list.keys()):
-#             h5_file_dict = h5_list[h5_file_key]
-#             self.survey_combo.addItem(h5_file_dict['name'])
-#             
-#             self.survey_combo.setCurrentIndex(1)
-# 
-#     def refresh_wavefile_list(self, index):
-#         """ """
-#         self.wavefile_combo.clear()
-#         workspace = str(self.workspacedir_edit.text())
-#         survey = str(self.survey_combo.currentText())
-#         if survey not in ['', '<select survey>']:
-#             h5wavefile = hdf54bats.Hdf5Wavefile(workspace, survey)
-#             
-#             from_top_node = ''
-#             wavefiles_dict = h5wavefile.get_wavefiles(from_top_node)
-#             for wave_id in sorted(wavefiles_dict):
-#                 self.wavefile_combo.addItem(wave_id)
-#         else:
-#             self.wavefile_combo.clear()
     
     def plot_spectrogram(self):
         """ Use a thread to relese the user. """
         workspace = app_core.DesktopAppSync().get_workspace()
         survey = app_core.DesktopAppSync().get_selected_survey()
         item_id = app_core.DesktopAppSync().get_selected_item_id(item_type='wavefile')
-        if not item_id:
-            # Clear.
-            self.axes.cla()
-            self._canvas.draw()
-#             self.workspacedir_label.setText('Workspace: -     ')
-            self.survey_label.setText('Survey: -')
-            self.itemid_label.setText('Item id: -')
-            self.title_label.setText('Title: -')
-            return
-        #
-#         self.workspacedir_label.setText('Workspace: <b>' + workspace + '</b>   ')
-        self.survey_label.setText('Survey: <b>' + survey + '</b>')
-        self.itemid_label.setText('Item id: <b>' + item_id + '</b>')
-#         self.title_label.setText('Title: <b>' + title + '</b>')
+        item_metadata = app_core.DesktopAppSync().get_metadata_dict()
+        item_title = item_metadata.get('item_title', '')
+#         if not item_id:
+#             # Clear.
+#             self.survey_label.setText('Survey: -')
+#             self.itemid_label.setText('Item id: -')
+#             self.title_label.setText('Title: -')
+#             return
         #
         try:
             # Check if thread is running.
-            if self.spectrogram_thread:
-#                 while self.spectrogram_thread.is_alive():
-#                     #print('DEBUG: Stop running thread.')
-                self.spectrogram_thread_active = False
-##################                threading.Timer(0.5, self.plot_spectrogram)
-            else:
-                
-                
-                self.axes.cla()
-                self._canvas.draw()
-
-                
-                
-                # Use a thread to relese the user.
+            if not self.spectrogram_thread:
                 self.spectrogram_thread_active = True
-                self.spectrogram_thread = threading.Thread(target = self.run_plot_spectrogram, 
-                                                           args=(workspace, survey, item_id))
+                self.spectrogram_thread = threading.Thread(target = self.run_spectrogram_plotter, 
+                                                           args=())
                 self.spectrogram_thread.start()
         except Exception as e:
             print('EXCEPTION in plot_spectrogram_in_thread: ', e)
+            
+        spectrogram_dict = {}
+        spectrogram_dict['workspace'] = workspace
+        spectrogram_dict['survey'] = survey
+        spectrogram_dict['item_id'] = item_id
+        spectrogram_dict['item_title'] = item_title
+        #
+        while self.spectrogram_queue.qsize() > 10:
+            _dummy = self.spectrogram_queue.get(block=False)
+            print('DEBUG: Spectrogram queue - skipped.')
+        #
+        self.spectrogram_queue.put(spectrogram_dict)
     
-    def run_plot_spectrogram(self, workspace, survey, item_id):
+    def run_spectrogram_plotter(self):
         """ """
         try:
-            self.axes.cla()
-            #
-            if not self.spectrogram_thread_active:
+            while True:
+                queue_item = self.spectrogram_queue.get()
+                #
+                if self.isVisible():
+                    workspace = queue_item.get('workspace', '') 
+                    survey = queue_item.get('survey', '') 
+                    item_id = queue_item.get('item_id', '') 
+                    item_title = queue_item.get('item_title', '') 
+                    #
+                    self.create_spectrogram(workspace, survey, 
+                                            item_id, item_title)
+                    #
+                    self.survey_label.setText('Survey: ' + survey)
+                    self.itemid_label.setText('Item id: ' + item_id)
+                    self.title_label.setText('Title: ' + item_title)
+        finally:
+            self.spectrogram_thread = None
+
+    def create_spectrogram(self, workspace, survey, item_id, item_title):
+        """ """
+        try:
+            if not item_id:
+                self.axes.cla()
+                self._canvas.draw()
                 return
             #
             h5wavefile = hdf54bats.Hdf5Wavefile(workspace, survey)
@@ -279,18 +239,16 @@ class SpectrogramTool(app_framework.ToolBase):
                 item_metadata = h5wavefile.get_user_metadata(item_id, close=False)
             finally:
                 h5wavefile.close()
-            sampling_freq_hz = item_metadata.get('file_frame_rate_hz', '')
+            #
+            sampling_freq_hz = item_metadata.get('frame_rate_hz', '')
             if not sampling_freq_hz:
-                sampling_freq = 384000
+                sampling_freq = 500000 # Correct for D500X.
             else:
                 sampling_freq = int(sampling_freq_hz)
-            
-            print('- Framerate: ', sampling_freq)
-            
+            #
             if len(signal) > (10 * sampling_freq):
                 signal = signal[0:10 * sampling_freq]
-                print('Warning: Signal truncated to 10 sec.')
-                    
+                print('DEBUG: Warning: Signal truncated to 10 sec.')                    
             # Settings.
             window_size = int(self.windowsize_combo.currentText())
             timeresolution = self.timeresolution_combo.currentText()
@@ -311,7 +269,7 @@ class SpectrogramTool(app_framework.ToolBase):
             elif timeresolution == '1/8 ms':
                 window_function = 'kaiser'
                 jump = int(sampling_freq / 8000)
-            
+            #
             viewpart = self.viewpart_combo.currentText()
             if viewpart == 'All':
                 pass
@@ -335,31 +293,23 @@ class SpectrogramTool(app_framework.ToolBase):
                 signal = signal[sampling_freq*8:sampling_freq*9]
             elif viewpart == '9-10 s':
                 signal = signal[sampling_freq*9:sampling_freq*10]
-            #
             pos_in_sec_from = 0.0
             pos_in_sec_to = len(signal) / sampling_freq
-            #
             # Cut part from 1 sec signal.
             signal_short = signal[int(pos_in_sec_from * sampling_freq):int(pos_in_sec_to * sampling_freq)]
-            # 
-            if not self.spectrogram_thread_active:
-                return
             # Create util.
             dbsf_util = dsp4bats.DbfsSpectrumUtil(window_size=window_size, 
                                                   window_function=window_function)
-            #
-            if not self.spectrogram_thread_active:
-                return
             # Create matrix.
             ### jump = int(sampling_freq/1000/jumps_per_ms)
             size = int(len(signal_short) / jump)
             matrix = dbsf_util.calc_dbfs_matrix(signal_short, matrix_size=size, jump=jump)
-            #
-            if not self.spectrogram_thread_active:
-                return
             # Plot.
             max_freq = sampling_freq / 1000 / 2 # kHz and Nyquist.
-            ###f, ax = plt.subplots(figsize=(15, 5))
+
+            # Plot.            
+            self.axes.cla()
+            #
             self.axes.imshow(matrix.T, 
                       cmap='viridis', 
                       origin='lower',
@@ -367,19 +317,14 @@ class SpectrogramTool(app_framework.ToolBase):
                               0, max_freq)
                      )
             self.axes.axis('tight')
-#             self.axes.set_title(wave_file_path.name)
-#             self.axes.set_title(wavefile_id)
 #             self.axes.set_title(item_title)
             self.axes.set_ylabel('Frequency (kHz)')
             self.axes.set_xlabel('Time (s)')
             #ax.set_ylim([0,160])
             #
-            if not self.spectrogram_thread_active:
-                return
-            #
             self._canvas.draw()
             
-        finally:
-            self.spectrogram_thread = None
+        except Exception as e:
+            print('EXCEPTION in plot_spectrogram: ', e)
 
     

@@ -77,7 +77,7 @@ class MapTool(app_framework.ToolBase):
                                   '0.005', 
                                   '0.001', 
                                   ])
-        self.zoom_combo.setCurrentIndex(3)
+        self.zoom_combo.setCurrentIndex(4)
 
         # Matplotlib figure and canvas for Qt5.
         self._figure = mpl_figure.Figure()
@@ -139,8 +139,8 @@ class MapTool(app_framework.ToolBase):
     def update_map(self):
         """ """
         
-        
-        return
+        if not self.isVisible():
+            return
         
         
         
@@ -166,16 +166,20 @@ class MapTool(app_framework.ToolBase):
             self.itemid_label.setText('Item id: <b>' + item_id + '</b>')
             self.title_label.setText('Title: <b>' + item_title + '</b>')
             #
+            lat_dd = 0.0
+            long_dd = 0.0
             try:
                 lat_dd = float(latitude_dd)
                 long_dd = float(longitude_dd)
             except:
-                # Clear.
-                self.axes.cla()
-                self._canvas.draw()
-                return
+                pass
+            
+            if (lat_dd == 0.0) or (long_dd == 0):
+                    # Clear.
+                    self.axes.cla()
+                    self._canvas.draw()
+                    return
              
-    
             current_position = (long_dd, lat_dd)
            
             degree_range = 0.05

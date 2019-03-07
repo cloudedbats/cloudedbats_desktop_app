@@ -1,16 +1,20 @@
 
 pyqt5
-matplotlib
-pandas
+numpy
 scipy
-librosa
+pandas
+matplotlib
+openpyxl
+xlsxwriter
 folium
-pyinstaller
 tilemapbase
+pyinstaller
+
+### Execute manually, not via "pip install -r requrements.txt":
 
 # brew install hdf5 # For MacOS.
-# tables # Use "pip install tables" instead.
 # h5py # Use "pip install h5py" instead.
+# tables # Use "pip install tables" instead.
 
 # git+https://github.com/cloudedbats/cloudedbats_dsp
 # git+https://github.com/cloudedbats/cloudedbats_hdf5
