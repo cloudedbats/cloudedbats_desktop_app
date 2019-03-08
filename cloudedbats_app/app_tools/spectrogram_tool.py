@@ -8,6 +8,7 @@ import pathlib
 import queue
 import threading
 from PyQt5 import QtWidgets
+from PyQt5 import QtGui
 from PyQt5 import QtCore
 import numpy as np
 import matplotlib.backends.backend_qt5agg as mpl_backend
@@ -23,8 +24,6 @@ class SpectrogramTool(app_framework.ToolBase):
     
     def __init__(self, name, parentwidget):
         """ """
-        self.spectrogram_thread = None
-        self.spectrogram_thread_active = False
         # Initialize parent. Should be called after other 
         # initialization since the base class calls _create_content().
         super(SpectrogramTool, self).__init__(name, parentwidget)
@@ -37,8 +36,12 @@ class SpectrogramTool(app_framework.ToolBase):
         self.hide()
         # Plot queue. Used to separate threads.
         self.spectrogram_queue = queue.Queue(maxsize=100)
+        self.spectrogram_thread = None
+        self.spectrogram_active = False
         # Use sync object for workspaces and surveys. 
         app_core.DesktopAppSync().item_id_changed_signal.connect(self.plot_spectrogram)
+        # Also when visible.
+        self.visibilityChanged.connect(self.visibility_changed)
     
     def _create_content(self):
         """ """
@@ -58,9 +61,25 @@ class SpectrogramTool(app_framework.ToolBase):
         widget = QtWidgets.QWidget()
         
 #         self.workspacedir_label = QtWidgets.QLabel('Workspace: -     ')
-        self.survey_label = QtWidgets.QLabel('Survey: -')
-        self.itemid_label = QtWidgets.QLabel('Item id: -')
-        self.title_label = QtWidgets.QLabel('Title: -')
+        self.survey_label = QtWidgets.QLabel('Survey: ')
+        self.itemid_label = QtWidgets.QLabel('Item id: ')
+        self.title_label = QtWidgets.QLabel('Title: ')
+        self.survey_edit = QtWidgets.QLineEdit('')
+        self.itemid_edit = QtWidgets.QLineEdit('')
+        self.title_edit = QtWidgets.QLineEdit('')
+        self.survey_edit.setReadOnly(True)
+        self.itemid_edit.setReadOnly(True)
+        self.title_edit.setReadOnly(True)
+        self.survey_edit.setMaximumWidth(1000)
+        self.itemid_edit.setMaximumWidth(1000)
+        self.title_edit.setMaximumWidth(1000)
+        self.survey_edit.setFrame(False)
+        self.itemid_edit.setFrame(False)
+        self.title_edit.setFrame(False)
+        font = QtGui.QFont(QtGui.QFont('SansSerif', pointSize=-1, weight=QtGui.QFont.Bold))
+        self.survey_edit.setFont(font)
+        self.itemid_edit.setFont(font)
+        self.title_edit.setFont(font)
         
         self.windowsize_combo = QtWidgets.QComboBox()
         self.windowsize_combo.setEditable(False)
@@ -118,28 +137,44 @@ class SpectrogramTool(app_framework.ToolBase):
         # Layout widgets.
         form1 = QtWidgets.QGridLayout()
         gridrow = 0
-        hlayout = QtWidgets.QHBoxLayout()
-        hlayout.addWidget(self.survey_label)
-        hlayout.addStretch(20)
-        hlayout.addWidget(app_framework.RightAlignedQLabel('FFT window size:'))
-        hlayout.addWidget(self.windowsize_combo)
-        form1.addLayout(hlayout, gridrow, 0, 1, 20)
+#         hlayout = QtWidgets.QHBoxLayout()
+#         hlayout.addWidget(self.survey_label)
+#         hlayout.addWidget(self.survey_edit)
+#         hlayout.addStretch(20)
+#         hlayout.addWidget(app_framework.RightAlignedQLabel('FFT window size:'))
+#         hlayout.addWidget(self.windowsize_combo)
+#         form1.addLayout(hlayout, gridrow, 0, 1, 20)
+        form1.addWidget(self.survey_label, gridrow, 0, 1, 1)
+        form1.addWidget(self.survey_edit, gridrow, 1, 1, 27)
+        label = app_framework.RightAlignedQLabel('FFT window size:')
+        form1.addWidget(label, gridrow, 28, 1, 1)
+        form1.addWidget(self.windowsize_combo, gridrow, 29, 1, 1)
         gridrow += 1
-        hlayout = QtWidgets.QHBoxLayout()
-        hlayout.addWidget(self.itemid_label)
-        hlayout.addStretch(20)
-        hlayout.addWidget(app_framework.RightAlignedQLabel('Time resolution:'))
-        hlayout.addWidget(self.timeresolution_combo)
-        form1.addLayout(hlayout, gridrow, 0, 1, 20)
+#         hlayout = QtWidgets.QHBoxLayout()
+#         hlayout.addWidget(self.itemid_label)
+#         hlayout.addStretch(20)
+#         hlayout.addWidget(app_framework.RightAlignedQLabel('Time resolution:'))
+#         hlayout.addWidget(self.timeresolution_combo)
+#         form1.addLayout(hlayout, gridrow, 0, 1, 20)
+        form1.addWidget(self.itemid_label, gridrow, 0, 1, 1)
+        form1.addWidget(self.itemid_edit, gridrow, 1, 1, 27)
+        label = app_framework.RightAlignedQLabel('Time resolution:')
+        form1.addWidget(label, gridrow, 28, 1, 1)
+        form1.addWidget(self.timeresolution_combo, gridrow, 29, 1, 1)
         gridrow += 1
-        hlayout = QtWidgets.QHBoxLayout()
-        hlayout.addWidget(self.title_label)
-        hlayout.addStretch(20)
-        hlayout.addWidget(app_framework.RightAlignedQLabel('View part:'))
-        hlayout.addWidget(self.viewpart_combo)
-        form1.addLayout(hlayout, gridrow, 0, 1, 20)
+#         hlayout = QtWidgets.QHBoxLayout()
+#         hlayout.addWidget(self.title_label)
+#         hlayout.addStretch(20)
+#         hlayout.addWidget(app_framework.RightAlignedQLabel('View part:'))
+#         hlayout.addWidget(self.viewpart_combo)
+#         form1.addLayout(hlayout, gridrow, 0, 1, 20)
+        form1.addWidget(self.title_label, gridrow, 0, 1, 1)
+        form1.addWidget(self.title_edit, gridrow, 1, 1, 27)
+        label = app_framework.RightAlignedQLabel('View part:')
+        form1.addWidget(label, gridrow, 28, 1, 1)
+        form1.addWidget(self.viewpart_combo, gridrow, 29, 1, 1)
         gridrow += 1
-        form1.addWidget(self._canvas, gridrow, 0, 100, 20)
+        form1.addWidget(self._canvas, gridrow, 0, 100, 30)
         #
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(form1)
@@ -167,6 +202,21 @@ class SpectrogramTool(app_framework.ToolBase):
         #
         return widget
     
+    def close(self):
+        """ """
+        # Terminate spectrogram thread.
+        self.spectrogram_active = False
+        # Send on queue to release thread.
+        self.spectrogram_queue.put(False)
+        # 
+        super().close()
+        
+    
+    def visibility_changed(self, visible):
+        """ """
+        if visible:
+            self.plot_spectrogram()
+    
     def plot_spectrogram(self):
         """ Use a thread to relese the user. """
         workspace = app_core.DesktopAppSync().get_workspace()
@@ -174,17 +224,11 @@ class SpectrogramTool(app_framework.ToolBase):
         item_id = app_core.DesktopAppSync().get_selected_item_id(item_type='wavefile')
         item_metadata = app_core.DesktopAppSync().get_metadata_dict()
         item_title = item_metadata.get('item_title', '')
-#         if not item_id:
-#             # Clear.
-#             self.survey_label.setText('Survey: -')
-#             self.itemid_label.setText('Item id: -')
-#             self.title_label.setText('Title: -')
-#             return
         #
         try:
             # Check if thread is running.
             if not self.spectrogram_thread:
-                self.spectrogram_thread_active = True
+                self.spectrogram_active = True
                 self.spectrogram_thread = threading.Thread(target = self.run_spectrogram_plotter, 
                                                            args=())
                 self.spectrogram_thread.start()
@@ -206,8 +250,12 @@ class SpectrogramTool(app_framework.ToolBase):
     def run_spectrogram_plotter(self):
         """ """
         try:
-            while True:
+            while self.spectrogram_active:
                 queue_item = self.spectrogram_queue.get()
+                if queue_item == False:
+                    # Exit.
+                    self.spectrogram_active = False
+                    continue
                 #
                 if self.isVisible():
                     workspace = queue_item.get('workspace', '') 
@@ -218,9 +266,9 @@ class SpectrogramTool(app_framework.ToolBase):
                     self.create_spectrogram(workspace, survey, 
                                             item_id, item_title)
                     #
-                    self.survey_label.setText('Survey: ' + survey)
-                    self.itemid_label.setText('Item id: ' + item_id)
-                    self.title_label.setText('Title: ' + item_title)
+                    self.survey_edit.setText(survey)
+                    self.itemid_edit.setText(item_id)
+                    self.title_edit.setText(item_title)
         finally:
             self.spectrogram_thread = None
 

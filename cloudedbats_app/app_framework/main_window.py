@@ -113,6 +113,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._ui_settings.setValue('MainWindow/Position', QtCore.QVariant(self.pos()))
         self._ui_settings.setValue('MainWindow/State', self.saveState())
         self._ui_settings.setValue('MainWindow/Geometry', self.geometry())
+        #
+        self. _hideAllTools()
+        #
         self._logfile.close
     
     def _createMenu(self):
@@ -170,9 +173,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # Widget to create space and layout for two groupboxes.
         content = QtWidgets.QWidget()
         widget = QtWidgets.QWidget()
-        widget.setStyleSheet("""        
-            QDockWidget .QWidget { background-color: white; }
-            """)
+#         widget.setStyleSheet("""        
+#             QDockWidget .QWidget { background-color: white; }
+#             """)
         dock.setWidget(widget)        
         # Add scroll.
         mainscroll = QtWidgets.QScrollArea()

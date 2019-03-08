@@ -72,20 +72,20 @@ class ClickableQLabel(QtWidgets.QLabel):
         """ Overridden abstract method. """
         self.setStyleSheet(""" 
             * [ActivityStatus="Selected"] { color: #d1581c; background-color: black; }
-            * [ActivityStatus="Unselected"] { color: #d1581c; background-color: white; }
+            * [ActivityStatus="Unselected"] { color: #d1581c; background-color: transparent; }
             """)
   
     def leaveEvent(self, ev):  
         """ Overridden abstract method. """
         self.setStyleSheet(""" 
             * [ActivityStatus="Selected"] { color: white; background-color: black; }
-            * [ActivityStatus="Unselected"] { color: black; background-color: white; }
+            * [ActivityStatus="Unselected"] { color: black; background-color: transparent; }
             """)
 
     def updateStyleSheet(self):  
         self.setStyleSheet(""" 
             * [ActivityStatus="Selected"] { color:  white; background-color: black; }
-            * [ActivityStatus="Unselected"] { color:  black; background-color: white; }
+            * [ActivityStatus="Unselected"] { color:  black; background-color: transparent; }
             """)
 
 class ClickableLinkQLabel(QtWidgets.QLabel):  
