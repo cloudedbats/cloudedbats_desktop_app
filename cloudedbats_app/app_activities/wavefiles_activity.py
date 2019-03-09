@@ -100,6 +100,9 @@ class WavefilesActivity(app_framework.ActivityBase):
         
         # Layout widgets.
         form1 = QtWidgets.QGridLayout()
+        form1.setSpacing(5)
+        form1.setContentsMargins(5,5,5,5)
+                
         gridrow = 0
         hlayout = QtWidgets.QHBoxLayout()
         hlayout.addWidget(QtWidgets.QLabel('Survey:'))
@@ -453,38 +456,43 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                 wurb_utils = dsp4bats.WurbFileUtils()
                 
                 for rowindex in range(self._items_model.rowCount()):
-                    item = self._items_model.item(rowindex, 0)
-                    if item.checkState() == QtCore.Qt.Checked:
-                        wave_file_path = str(item.text())
-    #                     wave.remove_wavefile(item_id)
-                        
-                        wave_reader = None
-                        try:
-                            metadata = wurb_utils.extract_metadata(wave_file_path)
+                    try:
+                        item = self._items_model.item(rowindex, 0)
+                        if item.checkState() == QtCore.Qt.Checked:
+                            wave_file_path = str(item.text())
+        #                     wave.remove_wavefile(item_id)
                             
-                            file_name = metadata['file_name']
-                            title = file_name
-                            if 'datetime_str' in metadata:
-                                datetime_str = metadata['datetime_str'][0:15]
-                                name = 'wave_' + hdf54bats.str_to_ascii(datetime_str)
-                            else:
-                                name = metadata['file_stem'].lower()
+                            wave_reader = None
+                            try:
+                                metadata = wurb_utils.extract_metadata(wave_file_path)
+                                
+                                file_name = metadata['file_name']
+                                title = file_name
+                                if 'datetime_str' in metadata:
+                                    datetime_str = metadata['datetime_str'][0:15]
+                                    name = 'wave_' + hdf54bats.str_to_ascii(datetime_str)
+                                else:
+                                    name = metadata['file_stem'].lower()
+                                
+                                self._parentwidget._write_to_status_bar('- Busy: Importing: ' + file_name)
                             
-                            self._parentwidget._write_to_status_bar('- Busy: Importing: ' + file_name)
-                        
-                            wave_reader = dsp4bats.WaveFileReader(wave_file_path)
-                            signal = np.array([], dtype=np.int16)
-                            buffer = wave_reader.read_buffer(convert_to_float=False)
-                            while len(buffer) > 0:
-                                signal = np.append(signal, buffer)
+                                wave_reader = dsp4bats.WaveFileReader(wave_file_path)
+                                signal = np.array([], dtype=np.int16)
                                 buffer = wave_reader.read_buffer(convert_to_float=False)
-                        finally:
-                            if wave_reader:
-                                wave_reader.close()
-                    
-                        h5wavefile.add_wavefile(detectorgroup, name, title, signal)
+                                while len(buffer) > 0:
+                                    signal = np.append(signal, buffer)
+                                    buffer = wave_reader.read_buffer(convert_to_float=False)
+                            finally:
+                                if wave_reader:
+                                    wave_reader.close()
                         
-                        h5wavefile.set_user_metadata(detectorgroup + '.' + name, metadata)
+                            h5wavefile.add_wavefile(detectorgroup, name, title, signal)
+                            
+                            h5wavefile.set_user_metadata(detectorgroup + '.' + name, metadata)
+                    #
+                    except Exception as e:
+                        debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+                        app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
             finally:    
                 self._parentwidget._write_to_status_bar('')
                 self.accept() # Close dialog box.

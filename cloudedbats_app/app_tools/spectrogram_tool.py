@@ -136,6 +136,9 @@ class SpectrogramTool(app_framework.ToolBase):
         
         # Layout widgets.
         form1 = QtWidgets.QGridLayout()
+        form1.setSpacing(5)
+        form1.setContentsMargins(5,5,5,5)
+                
         gridrow = 0
 #         hlayout = QtWidgets.QHBoxLayout()
 #         hlayout.addWidget(self.survey_label)
@@ -343,7 +346,7 @@ class SpectrogramTool(app_framework.ToolBase):
                 signal = signal[sampling_freq*9:sampling_freq*10]
             pos_in_sec_from = 0.0
             pos_in_sec_to = len(signal) / sampling_freq
-            # Cut part from 1 sec signal.
+            # Cut part from from the whole signal.
             signal_short = signal[int(pos_in_sec_from * sampling_freq):int(pos_in_sec_to * sampling_freq)]
             # Create util.
             dbsf_util = dsp4bats.DbfsSpectrumUtil(window_size=window_size, 
