@@ -14,14 +14,15 @@ Early example of the user interface for the desktop application. CloudedBats.org
 
 Install Python3, venv, and HDF5 on your computer. 
 
-HDF5 can be downloaded from this page: https://www.hdfgroup.org/downloads/hdf5/ 
+HDF5 can be downloaded from this page: https://www.hdfgroup.org/downloads/hdf5/ (It seems like version 1.8.20 is the last one with installer for Windows 32 bits. Use the latest version for all other 64 bits operating systems.)
+
 On macOS it is possible to use Homebrew to install HDF5. Use the command "brew install hdf5".
 
 	mkdir work_cloudedbats
 	cd work_cloudedbats    
 	python -m venv venv
 	source venv/bin/activate # On Linux and macOS.
-	# venv\\Scripts\\activate # On Windows.
+	# venv\Scripts\activate # On Windows.
 	git clone https://github.com/cloudedbats/cloudedbats_desktop_app.git
 	cd cloudedbats_desktop_app
 	pip install -r rquirements.txt
@@ -38,7 +39,8 @@ To run the desktop application:
 To bild a single file executabel. Check http://pyinstaller.org for more info.
 
 	pyinstaller cloudedbats_app_main.spec 
-
+	
+Contact me if you are not familiar with the stuff above. I have prebuild single file executables for macOS and Windows (called "cloudedbats_desktop_app.exe"). But you have to install HDF5 on your computer yourself before that. 
 
 ## Contact
 
