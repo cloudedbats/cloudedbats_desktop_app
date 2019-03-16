@@ -15,6 +15,7 @@ import dsp4bats
 from cloudedbats_app import app_framework
 from cloudedbats_app import app_utils
 from cloudedbats_app import app_core
+from platform import node
 
 
 class WavefilesActivity(app_framework.ActivityBase):
@@ -190,6 +191,10 @@ class WavefilesActivity(app_framework.ActivityBase):
             self.wavefiles_tableview.blockSignals(True)
             self.wavefiles_tableview.getSelectionModel().blockSignals(True)
             #
+            self.dir_path = app_core.DesktopAppSync().get_workspace()
+            self.survey_name = app_core.DesktopAppSync().get_selected_survey()
+            h5wavefile = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
+            #
             if self.survey_combo.currentIndex() == 0:
                 dataset_table = app_framework.DatasetTable()
                 self.wavefiles_tableview.setTableModel(dataset_table)
@@ -205,16 +210,36 @@ class WavefilesActivity(app_framework.ActivityBase):
                 return
             #
             events_dict = app_core.DesktopAppSync().get_events_dict()
-            
+            #
             dataset_table = app_framework.DatasetTable()
             dataset_table.set_header(['item_id', 'item_type', 'item_title'])
-            for key in events_dict.keys():
+            for key in sorted(events_dict.keys()):
                 item_dict = events_dict.get(key, {})
                 row = []
-                row.append(item_dict.get('item_id', ''))
-                row.append(item_dict.get('item_type', ''))
+                item_id = item_dict.get('item_id', '')
+                item_type = item_dict.get('item_type', '')
+                row.append(item_id)
+                row.append(item_type)
                 row.append(item_dict.get('item_title', ''))
                 dataset_table.append_row(row)
+                #
+#                 if item_type == 'detector':
+#                     try:
+#                         nodes = h5wavefile.get_child_nodes(item_id)
+#                         for node_key in sorted(nodes):
+#                             node_dict = nodes.get(node_key, {})
+#                             node_row = []
+#                             node_item_id = node_dict.get('item_id', '')
+#                             node_item_type = node_dict.get('item_type', '')
+#                             if node_item_type == 'wavefile':
+#                                 node_row.append(node_item_id)
+#                                 node_row.append(node_item_type)
+#                                 node_row.append(node_dict.get('item_title', ''))
+#                                 dataset_table.append_row(node_row)
+#                             
+#                     except Exception as e:
+#                         print('EXCEPTION: ', e)
+                    
             #
             self.wavefiles_tableview.setTableModel(dataset_table)
             self.wavefiles_tableview.resizeColumnsToContents()
@@ -386,12 +411,21 @@ class ImportWavefileDialog(QtWidgets.QDialog):
     def update_event_list(self):
         """ """
         try:
+            selected_detector_id = app_core.DesktopAppSync().get_selected_item_id(item_type='detector')
+            events_dict = app_core.DesktopAppSync().get_events_dict()
             self.detector_combo.clear()
-            survey = hdf54bats.Hdf5Survey(self.dir_path, self.survey_name)
-            event = hdf54bats.Hdf5Event(self.dir_path, self.survey_name)
-            for event_group in sorted(survey.get_children('')):
-                for detector_group in sorted(event.get_children(event_group)):
-                    self.detector_combo.addItem(detector_group)
+            self.detector_combo.addItem('<select>')
+            index = 0
+            row_index = 0
+            for key in sorted(events_dict.keys()):
+                item_dict = events_dict.get(key, '')
+                item_type = item_dict.get('item_type', '')
+                if item_type == 'detector':
+                    self.detector_combo.addItem(key)
+                    row_index += 1
+                    if key == selected_detector_id:
+                        index = row_index
+            self.detector_combo.setCurrentIndex(index)
         except Exception as e:
             print('EXCEPTION: ', e)
                 
@@ -452,7 +486,7 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                 detectorgroup = self.detector_combo.currentText()
                 self._parentwidget._write_to_status_bar('- Busy: Importing wave files.')
                 
-                h5wavefile = hdf54bats.Hdf5Wavefile(self.dir_path, self.survey_name)
+                h5wavefile = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
                 wurb_utils = dsp4bats.WurbFileUtils()
                 
                 for rowindex in range(self._items_model.rowCount()):
@@ -486,7 +520,7 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                                 if wave_reader:
                                     wave_reader.close()
                         
-                            h5wavefile.add_wavefile(detectorgroup, name, title, signal)
+                            h5wavefile.add_wavefile(parent_id=detectorgroup, new_name=name, title=title, array=signal)
                             
                             h5wavefile.set_user_metadata(detectorgroup + '.' + name, metadata)
                     #
@@ -569,17 +603,44 @@ class DeleteDialog(QtWidgets.QDialog):
         """ """
         try:
             self._items_model.clear()
-            wave = hdf54bats.Hdf5Wavefile(self.dir_path, self.survey_name)
-            
+            wavefiles = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
             from_top_node = ''
-            wavefiles_dict = wave.get_wavefiles(from_top_node)
-            
-            for wave_id in sorted(wavefiles_dict):
-#                 self.groupid_combo.addItem(event_group)
-                item = QtGui.QStandardItem(wave_id)
-                item.setCheckState(QtCore.Qt.Unchecked)
-                item.setCheckable(True)
-                self._items_model.appendRow(item)
+            nodes = wavefiles.get_child_nodes(from_top_node)
+            for node_key in sorted(nodes):
+                node_dict = nodes.get(node_key, {})
+                node_item_id = node_dict.get('item_id', '')
+                node_item_type = node_dict.get('item_type', '')
+                if node_item_type == 'wavefile':
+                    item = QtGui.QStandardItem(node_item_id)
+                    item.setCheckState(QtCore.Qt.Unchecked)
+                    item.setCheckable(True)
+                    self._items_model.appendRow(item)
+                
+                
+                
+#             nodes = h5wavefile.get_child_nodes(item_id)
+#             for node_key in sorted(nodes):
+#                 node_dict = nodes.get(node_key, {})
+#                 node_row = []
+#                 node_item_id = node_dict.get('item_id', '')
+#                 node_item_type = node_dict.get('item_type', '')
+#                 node_row.append(node_item_id)
+#                 node_row.append(node_item_type)
+#                 node_row.append(node_dict.get('item_title', ''))
+#                 dataset_table.append_row(node_row)
+
+#             self._items_model.clear()
+#             wave = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
+#             
+#             from_top_node = ''
+#             wavefiles_dict = wave.get_wavefiles(from_top_node)
+#             
+#             for wave_id in sorted(wavefiles_dict):
+# #                 self.groupid_combo.addItem(event_group)
+#                 item = QtGui.QStandardItem(wave_id)
+#                 item.setCheckState(QtCore.Qt.Unchecked)
+#                 item.setCheckable(True)
+#                 self._items_model.appendRow(item)
         #
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
@@ -611,12 +672,12 @@ class DeleteDialog(QtWidgets.QDialog):
         """ """
         try:
             try:        
-                wave = hdf54bats.Hdf5Wavefile(self.dir_path, self.survey_name)
+                wave = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
                 for rowindex in range(self._items_model.rowCount()):
                     item = self._items_model.item(rowindex, 0)
                     if item.checkState() == QtCore.Qt.Checked:
                         item_id = str(item.text())
-                        wave.remove_wavefile(item_id)
+                        wave.remove_wavefile(item_id, recursive=True)
             finally:
                 self.accept() # Close dialog box.
         #
