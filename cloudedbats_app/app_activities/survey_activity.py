@@ -389,10 +389,10 @@ class NewEventDialog(QtWidgets.QDialog):
     def create_event(self):
         """ """
         try:
-            event = hdf54bats.Hdf5Event(self.dir_path, self.survey_name)
+            event = hdf54bats.Hdf5Events(self.dir_path, self.survey_name)
             eventtitle = str(self.eventtitle_edit.text())
             eventgroup = str(self.eventgroup_edit.text())
-            event.add_event(parents='', name=eventgroup, title=eventtitle)
+            event.add_event(parent_id='', new_event_name=eventgroup, title=eventtitle)
             self.accept() # Close dialog box.
         except Exception as e:
             print('EXCEPTION: ', e)
@@ -511,11 +511,11 @@ class NewDetectorDialog(QtWidgets.QDialog):
         """ """
         try:
             if self.event_combo.currentIndex() > 0:
-                detector = hdf54bats.Hdf5Detector(self.dir_path, self.survey_name)
+                detector = hdf54bats.Hdf5Samples(self.dir_path, self.survey_name)
                 eventgroup = self.event_combo.currentText()
                 detectortitle = str(self.detectortitle_edit.text())
                 detectorgroup = str(self.detectorgroup_edit.text())
-                detector.add_detector(parents=eventgroup, name=detectorgroup, title=detectortitle)
+                detector.add_sample(parent_id=eventgroup, new_sample_name=detectorgroup, item_type='detector', title=detectortitle)
                 self.accept() # Close dialog box.
         except Exception as e:
             print('EXCEPTION: ', e)
@@ -622,11 +622,11 @@ class RenameDialog(QtWidgets.QDialog):
         """ """
         self.accept() # Close dialog box.
 #         try:
-#             detector = hdf54bats.Hdf5Detector(self.dir_path, self.survey_name)
+#             detector = hdf54bats.Hdf5Samples(self.dir_path, self.survey_name)
 #             eventgroup = self.event_combo.currentText()
 #             detectortitle = str(self.detectortitle_edit.text())
 #             detectorgroup = str(self.detectorgroup_edit.text())
-#             detector.rename_detector(parents=eventgroup, name=detectorgroup, title=detectortitle)
+#             detector.rename_detector(parent_id=eventgroup, name=detectorgroup, title=detectortitle)
 #             self.accept() # Close dialog box.
 #         except Exception as e:
 #             print('TODO: ERROR: ', e)
@@ -811,7 +811,7 @@ class DeleteDialog(QtWidgets.QDialog):
         #
         widget.setLayout(layout)
         #
-        return widget                
+        return widget
 
     def load_item_data(self):
         """ """
@@ -855,14 +855,12 @@ class DeleteDialog(QtWidgets.QDialog):
     def delete_marked_items(self):
         """ """
         try:        
-            dir_path = app_core.DesktopAppSync().get_workspace()
-            ws = hdf54bats.Hdf5Workspace(dir_path)
-            event = hdf54bats.Hdf5Event(self.dir_path, self.survey_name)
+            event = hdf54bats.Hdf5Events(self.dir_path, self.survey_name)
             for rowindex in range(self.items_model.rowCount()):
                 item = self.items_model.item(rowindex, 0)
                 if item.checkState() == QtCore.Qt.Checked:
                     item_groupname = str(item.text())
-                    event.remove_event(item_groupname)
+                    event.remove_event(item_groupname, recursive=True)
             #
 #             self.parentwidget._emit_change_notification()
             self.accept() # Close dialog box.

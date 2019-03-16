@@ -159,39 +159,80 @@ class DesktopAppSync(QtCore.QObject):
         self.events_dict = {}
         if self.workspace and self.survey:
             try:
+
                 if not pathlib.Path(self.workspace).exists():
                     return
                 if not pathlib.Path(self.workspace, self.survey).exists():
                     return
                 try:
-                    h5_event = hdf54bats.Hdf5Event(self.workspace, self.survey)
-                    h5_detector = hdf54bats.Hdf5Detector(self.workspace, self.survey)
-                    h5_wavefile = hdf54bats.Hdf5Detector(self.workspace, self.survey)
-                    # 
-                    for event_id in sorted(h5_event.get_children('', close=False)):
+                    h5_survey = hdf54bats.Hdf5Survey(self.workspace, self.survey)
+                    for item_id, group in h5_survey.get_child_groups().items():
                         item_dict = {}
-                        item_dict['item_id'] = event_id
-                        item_dict['item_type'] = 'event'
-                        item_dict['item_title'] = h5_event.get_title(event_id, close=False)
-                        self.events_dict[event_id] = item_dict
+                        item_dict['item_id'] = item_id
+                        item_dict['item_type'] = group.get('item_type', '')
+                        item_dict['item_title'] = group.get('item_title', '')
+                        self.events_dict[item_id] = item_dict
                         
-                        for detector_id in sorted(h5_detector.get_children(event_id, close=False)):
-                            item_dict = {}
-                            item_dict['item_id'] = detector_id
-                            item_dict['item_type'] = 'detector'
-                            item_dict['item_title'] = h5_detector.get_title(detector_id, close=False)
-                            self.events_dict[detector_id] = item_dict
-                             
-                            for wavefile_id in sorted(h5_wavefile.get_children(detector_id, close=False)):
-                                item_dict = {}
-                                item_dict['item_id'] = wavefile_id
-                                item_dict['item_type'] = 'wavefile'
-                                item_dict['item_title'] = h5_detector.get_title(wavefile_id, close=False)
-                                self.events_dict[wavefile_id] = item_dict
+                    
+#                     # 
+#                     for event_id in sorted(h5_event.get_children('', close=False)):
+#                         item_dict = {}
+#                         item_dict['item_id'] = event_id
+#                         item_dict['item_type'] = 'event'
+#                         item_dict['item_title'] = h5_event.get_item_title(event_id, close=False)
+#                         self.events_dict[event_id] = item_dict
+#                          
+#                         for detector_id in sorted(h5_detector.get_children(event_id, close=False)):
+#                             item_dict = {}
+#                             item_dict['item_id'] = detector_id
+#                             item_dict['item_type'] = 'detector'
+#                             item_dict['item_title'] = h5_detector.get_item_title(detector_id, close=False)
+#                             self.events_dict[detector_id] = item_dict
+#                               
+#                             for wavefile_id in sorted(h5_wavefile.get_children(detector_id, close=False)):
+#                                 item_dict = {}
+#                                 item_dict['item_id'] = wavefile_id
+#                                 item_dict['item_type'] = 'wavefile'
+#                                 item_dict['item_title'] = h5_detector.get_item_title(wavefile_id, close=False)
+#                                 self.events_dict[wavefile_id] = item_dict
                 finally:
-                    h5_event.close()
-                    h5_detector.close()
-                    h5_wavefile.close()
+                    h5_survey.close()
+
+
+
+#                 if not pathlib.Path(self.workspace).exists():
+#                     return
+#                 if not pathlib.Path(self.workspace, self.survey).exists():
+#                     return
+#                 try:
+#                     h5_event = hdf54bats.Hdf5Events(self.workspace, self.survey)
+#                     h5_detector = hdf54bats.Hdf5Samples(self.workspace, self.survey)
+#                     h5_wavefile = hdf54bats.Hdf5Wavefiles(self.workspace, self.survey)
+#                     # 
+#                     for event_id in sorted(h5_event.get_children('', close=False)):
+#                         item_dict = {}
+#                         item_dict['item_id'] = event_id
+#                         item_dict['item_type'] = 'event'
+#                         item_dict['item_title'] = h5_event.get_item_title(event_id, close=False)
+#                         self.events_dict[event_id] = item_dict
+#                         
+#                         for detector_id in sorted(h5_detector.get_children(event_id, close=False)):
+#                             item_dict = {}
+#                             item_dict['item_id'] = detector_id
+#                             item_dict['item_type'] = 'detector'
+#                             item_dict['item_title'] = h5_detector.get_item_title(detector_id, close=False)
+#                             self.events_dict[detector_id] = item_dict
+#                              
+#                             for wavefile_id in sorted(h5_wavefile.get_children(detector_id, close=False)):
+#                                 item_dict = {}
+#                                 item_dict['item_id'] = wavefile_id
+#                                 item_dict['item_type'] = 'wavefile'
+#                                 item_dict['item_title'] = h5_detector.get_item_title(wavefile_id, close=False)
+#                                 self.events_dict[wavefile_id] = item_dict
+#                 finally:
+#                     h5_event.close()
+#                     h5_detector.close()
+#                     h5_wavefile.close()
             except Exception as e:
                 debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
                 app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
@@ -210,9 +251,9 @@ class DesktopAppSync(QtCore.QObject):
                 if not pathlib.Path(self.workspace, self.survey).exists():
                     return
                 try:
-                    h5_wavefile = hdf54bats.Hdf5Wavefile(self.workspace, self.survey)
+                    h5_wavefile = hdf54bats.Hdf5Wavefiles(self.workspace, self.survey)
                     self.metadata_dict = h5_wavefile.get_user_metadata(self.item_id, close=False)
-                    self.metadata_dict['item_title'] = h5_wavefile.get_title(self.item_id, close=False)
+                    self.metadata_dict['item_title'] = h5_wavefile.get_item_title(self.item_id, close=False)
                 finally:
                     h5_wavefile.close()
             except Exception as e:

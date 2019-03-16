@@ -701,7 +701,7 @@ class DeleteDialog(QtWidgets.QDialog):
                     item = self._surveys_model.item(rowindex, 0)
                     if item.checkState() == QtCore.Qt.Checked:
                         survey_filename = str(item.text())
-                        ws.delete_h5(survey_filename)
+                        ws.delete_h5(survey_filename, recursive=True)
             finally:
                 self.accept() # Close dialog box.
         #

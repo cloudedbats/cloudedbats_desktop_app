@@ -283,11 +283,11 @@ class SpectrogramTool(app_framework.ToolBase):
                 self._canvas.draw()
                 return
             #
-            h5wavefile = hdf54bats.Hdf5Wavefile(workspace, survey)
+            h5wavefile = hdf54bats.Hdf5Wavefiles(workspace, survey)
             try:
-                signal = h5wavefile.get_wavefile(item_id, close=False)
-                item_title = h5wavefile.get_title(item_id, close=False)
-                item_metadata = h5wavefile.get_user_metadata(item_id, close=False)
+                signal = h5wavefile.get_wavefile(item_id=item_id, close=False)
+                item_title = h5wavefile.get_item_title(item_id=item_id, close=False)
+                item_metadata = h5wavefile.get_user_metadata(item_id=item_id, close=False)
             finally:
                 h5wavefile.close()
             #
