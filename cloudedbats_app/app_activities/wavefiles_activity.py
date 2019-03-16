@@ -223,22 +223,22 @@ class WavefilesActivity(app_framework.ActivityBase):
                 row.append(item_dict.get('item_title', ''))
                 dataset_table.append_row(row)
                 #
-                if item_type == 'detector':
-                    try:
-                        nodes = h5wavefile.get_child_nodes(item_id)
-                        for node_key in sorted(nodes):
-                            node_dict = nodes.get(node_key, {})
-                            node_row = []
-                            node_item_id = node_dict.get('item_id', '')
-                            node_item_type = node_dict.get('item_type', '')
-                            if node_item_type == 'wavefile':
-                                node_row.append(node_item_id)
-                                node_row.append(node_item_type)
-                                node_row.append(node_dict.get('item_title', ''))
-                                dataset_table.append_row(node_row)
-                            
-                    except Exception as e:
-                        print('EXCEPTION: ', e)
+#                 if item_type == 'detector':
+#                     try:
+#                         nodes = h5wavefile.get_child_nodes(item_id)
+#                         for node_key in sorted(nodes):
+#                             node_dict = nodes.get(node_key, {})
+#                             node_row = []
+#                             node_item_id = node_dict.get('item_id', '')
+#                             node_item_type = node_dict.get('item_type', '')
+#                             if node_item_type == 'wavefile':
+#                                 node_row.append(node_item_id)
+#                                 node_row.append(node_item_type)
+#                                 node_row.append(node_dict.get('item_title', ''))
+#                                 dataset_table.append_row(node_row)
+#                             
+#                     except Exception as e:
+#                         print('EXCEPTION: ', e)
                     
             #
             self.wavefiles_tableview.setTableModel(dataset_table)

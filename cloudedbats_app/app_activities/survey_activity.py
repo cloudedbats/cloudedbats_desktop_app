@@ -511,11 +511,12 @@ class NewDetectorDialog(QtWidgets.QDialog):
         """ """
         try:
             if self.event_combo.currentIndex() > 0:
-                detector = hdf54bats.Hdf5Samples(self.dir_path, self.survey_name)
+                detector = hdf54bats.Hdf5Events(self.dir_path, self.survey_name)
                 eventgroup = self.event_combo.currentText()
                 detectortitle = str(self.detectortitle_edit.text())
                 detectorgroup = str(self.detectorgroup_edit.text())
-                detector.add_sample(parent_id=eventgroup, new_sample_name=detectorgroup, item_type='detector', title=detectortitle)
+                detector.add_event(parent_id=eventgroup, new_event_name=detectorgroup, 
+                                   title=detectortitle, item_type='detector')
                 self.accept() # Close dialog box.
         except Exception as e:
             print('EXCEPTION: ', e)

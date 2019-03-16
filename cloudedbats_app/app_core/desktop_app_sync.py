@@ -55,8 +55,7 @@ class DesktopAppSync(QtCore.QObject):
 
     def set_workspace(self, workspace=''):
         """ """
-        print('- SET WORKSPACE: ', workspace)
-        
+#         print('- SET WORKSPACE: ', workspace)
         if self.workspace != workspace:
             self.clear()
             self.workspace = workspace
@@ -73,8 +72,7 @@ class DesktopAppSync(QtCore.QObject):
     
     def set_selected_survey(self, survey=''):
         """ """
-        print('- SET SURVEY: ', survey)
-        
+#         print('- SET SURVEY: ', survey)
         if self.survey != survey:
             self.survey = survey
             self.surveys_dict = {}
@@ -95,8 +93,7 @@ class DesktopAppSync(QtCore.QObject):
     
     def set_selected_item_id(self, item_id):
         """ """
-        print('- SET ITEM: ', item_id)
-        
+#         print('- SET ITEM: ', item_id)
         if self.item_id != item_id:
             self.item_id = item_id
             self.update_metadata_dict()
