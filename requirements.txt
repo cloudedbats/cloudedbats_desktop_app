@@ -8,6 +8,7 @@ openpyxl
 xlsxwriter
 folium
 tilemapbase
+pyproj
 pyinstaller
 
 ### Execute manually, not via "pip install -r requrements.txt":
