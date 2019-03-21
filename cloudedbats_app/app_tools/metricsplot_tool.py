@@ -15,6 +15,7 @@ from PyQt5 import QtCore
 # from cartopy.io.img_tiles import OSM
 
 from cloudedbats_app import app_framework
+from cloudedbats_app import app_utils
 
 class MetricsPlotTool(app_framework.ToolBase):
     """
@@ -75,5 +76,5 @@ class MetricsPlotTool(app_framework.ToolBase):
 
     def _test(self):
         """ """
-        app_framework.Logging().log('Name: ' + str(self._emailedit.text()))
+        app_utils.Logging().log('Name: ' + str(self._emailedit.text()))
 

@@ -143,7 +143,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """ """
         tools = self._toolmanager.get_tool_list()
         for tool in tools:
-            tool.close()
+#             tool.close()
+            tool.hide_tool()
 
     def _createStatusBar(self):
         """ 

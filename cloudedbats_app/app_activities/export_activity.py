@@ -31,7 +31,8 @@ class ExportActivity(app_framework.ActivityBase):
         # Add tabs.
         tabWidget = QtWidgets.QTabWidget()
         tabWidget.addTab(self._content_export(), 'Export')
-        tabWidget.addTab(self._content_help(), 'Help')
+        tabWidget.addTab(self._content_more(), '(More)')
+        tabWidget.addTab(self._content_help(), '(Help)')
         # 
         layout.addWidget(tabWidget)
         content.setLayout(layout)
@@ -55,6 +56,13 @@ class ExportActivity(app_framework.ActivityBase):
         #
         return widget
     
+    # === More ===
+    def _content_more(self):
+        """ """
+        widget = QtWidgets.QWidget()
+        #
+        return widget
+ 
     # === Help ===
     def _content_help(self):
         """ """

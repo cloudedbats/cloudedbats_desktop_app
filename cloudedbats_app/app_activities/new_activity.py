@@ -38,7 +38,8 @@ class NewActivity(app_framework.ActivityBase):
         selectdatabox = QtWidgets.QGroupBox('', self)
         tabWidget = QtWidgets.QTabWidget()
         tabWidget.addTab(self._content_new(), 'New')
-        tabWidget.addTab(self._content_help(), 'Help')
+        tabWidget.addTab(self._content_more(), '(More)')
+        tabWidget.addTab(self._content_help(), '(Help)')
         # Layout widgets.
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(tabWidget)
@@ -65,6 +66,13 @@ class NewActivity(app_framework.ActivityBase):
         #
         return widget
     
+    # === More ===
+    def _content_more(self):
+        """ """
+        widget = QtWidgets.QWidget()
+        #
+        return widget
+ 
     # === Help ===
     def _content_help(self):
         """ """

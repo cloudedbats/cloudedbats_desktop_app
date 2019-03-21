@@ -4,18 +4,19 @@
 # Copyright (c) 2018 Arnold Andreasson 
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
-import pathlib
+import sys
+import time
 import queue
 import threading
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui
 from PyQt5 import QtCore
-import numpy as np
 import matplotlib.backends.backend_qt5agg as mpl_backend
 import matplotlib.figure as mpl_figure
 
 from cloudedbats_app import app_framework
 from cloudedbats_app import app_core
+from cloudedbats_app import app_utils
 import dsp4bats
 import hdf54bats
 
@@ -38,6 +39,7 @@ class SpectrogramTool(app_framework.ToolBase):
         self.spectrogram_queue = queue.Queue(maxsize=100)
         self.spectrogram_thread = None
         self.spectrogram_active = False
+        self.last_spectrogram_item_id = ''
         # Use sync object for workspaces and surveys. 
         app_core.DesktopAppSync().item_id_changed_signal.connect(self.plot_spectrogram)
         # Also when visible.
@@ -50,8 +52,8 @@ class SpectrogramTool(app_framework.ToolBase):
         # Add tabs.
         tabWidget = QtWidgets.QTabWidget()
         tabWidget.addTab(self._content_spectrogram(), 'Spectrogram')
-#         tabWidget.addTab(self._content_settings(), 'Settings')
-        tabWidget.addTab(self._content_help(), 'Help')
+        tabWidget.addTab(self._content_more(), '(More)')
+        tabWidget.addTab(self._content_help(), '(Help)')
         # 
         layout.addWidget(tabWidget)
         content.setLayout(layout)
@@ -76,7 +78,7 @@ class SpectrogramTool(app_framework.ToolBase):
         self.survey_edit.setFrame(False)
         self.itemid_edit.setFrame(False)
         self.title_edit.setFrame(False)
-        font = QtGui.QFont(QtGui.QFont('SansSerif', pointSize=-1, weight=QtGui.QFont.Bold))
+        font = QtGui.QFont('Helvetica', pointSize=-1, weight=QtGui.QFont.Bold)
         self.survey_edit.setFont(font)
         self.itemid_edit.setFont(font)
         self.title_edit.setFont(font)
@@ -129,8 +131,8 @@ class SpectrogramTool(app_framework.ToolBase):
         
         # Matplotlib figure and canvas for Qt5.
         self._figure = mpl_figure.Figure()
-        self._canvas = mpl_backend.FigureCanvasQTAgg(self._figure) 
-        self.axes = self._figure.add_subplot(111)       
+        self._canvas = mpl_backend.FigureCanvasQTAgg(self._figure)
+        self.axes = self._figure.add_subplot(111)
         self._figure.tight_layout()
         self._canvas.show()
         
@@ -138,39 +140,20 @@ class SpectrogramTool(app_framework.ToolBase):
         form1 = QtWidgets.QGridLayout()
         form1.setSpacing(5)
         form1.setContentsMargins(5,5,5,5)
-                
+        
         gridrow = 0
-#         hlayout = QtWidgets.QHBoxLayout()
-#         hlayout.addWidget(self.survey_label)
-#         hlayout.addWidget(self.survey_edit)
-#         hlayout.addStretch(20)
-#         hlayout.addWidget(app_framework.RightAlignedQLabel('FFT window size:'))
-#         hlayout.addWidget(self.windowsize_combo)
-#         form1.addLayout(hlayout, gridrow, 0, 1, 20)
         form1.addWidget(self.survey_label, gridrow, 0, 1, 1)
         form1.addWidget(self.survey_edit, gridrow, 1, 1, 27)
         label = app_framework.RightAlignedQLabel('FFT window size:')
         form1.addWidget(label, gridrow, 28, 1, 1)
         form1.addWidget(self.windowsize_combo, gridrow, 29, 1, 1)
         gridrow += 1
-#         hlayout = QtWidgets.QHBoxLayout()
-#         hlayout.addWidget(self.itemid_label)
-#         hlayout.addStretch(20)
-#         hlayout.addWidget(app_framework.RightAlignedQLabel('Time resolution:'))
-#         hlayout.addWidget(self.timeresolution_combo)
-#         form1.addLayout(hlayout, gridrow, 0, 1, 20)
         form1.addWidget(self.itemid_label, gridrow, 0, 1, 1)
         form1.addWidget(self.itemid_edit, gridrow, 1, 1, 27)
         label = app_framework.RightAlignedQLabel('Time resolution:')
         form1.addWidget(label, gridrow, 28, 1, 1)
         form1.addWidget(self.timeresolution_combo, gridrow, 29, 1, 1)
         gridrow += 1
-#         hlayout = QtWidgets.QHBoxLayout()
-#         hlayout.addWidget(self.title_label)
-#         hlayout.addStretch(20)
-#         hlayout.addWidget(app_framework.RightAlignedQLabel('View part:'))
-#         hlayout.addWidget(self.viewpart_combo)
-#         form1.addLayout(hlayout, gridrow, 0, 1, 20)
         form1.addWidget(self.title_label, gridrow, 0, 1, 1)
         form1.addWidget(self.title_edit, gridrow, 1, 1, 27)
         label = app_framework.RightAlignedQLabel('View part:')
@@ -185,6 +168,13 @@ class SpectrogramTool(app_framework.ToolBase):
         #
         return widget        
     
+    # === More ===
+    def _content_more(self):
+        """ """
+        widget = QtWidgets.QWidget()
+        #
+        return widget
+ 
     # === Help ===
     def _content_help(self):
         """ """
@@ -201,81 +191,113 @@ class SpectrogramTool(app_framework.ToolBase):
         gridrow += 1
         layout.addWidget(QtWidgets.QLabel(''), gridrow, 1, 1, 20)
         #
-        widget.setLayout(layout)                
+        widget.setLayout(layout)
         #
         return widget
     
     def close(self):
         """ """
-        # Terminate spectrogram thread.
-        self.spectrogram_active = False
-        # Send on queue to release thread.
-        self.spectrogram_queue.put(False)
-        # 
-        super().close()
-        
+        try:
+            # Terminate spectrogram thread.
+            self.spectrogram_active = False
+            # Send on queue to release thread.
+            self.spectrogram_queue.put(False)
+        except Exception as e:
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
     def visibility_changed(self, visible):
         """ """
-        if visible:
-            self.plot_spectrogram()
+        try:
+            if visible:
+                QtCore.QTimer.singleShot(100, self.plot_spectrogram)
+                 
+        except Exception as e:
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
     def plot_spectrogram(self):
         """ Use a thread to relese the user. """
-        workspace = app_core.DesktopAppSync().get_workspace()
-        survey = app_core.DesktopAppSync().get_selected_survey()
-        item_id = app_core.DesktopAppSync().get_selected_item_id(item_type='wavefile')
-        item_metadata = app_core.DesktopAppSync().get_metadata_dict()
-        item_title = item_metadata.get('item_title', '')
-        #
         try:
-            # Check if thread is running.
-            if not self.spectrogram_thread:
-                self.spectrogram_active = True
-                self.spectrogram_thread = threading.Thread(target = self.run_spectrogram_plotter, 
-                                                           args=())
-                self.spectrogram_thread.start()
-        except Exception as e:
-            print('EXCEPTION in plot_spectrogram_in_thread: ', e)
+            workspace = app_core.DesktopAppSync().get_workspace()
+            survey = app_core.DesktopAppSync().get_selected_survey()
+            item_id = app_core.DesktopAppSync().get_selected_item_id(item_type='wavefile')
+            item_metadata = app_core.DesktopAppSync().get_metadata_dict()
+            item_title = item_metadata.get('item_title', '')
+            #
+            if item_id == self.last_spectrogram_item_id:
+                return
+            #
+            try:
+                # Check if thread is running.
+                if not self.spectrogram_thread:
+                    self.spectrogram_active = True
+                    self.spectrogram_thread = threading.Thread(target = self.run_spectrogram_plotter, 
+                                                               args=())
+                    self.spectrogram_thread.start()
             
-        spectrogram_dict = {}
-        spectrogram_dict['workspace'] = workspace
-        spectrogram_dict['survey'] = survey
-        spectrogram_dict['item_id'] = item_id
-        spectrogram_dict['item_title'] = item_title
-        #
-        while self.spectrogram_queue.qsize() > 10:
-            _dummy = self.spectrogram_queue.get(block=False)
-            print('DEBUG: Spectrogram queue - skipped.')
-        #
-        self.spectrogram_queue.put(spectrogram_dict)
+            except Exception as e:
+                debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+                app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
+            #
+            spectrogram_dict = {}
+            spectrogram_dict['workspace'] = workspace
+            spectrogram_dict['survey'] = survey
+            spectrogram_dict['item_id'] = item_id
+            spectrogram_dict['item_title'] = item_title
+            #
+            if self.spectrogram_queue.qsize() > 5:
+                app_utils.Logging().info('Items removed from the spectrogram plotting queue.')
+                while self.spectrogram_queue.qsize() > 5:
+                    try:
+                        self.spectrogram_queue.get_nowait()
+                    except queue.Empty:
+                        break # Exits while loop.
+            #
+            print('- To queue: ', item_id)
+            self.spectrogram_queue.put(spectrogram_dict)
+            self.last_spectrogram_item_id = item_id
+        
+        except Exception as e:
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
     def run_spectrogram_plotter(self):
         """ """
         try:
-            while self.spectrogram_active:
-                queue_item = self.spectrogram_queue.get()
-                if queue_item == False:
-                    # Exit.
-                    self.spectrogram_active = False
-                    continue
-                #
-                if self.isVisible():
-                    workspace = queue_item.get('workspace', '') 
-                    survey = queue_item.get('survey', '') 
-                    item_id = queue_item.get('item_id', '') 
-                    item_title = queue_item.get('item_title', '') 
+            try:
+                while self.spectrogram_active:
+                    queue_item = self.spectrogram_queue.get()
+                    if queue_item == False:
+                        # Exit.
+                        self.spectrogram_active = False
+                        continue
                     #
-                    self.create_spectrogram(workspace, survey, 
-                                            item_id, item_title)
+                    self.survey_edit.setText('')
+                    self.itemid_edit.setText('')
+                    self.title_edit.setText('')
                     #
-                    self.survey_edit.setText(survey)
-                    self.itemid_edit.setText(item_id)
-                    self.title_edit.setText(item_title)
-        finally:
-            self.spectrogram_thread = None
-
-    def create_spectrogram(self, workspace, survey, item_id, item_title):
+                    if self.isVisible():
+                        workspace = queue_item.get('workspace', '') 
+                        survey = queue_item.get('survey', '') 
+                        item_id = queue_item.get('item_id', '') 
+                        item_title = queue_item.get('item_title', '') 
+                        #
+                        self.create_spectrogram(workspace, survey, item_id)
+                        #
+                        self.survey_edit.setText(survey)
+                        self.itemid_edit.setText(item_id)
+                        self.title_edit.setText(item_title)
+                        #
+                        time.sleep(0.3)
+            finally:
+                self.spectrogram_thread = None
+        
+        except Exception as e:
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
+    
+    def create_spectrogram(self, workspace, survey, item_id):
         """ """
         try:
             if not item_id:
@@ -286,7 +308,6 @@ class SpectrogramTool(app_framework.ToolBase):
             h5wavefile = hdf54bats.Hdf5Wavefiles(workspace, survey)
             try:
                 signal = h5wavefile.get_wavefile(item_id=item_id, close=False)
-                item_title = h5wavefile.get_item_title(item_id=item_id, close=False)
                 item_metadata = h5wavefile.get_user_metadata(item_id=item_id, close=False)
             finally:
                 h5wavefile.close()
@@ -357,7 +378,7 @@ class SpectrogramTool(app_framework.ToolBase):
             matrix = dbsf_util.calc_dbfs_matrix(signal_short, matrix_size=size, jump=jump)
             # Plot.
             max_freq = sampling_freq / 1000 / 2 # kHz and Nyquist.
-
+            
             # Plot.            
             self.axes.cla()
             #
@@ -376,6 +397,6 @@ class SpectrogramTool(app_framework.ToolBase):
             self._canvas.draw()
             
         except Exception as e:
-            print('EXCEPTION in plot_spectrogram: ', e)
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 
-    

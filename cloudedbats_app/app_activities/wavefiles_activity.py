@@ -45,8 +45,8 @@ class WavefilesActivity(app_framework.ActivityBase):
         # Add tabs.
         tabWidget = QtWidgets.QTabWidget()
         tabWidget.addTab(self._content_wavefiles(), 'Wavefiles')
-#         tabWidget.addTab(self._content_adv_filter(), 'Advanced filter')
-        tabWidget.addTab(self._content_help(), 'Help')
+        tabWidget.addTab(self._content_more(), '(More)')
+        tabWidget.addTab(self._content_help(), '(Help)')
         # 
         layout.addWidget(tabWidget)
         content.setLayout(layout)
@@ -75,7 +75,7 @@ class WavefilesActivity(app_framework.ActivityBase):
         self.type_filter_combo.setMaximumWidth(120)
         self.type_filter_combo.addItems(['<select>', 'event', 'detector', 'wavefile'])
         self.title_filter_edit = QtWidgets.QLineEdit('')
-        self.clear_filter_button = QtWidgets.QPushButton('Clear')
+        self.clear_filter_button = QtWidgets.QPushButton('(Clear)')
 #         self.clear_filter_button.clicked.connect(self.clear_filter)
         
         self.wavefiles_tableview = app_framework.ToolboxQTableView()
@@ -113,10 +113,10 @@ class WavefilesActivity(app_framework.ActivityBase):
         form1.addLayout(hlayout, gridrow, 0, 1, 15)
         gridrow += 1
         hlayout = QtWidgets.QHBoxLayout()
-        hlayout.addWidget(QtWidgets.QLabel('Type filter:'), 1)
-        hlayout.addWidget(self.type_filter_combo, 5)
-        hlayout.addWidget(QtWidgets.QLabel('Title filter:'), 1)
+        hlayout.addWidget(QtWidgets.QLabel('(Title filter:)'), 1)
         hlayout.addWidget(self.title_filter_edit, 10)
+        hlayout.addWidget(QtWidgets.QLabel('(Type filter:)'), 1)
+        hlayout.addWidget(self.type_filter_combo, 5)
         hlayout.addWidget(self.clear_filter_button)
 #         hlayout.addStretch(10)
         form1.addLayout(hlayout, gridrow, 0, 1, 15)
@@ -157,12 +157,12 @@ class WavefilesActivity(app_framework.ActivityBase):
         try:
             modelIndex = self.wavefiles_tableview.currentIndex()
             if modelIndex.isValid():
-                item_id = str(self.wavefiles_tableview.model().index(modelIndex.row(), 0).data())
+                item_id = str(self.wavefiles_tableview.model().index(modelIndex.row(), 2).data())
                 # Sync.
                 app_core.DesktopAppSync().set_selected_item_id(item_id)
         except Exception as e:
-#             pass
-            print('Exception: ', e)
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
     def refresh_survey_list(self):
         """ """
@@ -212,15 +212,17 @@ class WavefilesActivity(app_framework.ActivityBase):
             events_dict = app_core.DesktopAppSync().get_events_dict()
             #
             dataset_table = app_framework.DatasetTable()
-            dataset_table.set_header(['item_id', 'item_type', 'item_title'])
+#             dataset_table.set_header(['item_title', 'item_type', 'item_id'])
+            dataset_table.set_header(['Title', 'Type', 'Item id'])
             for key in sorted(events_dict.keys()):
                 item_dict = events_dict.get(key, {})
                 row = []
                 item_id = item_dict.get('item_id', '')
                 item_type = item_dict.get('item_type', '')
-                row.append(item_id)
+                item_title = item_dict.get('item_title', '')
+                row.append(item_title)
                 row.append(item_type)
-                row.append(item_dict.get('item_title', ''))
+                row.append(item_id)
                 dataset_table.append_row(row)
                 #
 #                 if item_type == 'detector':
@@ -237,8 +239,9 @@ class WavefilesActivity(app_framework.ActivityBase):
 #                                 node_row.append(node_dict.get('item_title', ''))
 #                                 dataset_table.append_row(node_row)
 #                             
-#                     except Exception as e:
-#                         print('EXCEPTION: ', e)
+#                 except Exception as e:
+#                     debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+#                     app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
                     
             #
             self.wavefiles_tableview.setTableModel(dataset_table)
@@ -270,6 +273,13 @@ class WavefilesActivity(app_framework.ActivityBase):
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
         
+    # === More ===
+    def _content_more(self):
+        """ """
+        widget = QtWidgets.QWidget()
+        #
+        return widget
+ 
     # === Help ===
     def _content_help(self):
         """ """
@@ -350,7 +360,7 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         markall_button = app_framework.ClickableQLabel('Mark all')
         markall_button.label_clicked.connect(self._check_all_items)
         self.filter_edit = QtWidgets.QLineEdit('')
-        self.filterclear_button = QtWidgets.QPushButton('Clear')
+        self.filterclear_button = QtWidgets.QPushButton('(Clear)')
         
         self.detector_combo = QtWidgets.QComboBox()
         self.detector_combo.setEditable(False)
@@ -384,7 +394,7 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         hbox1 = QtWidgets.QHBoxLayout()
         hbox1.addWidget(clearall_button)
         hbox1.addWidget(markall_button)
-        label = QtWidgets.QLabel('Filter:')
+        label = QtWidgets.QLabel('(Filter:)')
         hbox1.addWidget(label)
         hbox1.addWidget(self.filter_edit,20)
         hbox1.addWidget(self.filterclear_button)
@@ -427,7 +437,8 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                         index = row_index
             self.detector_combo.setCurrentIndex(index)
         except Exception as e:
-            print('EXCEPTION: ', e)
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
                 
     def source_dir_browse(self):
         """ """

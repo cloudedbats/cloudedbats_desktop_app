@@ -43,7 +43,8 @@ class SurveyActivity(app_framework.ActivityBase):
         # Add tabs.
         tabWidget = QtWidgets.QTabWidget()
         tabWidget.addTab(self.content_survey(), 'Survey')
-        tabWidget.addTab(self.content_help(), 'Help')
+        tabWidget.addTab(self._content_more(), '(More)')
+        tabWidget.addTab(self._content_help(), '(Help)')
         # 
         layout.addWidget(tabWidget)
         content.setLayout(layout)
@@ -82,7 +83,7 @@ class SurveyActivity(app_framework.ActivityBase):
         self.type_filter_combo.setMaximumWidth(120)
         self.type_filter_combo.addItems(['<select>', 'event', 'detector'])
         self.title_filter_edit = QtWidgets.QLineEdit('')
-        self.clear_filter_button = QtWidgets.QPushButton('Clear')
+        self.clear_filter_button = QtWidgets.QPushButton('(Clear)')
 #         self.clear_filter_button.clicked.connect(self.clear_filter)
         
         # Buttons.
@@ -110,10 +111,10 @@ class SurveyActivity(app_framework.ActivityBase):
         form1.addLayout(hlayout, gridrow, 0, 1, 15)
         gridrow += 1
         hlayout = QtWidgets.QHBoxLayout()
-        hlayout.addWidget(QtWidgets.QLabel('Type filter:'), 1)
-        hlayout.addWidget(self.type_filter_combo, 5)
-        hlayout.addWidget(QtWidgets.QLabel('Title filter:'), 1)
+        hlayout.addWidget(QtWidgets.QLabel('(Title filter:)'), 1)
         hlayout.addWidget(self.title_filter_edit, 10)
+        hlayout.addWidget(QtWidgets.QLabel('(Type filter:)'), 1)
+        hlayout.addWidget(self.type_filter_combo, 5)
         hlayout.addWidget(self.clear_filter_button)
 #         hlayout.addStretch(10)
         form1.addLayout(hlayout, gridrow, 0, 1, 15)
@@ -156,11 +157,12 @@ class SurveyActivity(app_framework.ActivityBase):
         try:
             modelIndex = self.events_tableview.currentIndex()
             if modelIndex.isValid():
-                item_id = str(self.events_tableview.model().index(modelIndex.row(), 0).data())
+                item_id = str(self.events_tableview.model().index(modelIndex.row(), 2).data())
                 # Sync.
                 app_core.DesktopAppSync().set_selected_item_id(item_id)
-        except:
-            pass
+        except Exception as e:
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
     def refresh_survey_list(self):
         """ """
@@ -214,15 +216,16 @@ class SurveyActivity(app_framework.ActivityBase):
             events_dict = app_core.DesktopAppSync().get_events_dict()
             
             dataset_table = app_framework.DatasetTable()
-            dataset_table.set_header(['item_id', 'item_type', 'item_title'])
+#             dataset_table.set_header(['item_title', 'item_type', 'item_id'])
+            dataset_table.set_header(['Title', 'Type', 'Item id'])
             for key in events_dict.keys():
                 item_dict = events_dict.get(key, {})
                 item_type = item_dict.get('item_type', '')
                 if item_type in ['event', 'detector']:
                     row = []
-                    row.append(item_dict.get('item_id', ''))
-                    row.append(item_dict.get('item_type', ''))
                     row.append(item_dict.get('item_title', ''))
+                    row.append(item_dict.get('item_type', ''))
+                    row.append(item_dict.get('item_id', ''))
                     dataset_table.append_row(row)
             #
             self.events_tableview.setTableModel(dataset_table)
@@ -281,8 +284,15 @@ class SurveyActivity(app_framework.ActivityBase):
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
+    # === More ===
+    def _content_more(self):
+        """ """
+        widget = QtWidgets.QWidget()
+        #
+        return widget
+ 
     # === Help ===
-    def content_help(self):
+    def _content_help(self):
         """ """
         widget = QtWidgets.QWidget()
         #
@@ -395,8 +405,8 @@ class NewEventDialog(QtWidgets.QDialog):
             event.add_event(parent_id='', new_event_name=eventgroup, title=eventtitle)
             self.accept() # Close dialog box.
         except Exception as e:
-            print('EXCEPTION: ', e)
-            self.accept() # Close dialog box.
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 
 
 class NewDetectorDialog(QtWidgets.QDialog):
@@ -519,7 +529,8 @@ class NewDetectorDialog(QtWidgets.QDialog):
                                    title=detectortitle, item_type='detector')
                 self.accept() # Close dialog box.
         except Exception as e:
-            print('EXCEPTION: ', e)
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
             self.accept() # Close dialog box.
 
 
@@ -630,7 +641,8 @@ class RenameDialog(QtWidgets.QDialog):
 #             detector.rename_detector(parent_id=eventgroup, name=detectorgroup, title=detectortitle)
 #             self.accept() # Close dialog box.
 #         except Exception as e:
-#             print('TODO: ERROR: ', e)
+#             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+#             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 #             self.accept() # Close dialog box.
 
 
@@ -745,7 +757,8 @@ class CopyDialog(QtWidgets.QDialog):
 #             self.update_item_list()
 #             self.accept() # Close dialog box.
 #         except Exception as e:
-#             print('TODO: ERROR: ', e)
+#             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+#             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 #             self.accept() # Close dialog box.
 
 

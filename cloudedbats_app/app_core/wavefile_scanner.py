@@ -5,6 +5,7 @@ import time
 import datetime
 import threading
 from cloudedbats_app import app_framework
+from cloudedbats_app import app_utils
 
 # Github repository included as a github submodule.
 import dsp4bats
@@ -41,7 +42,7 @@ class WaveFileScanner():
             # Check if thread is running.
             if self.thread_object:
                 if self.thread_object.is_alive():
-                    app_framework.Logging.warning('Wave file scanner is already running. Please try again later.')
+                    app_utils.Logging.warning('Wave file scanner is already running. Please try again later.')
                     return
             # Use a thread to relese the user.
             source_dir = param_dict.get('source_dir_path', '')
@@ -55,7 +56,7 @@ class WaveFileScanner():
                                                       )) # logrow_id, datatype_list, year_from, year_to, status, user ))
             self.thread_object.start()
         except Exception as e:
-            app_framework.Logging.warning('Failed to scan wave files. Exception: ' + str(e))
+            app_utils.Logging.warning('Failed to scan wave files. Exception: ' + str(e))
             
     def _scan_files(self, source_dir, target_dir, low_freq_hz, high_freq_hz):
         """ """
@@ -72,7 +73,7 @@ class WaveFileScanner():
         return #####################################################
 
 
-        app_framework.Logging().log('Wave file scanner started.')
+        app_utils.Logging().log('Wave file scanner started.')
 
          
 #         scanner = batfiles_scanner.BatfilesScanner(
@@ -127,6 +128,6 @@ class WaveFileScanner():
         print('\n', 'Creates map. ',  datetime.datetime.now(), '\n')
         scanner.plot_positions_on_map()
          
-        app_framework.Logging().log('Wave file scanner ended.')
+        app_utils.Logging().log('Wave file scanner ended.')
     
     

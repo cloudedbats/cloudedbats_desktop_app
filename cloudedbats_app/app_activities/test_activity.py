@@ -7,6 +7,7 @@
 from PyQt5 import QtWidgets
 
 from cloudedbats_app import app_framework
+from cloudedbats_app import app_utils
 
 class TestActivity(app_framework.ActivityBase):
     """
@@ -63,6 +64,6 @@ class TestActivity(app_framework.ActivityBase):
 
     def _test(self):
         """ """
-        app_framework.Logging().log('Name: ' + str(self._nameedit.text()))
-        app_framework.Logging().log('E-mail: ' + str(self._emailedit.text()))
+        app_utils.Logging().log('Name: ' + str(self._nameedit.text()))
+        app_utils.Logging().log('E-mail: ' + str(self._emailedit.text()))
         

@@ -6,7 +6,7 @@
 
 from PyQt5 import QtCore
 
-import app_framework
+from cloudedbats_app import app_framework
 
 @app_framework.singleton
 class AppSync(QtCore.QObject):

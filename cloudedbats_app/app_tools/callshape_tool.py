@@ -4,6 +4,7 @@
 # Copyright (c) 2018 Arnold Andreasson 
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
+import sys
 import pathlib
 import threading
 from PyQt5 import QtWidgets
@@ -13,6 +14,7 @@ import matplotlib.backends.backend_qt5agg as mpl_backend
 import matplotlib.figure as mpl_figure
 
 from cloudedbats_app import app_framework
+from cloudedbats_app import app_utils
 import dsp4bats
 
 class CallShapesTool(app_framework.ToolBase):
@@ -42,7 +44,8 @@ class CallShapesTool(app_framework.ToolBase):
         tabWidget = QtWidgets.QTabWidget()
         tabWidget.addTab(self._content_callshape(), 'Call shape')
 #         tabWidget.addTab(self._content_settings(), 'Settings')
-        tabWidget.addTab(self._content_help(), 'Help')
+        tabWidget.addTab(self._content_more(), '(More)')
+        tabWidget.addTab(self._content_help(), '(Help)')
         # 
         layout.addWidget(tabWidget)
         content.setLayout(layout)
@@ -147,7 +150,7 @@ class CallShapesTool(app_framework.ToolBase):
         # Check if user pressed ok or cancel.
         if filenames:
             for filename in filenames:
-                print('DEBUG: ', filename)
+#                 print('DEBUG: ', filename)
                 self.wavefilepath_edit.setText(filename)
                 self.plot_callshape()
     
@@ -195,6 +198,13 @@ class CallShapesTool(app_framework.ToolBase):
 #         return widget
     
     
+    # === More ===
+    def _content_more(self):
+        """ """
+        widget = QtWidgets.QWidget()
+        #
+        return widget
+ 
     # === Help ===
     def _content_help(self):
         """ """
@@ -237,7 +247,8 @@ class CallShapesTool(app_framework.ToolBase):
                                                           args=())
             self.callshape_thread.start()
         except Exception as e:
-            print('EXCEPTION in plot_callshape_in_thread: ', e)
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
     def run_plot_callshape(self):
         """ """
@@ -347,7 +358,8 @@ class CallShapesTool(app_framework.ToolBase):
 #                                                           args=())
 #             self.spectrogram_thread.start()
 #         except Exception as e:
-#             print('EXCEPTION in plot_spectrogram_in_thread: ', e)
+#             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+#             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
 #     
 #     def run_plot_spectrogram(self):
 #         """ """

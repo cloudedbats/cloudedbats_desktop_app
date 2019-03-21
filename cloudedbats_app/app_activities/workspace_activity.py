@@ -42,7 +42,8 @@ class WorkspaceActivity(app_framework.ActivityBase):
         # Add tabs.
         tabWidget = QtWidgets.QTabWidget()
         tabWidget.addTab(self._content_workspace(), 'Workspace')
-        tabWidget.addTab(self._content_help(), 'Help')
+        tabWidget.addTab(self._content_more(), '(More)')
+        tabWidget.addTab(self._content_help(), '(Help)')
         # 
         layout.addWidget(tabWidget)
         content.setLayout(layout)
@@ -139,12 +140,10 @@ class WorkspaceActivity(app_framework.ActivityBase):
             #
             dataset_table = app_framework.DatasetTable()
             header = ['h5_file', 'h5_title', 'h5_filepath']
-            dataset_table.set_header(header)
-#             header_cap = []
-#             for item in header:
-#                 header_cap.append(item.capitalize().replace('_', ' '))
-#             dataset_table.set_header(header_cap)
-            #
+            header_cap = []
+            for item in header:
+                header_cap.append(item.capitalize().replace('_', ' '))
+            dataset_table.set_header(header_cap)
             #
             selected_survey_index = None
             for index, key in enumerate(sorted(h5_survey_dict)):
@@ -178,8 +177,9 @@ class WorkspaceActivity(app_framework.ActivityBase):
                 time.sleep(0.1)
                 # Sync.
                 app_core.DesktopAppSync().set_selected_survey(h5_survey)
-        except:
-            pass
+        except Exception as e:
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
     def add_survey(self):
         """ """
@@ -222,6 +222,13 @@ class WorkspaceActivity(app_framework.ActivityBase):
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
     
+    # === More ===
+    def _content_more(self):
+        """ """
+        widget = QtWidgets.QWidget()
+        #
+        return widget
+ 
     # === Help ===
     def _content_help(self):
         """ """
