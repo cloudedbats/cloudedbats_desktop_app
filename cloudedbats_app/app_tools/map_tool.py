@@ -5,7 +5,6 @@
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
 import sys
-import time
 import queue
 import threading
 from PyQt5 import QtWidgets

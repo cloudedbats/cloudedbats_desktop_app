@@ -39,7 +39,10 @@ class SpectrogramTool(app_framework.ToolBase):
         self.spectrogram_queue = queue.Queue(maxsize=100)
         self.spectrogram_thread = None
         self.spectrogram_active = False
-        self.last_spectrogram_item_id = ''
+        self.last_used_spectrogram_item_id = ''
+        self.last_used_window_size = -1
+        self.last_used_timeresolution = -1
+        self.last_used_viewpart = -1
         # Use sync object for workspaces and surveys. 
         app_core.DesktopAppSync().item_id_changed_signal.connect(self.plot_spectrogram)
         # Also when visible.
@@ -224,8 +227,11 @@ class SpectrogramTool(app_framework.ToolBase):
             item_id = app_core.DesktopAppSync().get_selected_item_id(item_type='wavefile')
             item_metadata = app_core.DesktopAppSync().get_metadata_dict()
             item_title = item_metadata.get('item_title', '')
-            #
-            if item_id == self.last_spectrogram_item_id:
+            # Don't redraw the same spectrogram.
+            if (item_id == self.last_used_spectrogram_item_id) and \
+               (int(self.windowsize_combo.currentText()) == self.last_used_window_size) and \
+               (self.timeresolution_combo.currentText() == self.last_used_timeresolution) and \
+               (self.viewpart_combo.currentText() == self.last_used_viewpart):
                 return
             #
             try:
@@ -256,7 +262,13 @@ class SpectrogramTool(app_framework.ToolBase):
             #
             print('- To queue: ', item_id)
             self.spectrogram_queue.put(spectrogram_dict)
-            self.last_spectrogram_item_id = item_id
+            #
+            self.last_used_spectrogram_item_id = item_id
+            self.last_used_window_size = int(self.windowsize_combo.currentText())
+            self.last_used_timeresolution = self.timeresolution_combo.currentText()
+            self.last_used_viewpart = self.viewpart_combo.currentText()
+
+
         
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
