@@ -38,7 +38,8 @@ class SpectrogramTool(app_framework.ToolBase):
         # Plot queue. Used to separate threads.
         self.spectrogram_queue = queue.Queue(maxsize=100)
         self.spectrogram_thread = None
-        self.spectrogram_active = False
+#         self.spectrogram_active = False
+        self.spectrogram_active = True
         self.last_used_spectrogram_item_id = ''
         self.last_used_window_size = -1
         self.last_used_timeresolution = -1
@@ -237,7 +238,7 @@ class SpectrogramTool(app_framework.ToolBase):
             try:
                 # Check if thread is running.
                 if not self.spectrogram_thread:
-                    self.spectrogram_active = True
+#                     self.spectrogram_active = True
                     self.spectrogram_thread = threading.Thread(target = self.run_spectrogram_plotter, 
                                                                args=())
                     self.spectrogram_thread.start()
@@ -260,7 +261,7 @@ class SpectrogramTool(app_framework.ToolBase):
                     except queue.Empty:
                         break # Exits while loop.
             #
-            print('- To queue: ', item_id)
+#             print('- To queue: ', item_id)
             self.spectrogram_queue.put(spectrogram_dict)
             #
             self.last_used_spectrogram_item_id = item_id
@@ -332,7 +333,8 @@ class SpectrogramTool(app_framework.ToolBase):
             #
             if len(signal) > (10 * sampling_freq):
                 signal = signal[0:10 * sampling_freq]
-                print('DEBUG: Warning: Signal truncated to 10 sec.')                    
+#                 print('DEBUG: Warning: Signal truncated to 10 sec.')
+                app_utils.Logging().warning('Spectrogram: Signal truncated to 10 sec.')
             # Settings.
             window_size = int(self.windowsize_combo.currentText())
             timeresolution = self.timeresolution_combo.currentText()

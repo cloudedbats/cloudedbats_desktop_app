@@ -23,8 +23,6 @@ class MapTool(app_framework.ToolBase):
     
     def __init__(self, name, parentwidget):
         """ """
-        self.plot_map_thread = None
-        self.plot_map_thread_active = False
         # Initialize parent. Should be called after other 
         # initialization since the base class calls _create_content().
         super().__init__(name, parentwidget)
@@ -39,7 +37,8 @@ class MapTool(app_framework.ToolBase):
         # Plot map queue. Used to separate threads.
         self.plot_map_queue = queue.Queue(maxsize=2) # Note: Small buffer.
         self.plot_map_thread = None
-        self.plot_map_active = False
+#         self.plot_map_active = False
+        self.plot_map_active = True
         self.last_used_latitude = 0.0
         self.last_used_longitude = 0.0
         self.last_used_degree_range = 0.0
@@ -199,7 +198,7 @@ class MapTool(app_framework.ToolBase):
             try:
                 # Check if thread is running.
                 if not self.plot_map_thread:
-                    self.plot_map_active = True
+#                     self.plot_map_active = True
                     self.plot_map_thread = threading.Thread(target = self.run_map_plotter, 
                                                                args=())
                     self.plot_map_thread.start()

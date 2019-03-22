@@ -15,7 +15,7 @@ import dsp4bats
 from cloudedbats_app import app_framework
 from cloudedbats_app import app_utils
 from cloudedbats_app import app_core
-from platform import node
+# from platform import node
 
 
 class WavefilesActivity(app_framework.ActivityBase):
@@ -92,11 +92,11 @@ class WavefilesActivity(app_framework.ActivityBase):
         # Buttons.
         self.refresh_button = QtWidgets.QPushButton('Refresh')
         self.refresh_button.clicked.connect(self.refresh)
-        self.add_button = QtWidgets.QPushButton('Import wavefile...')
+        self.add_button = QtWidgets.QPushButton('Import wavefiles...')
         self.add_button.clicked.connect(self.import_wavefile)
         self.rename_button = QtWidgets.QPushButton('(Rename wavefile...)')
         self.rename_button.clicked.connect(self.rename_wavefile)
-        self.delete_button = QtWidgets.QPushButton('Delete wavefile(s)...')
+        self.delete_button = QtWidgets.QPushButton('Delete wavefiles...')
         self.delete_button.clicked.connect(self.delete_wavefiles)
         
         # Layout widgets.
@@ -193,7 +193,7 @@ class WavefilesActivity(app_framework.ActivityBase):
             #
             self.dir_path = app_core.DesktopAppSync().get_workspace()
             self.survey_name = app_core.DesktopAppSync().get_selected_survey()
-            h5wavefile = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
+#             h5wavefile = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
             #
             if self.survey_combo.currentIndex() == 0:
                 dataset_table = app_framework.DatasetTable()
@@ -318,7 +318,7 @@ class ImportWavefileDialog(QtWidgets.QDialog):
     def __init__(self, parentwidget):
         """ """
         super().__init__(parentwidget)
-        self.setWindowTitle("Import wavefile")
+        self.setWindowTitle("Import wavefiles")
         self._parentwidget = parentwidget
         self.setLayout(self._content())
         #
@@ -329,87 +329,150 @@ class ImportWavefileDialog(QtWidgets.QDialog):
 
     def _content(self):
         """ """
-        # From dir.
-        self.sourcedir_edit = QtWidgets.QLineEdit('')
-        self.sourcedir_button = QtWidgets.QPushButton('Browse...')
-        self.sourcedir_button.clicked.connect(self.source_dir_browse)
-        self.recursive_checkbox = QtWidgets.QCheckBox('Include subdirectories')
-        self.recursive_checkbox.setChecked(False)
-        # View from dir content as table.
-        self.sourcecontent_button = QtWidgets.QPushButton('View files')
-        self.sourcecontent_button.clicked.connect(self.load_data)
-        
-        self.detectortype_combo = QtWidgets.QComboBox()
-        self.detectortype_combo.setEditable(False)
-        self.detectortype_combo.setMinimumWidth(400)
-        self.detectortype_combo.addItems(['Generic', 
-                                          'Generic-GUANO', 
-                                          'AudioMoth', 
-                                          'Pettersson-M500X', 
-                                          'CloudedBats-WURB', 
-                                          'CloudedBats-Pathfinder', 
-                                          ])
-        
-#         self.sourcefiles_tableview = app_framework.ToolboxQTableView()
-        items_listview = QtWidgets.QListView()
-        self._items_model = QtGui.QStandardItemModel()
-        items_listview.setModel(self._items_model)
-        
-        clearall_button = app_framework.ClickableQLabel('Clear all')
-        clearall_button.label_clicked.connect(self._uncheck_all_items)
-        markall_button = app_framework.ClickableQLabel('Mark all')
-        markall_button.label_clicked.connect(self._check_all_items)
-        self.filter_edit = QtWidgets.QLineEdit('')
-        self.filterclear_button = QtWidgets.QPushButton('(Clear)')
-        
+        # Target detector as item_id
         self.detector_combo = QtWidgets.QComboBox()
         self.detector_combo.setEditable(False)
         self.detector_combo.setMinimumWidth(400)
+        # Detector type.
+        self.detectortype_combo = QtWidgets.QComboBox()
+        self.detectortype_combo.setEditable(False)
+        self.detectortype_combo.setMinimumWidth(400)
+        self.detectortype_combo.addItems(['<auto>', 
+                                          'Generic', 
+                                          '(Generic GUANO)', 
+                                          '(AudioMoth version 1.0)', 
+                                          '(AudioMoth version 1.2)', 
+                                          '(Pettersson-M500X)', 
+                                          'CloudedBats-WURB/Pathfinder', 
+                                          ])
+        # Detector position.
+        self.position_combo = QtWidgets.QComboBox()
+        self.position_combo.setEditable(False)
+        self.position_combo.setMinimumWidth(400)
+        self.position_combo.addItems(['Get from wave file', 
+                                      '(Enter manually)', 
+                                      '(Unknown position)', 
+                                      ])
+        self.latitude_dd_edit = QtWidgets.QLineEdit('')
+        self.latitude_dd_edit.setPlaceholderText('dd.dddd')
+        self.logitude_dd_edit = QtWidgets.QLineEdit('')
+        self.logitude_dd_edit.setPlaceholderText('dd.dddd')
+        # Processing during import.
+        self.processing_combo = QtWidgets.QComboBox()
+        self.processing_combo.setEditable(False)
+        self.processing_combo.setMinimumWidth(400)
+        self.processing_combo.addItems(['Import all files', 
+                                        '(Import files containing sound only)', 
+                                        '(Cut up files into parts)', 
+                                        '(Cut up into parts containing sound)', 
+                                        ])
+        self.processing_max_length_edit = QtWidgets.QLineEdit('')
         
         
-        cancel_button = QtWidgets.QPushButton('Cancel')
-        cancel_button.clicked.connect(self.reject) # Close dialog box.               
+        # Select files
+        self.sourcedir_edit = QtWidgets.QLineEdit('')
+        self.sourcedir_button = QtWidgets.QPushButton('Browse...')
+        self.sourcedir_button.clicked.connect(self.source_dir_browse)
+        self.addfiles_button = QtWidgets.QPushButton('Add files in directory')
+        self.addfiles_button.clicked.connect(self.add_files)
+        self.addmorefiles_button = QtWidgets.QPushButton('(Add more files...)')
+#         self.addmorefiles_button.clicked.connect(self.add_more_files)
+         
+        self.items_listview = QtWidgets.QListView()
+        self._items_model = QtGui.QStandardItemModel()
+        self.items_listview.setModel(self._items_model)
+         
+        self.clearall_button = app_framework.ClickableQLabel('Clear all')
+        self.clearall_button.label_clicked.connect(self._uncheck_all_items)
+        self.markall_button = app_framework.ClickableQLabel('Mark all')
+        self.markall_button.label_clicked.connect(self._check_all_items)
+        self.filter_edit = QtWidgets.QLineEdit('')
+        self.filterclear_button = QtWidgets.QPushButton('(Clear)')
+        
+        
+        self.cancel_button = QtWidgets.QPushButton('Cancel')
+        self.cancel_button.clicked.connect(self.reject) # Close dialog box.               
         self.importwavefiles_button = QtWidgets.QPushButton('Import wavefiles')
         self.importwavefiles_button.clicked.connect(self._import_wavefiles)
         self.importwavefiles_button.setEnabled(True)
         self.importwavefiles_button.setDefault(False)
+        
         # Layout widgets.
         form1 = QtWidgets.QGridLayout()
         gridrow = 0
-        label = QtWidgets.QLabel('From directory:')
-        form1.addWidget(label, gridrow, 0, 1, 1)
-        form1.addWidget(self.sourcedir_edit, gridrow, 1, 1, 13)
-        form1.addWidget(self.sourcedir_button, gridrow, 14, 1, 1)
-        gridrow += 1
-        form1.addWidget(self.recursive_checkbox, gridrow, 1, 1, 13)
-        gridrow += 1
-        label = QtWidgets.QLabel('Detector type:')
-        form1.addWidget(label, gridrow, 0, 1, 1)
-        form1.addWidget(self.detectortype_combo, gridrow, 1, 1, 13)
-        form1.addWidget(self.sourcecontent_button, gridrow, 14, 1, 1)
-        gridrow += 1
-#         form1.addWidget(self.sourcefiles_tableview, gridrow, 1, 1, 15)
-        form1.addWidget(items_listview, gridrow, 1, 1, 15)
-        gridrow += 1
-        hbox1 = QtWidgets.QHBoxLayout()
-        hbox1.addWidget(clearall_button)
-        hbox1.addWidget(markall_button)
-        label = QtWidgets.QLabel('(Filter:)')
-        hbox1.addWidget(label)
-        hbox1.addWidget(self.filter_edit,20)
-        hbox1.addWidget(self.filterclear_button)
-        form1.addLayout(hbox1, gridrow, 1, 1, 15)
-        gridrow += 1
-        label = QtWidgets.QLabel('Target:')
+        label = QtWidgets.QLabel('Detector:')
         form1.addWidget(label, gridrow, 0, 1, 1)
         gridrow += 1
         label = QtWidgets.QLabel('To detector:')
-        form1.addWidget(label, gridrow, 0, 1, 1)
-        form1.addWidget(self.detector_combo, gridrow, 1, 1, 14)
+        form1.addWidget(label, gridrow, 1, 1, 1)
+        form1.addWidget(self.detector_combo, gridrow, 2, 1, 17)
+        gridrow += 1
+        label = QtWidgets.QLabel('(Detector type:)')
+        form1.addWidget(label, gridrow, 1, 1, 1)
+        form1.addWidget(self.detectortype_combo, gridrow, 2, 1, 17)
+        gridrow += 1
+        label = QtWidgets.QLabel('(Detector position:)')
+        form1.addWidget(label, gridrow, 0, 1, 2)
+        gridrow += 1
+        label = QtWidgets.QLabel('(Detector position:)')
+        form1.addWidget(label, gridrow, 1, 1, 1)
+        form1.addWidget(self.position_combo, gridrow, 2, 1, 17)
+        gridrow += 1
+        label = QtWidgets.QLabel('(Latitude (DD):)')
+        form1.addWidget(label, gridrow, 1, 1, 1)
+        form1.addWidget(self.latitude_dd_edit, gridrow, 2, 1, 10)
+        gridrow += 1
+        label = QtWidgets.QLabel('(Longitude (DD):)')
+        form1.addWidget(label, gridrow, 1, 1, 1)
+        form1.addWidget(self.logitude_dd_edit, gridrow, 2, 1, 10)
+        gridrow += 1
+        label = QtWidgets.QLabel('(Import processing:)')
+        form1.addWidget(label, gridrow, 0, 1, 2)
+        gridrow += 1
+        label = QtWidgets.QLabel('(Processing:)')
+        form1.addWidget(label, gridrow, 1, 1, 1)
+        form1.addWidget(self.processing_combo, gridrow, 2, 1, 17)
+        gridrow += 1
+        label = QtWidgets.QLabel('(Max length (s):)')
+        form1.addWidget(label, gridrow, 1, 1, 1)
+        form1.addWidget(self.processing_max_length_edit, gridrow, 2, 1, 10)
+        
+        gridrow += 1
+        label = QtWidgets.QLabel('   ')
+        form1.addWidget(label, gridrow, 0, 1, 10)
+        gridrow += 1
+        label = QtWidgets.QLabel('Select files to import:')
+        form1.addWidget(label, gridrow, 0, 1, 10)
+        gridrow += 1
+        label = QtWidgets.QLabel('From directory:')
+        form1.addWidget(label, gridrow, 1, 1, 1)
+        form1.addWidget(self.sourcedir_edit, gridrow, 2, 1, 17)
+        form1.addWidget(self.sourcedir_button, gridrow, 19, 1, 1)
+        gridrow += 1
+        hbox1 = QtWidgets.QHBoxLayout()
+        hbox1.addStretch(10)
+        hbox1.addWidget(self.addfiles_button)
+        hbox1.addWidget(self.addmorefiles_button)
+        form1.addLayout(hbox1, gridrow, 1, 1, 19)
+
+        gridrow += 1
+        form1.addWidget(self.items_listview, gridrow, 1, 1, 19)
+        gridrow += 1
+        hbox1 = QtWidgets.QHBoxLayout()
+        hbox1.addWidget(self.clearall_button)
+        hbox1.addWidget(self.markall_button)
+        label = QtWidgets.QLabel('   (Filter:)')
+        hbox1.addWidget(label)
+        hbox1.addWidget(self.filter_edit,20)
+        hbox1.addWidget(self.filterclear_button)
+        form1.addLayout(hbox1, gridrow, 1, 1, 19)
+        gridrow += 1
+        label = QtWidgets.QLabel('   ')
+        form1.addWidget(label, gridrow, 0, 1, 10)
         # 
         hbox1 = QtWidgets.QHBoxLayout()
         hbox1.addStretch(10)
-        hbox1.addWidget(cancel_button)
+        hbox1.addWidget(self.cancel_button)
         hbox1.addWidget(self.importwavefiles_button)
         # 
         layout = QtWidgets.QVBoxLayout()
@@ -451,7 +514,7 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         if dirpath:
             self.sourcedir_edit.setText(dirpath)
 #             self.targetdir_edit.setText(dirpath + '_results')
-            
+        
     def _check_all_items(self):
         """ """
         try:        
@@ -474,15 +537,16 @@ class ImportWavefileDialog(QtWidgets.QDialog):
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
-    def load_data(self):
+#     def load_data(self):
+    def add_files(self):
         """ """
         dir_path = str(self.sourcedir_edit.text())
         scanner = app_core.WaveFileScanner()
         dataframe = scanner.get_file_info_as_dataframe(dir_path)
-        
+         
         path_array = list(dataframe['abs_file_path'])
         print('abs_file_path: ', path_array)
-        
+         
         for wave_file_path in sorted(path_array):
 #                 self.groupid_combo.addItem(event_group)
                 item = QtGui.QStandardItem(wave_file_path)
@@ -520,6 +584,8 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                                     name = metadata['file_stem'].lower()
                                 
                                 self._parentwidget._write_to_status_bar('- Busy: Importing: ' + file_name)
+                                
+                                app_utils.Logging().info('Importing: ' + file_name)
                             
                                 wave_reader = dsp4bats.WaveFileReader(wave_file_path)
                                 signal = np.array([], dtype=np.int16)
