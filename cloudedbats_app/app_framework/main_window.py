@@ -113,9 +113,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self._ui_settings.setValue('MainWindow/Position', QtCore.QVariant(self.pos()))
         self._ui_settings.setValue('MainWindow/State', self.saveState())
         self._ui_settings.setValue('MainWindow/Geometry', self.geometry())
-        #
-        self. _hideAllTools()
-        #
+        # Close tools to stop threads.
+        tools = self._toolmanager.get_tool_list()
+        for tool in tools:
+            tool.close()
+        # And finally close the log file.
         self._logfile.close
     
     def _createMenu(self):
@@ -221,7 +223,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Add one button for each tool.
         for tool in self._toolmanager.get_tool_list():
             button = app_framework.ClickableQLabel(' ' + tool.objectName())
-            button_hide = app_framework.ClickableQLabel(' (hide)')
+            button_hide = app_framework.ClickableQLabel('- hide')
             showhidehbox = QtWidgets.QHBoxLayout()
             showhidehbox.addWidget(button)
             showhidehbox.addWidget(button_hide)
@@ -231,7 +233,7 @@ class MainWindow(QtWidgets.QMainWindow):
             button_hide.label_clicked.connect(tool.hide_tool)
         #
         # Button to hide all tools.
-        button = app_framework.ClickableQLabel(' (Hide all)')
+        button = app_framework.ClickableQLabel('      Hide all')
         toolsvbox.addWidget(button)
         button.label_clicked.connect(self._hideAllTools)
         #
@@ -244,7 +246,7 @@ class MainWindow(QtWidgets.QMainWindow):
             
         
         # TODO: During development...
-        activities[1].show_in_main_window()
+        activities[3].show_in_main_window()
         
         
 

@@ -204,6 +204,10 @@ class SpectrogramTool(app_framework.ToolBase):
         try:
             # Terminate spectrogram thread.
             self.spectrogram_active = False
+            #
+            while self.spectrogram_queue.qsize() > 5:
+                try: self.spectrogram_queue.get_nowait()
+                except queue.Empty: break # Exits while loop.
             # Send on queue to release thread.
             self.spectrogram_queue.put(False)
         except Exception as e:

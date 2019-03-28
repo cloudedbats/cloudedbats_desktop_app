@@ -8,7 +8,7 @@
 # Format: <year>.<month>.<day>, example: '2019.01.01' 
 # import time
 # year_month_day = time.strftime("%Y.%m.%d")
-year_month_day = '2019.03.14'
+year_month_day = '2019.03.28'
 __version__ = year_month_day
 
 # Matplotlib for PyQt5. 

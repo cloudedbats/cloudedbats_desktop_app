@@ -170,6 +170,10 @@ class MapTool(app_framework.ToolBase):
         try:
             # Terminate plot_map thread.
             self.plot_map_active = False
+            #
+            while self.plot_map_queue.qsize() > 5:
+                try: self.plot_map_queue.get_nowait()
+                except queue.Empty: break # Exits while loop.
             # Send on queue to release thread.
             self.plot_map_queue.put(False)
         except Exception as e:
@@ -235,21 +239,9 @@ class MapTool(app_framework.ToolBase):
                         # Exit.
                         self.plot_map_active = False
                         continue
-#                     #
-#                     self.survey_edit.setText('')
-#                     self.itemid_edit.setText('')
-#                     self.title_edit.setText('')
                     #
                     if self.isVisible():
-#                         survey = queue_item.get('survey', '') 
-#                         item_id = queue_item.get('item_id', '') 
-#                         item_title = queue_item.get('item_title', '') 
-                        #
                         self.update_map()
-                        #
-#                         self.survey_edit.setText(survey)
-#                         self.itemid_edit.setText(item_id)
-#                         self.title_edit.setText(item_title)
             finally:
                 self.plot_map_thread = None
         
@@ -259,7 +251,6 @@ class MapTool(app_framework.ToolBase):
     
     def update_map(self):
         """ """
-        
         if not self.isVisible():
             return
         
@@ -279,6 +270,8 @@ class MapTool(app_framework.ToolBase):
                 self.last_used_latitude = 0.0
                 self.last_used_longitude = 0.0
                 self.last_used_degree_range = 0.0
+                self.axes.cla()
+                self._canvas.draw()
                 return
             #
             lat_dd = 0.0
@@ -287,7 +280,9 @@ class MapTool(app_framework.ToolBase):
                 lat_dd = float(latitude_dd)
                 long_dd = float(longitude_dd)
             except:
-                pass
+                self.axes.cla()
+                self._canvas.draw()
+                return
             #
             if (lat_dd == 0.0) or (long_dd == 0):
                     # Clear.
