@@ -233,7 +233,7 @@ class MainWindow(QtWidgets.QMainWindow):
             button_hide.label_clicked.connect(tool.hide_tool)
         #
         # Button to hide all tools.
-        button = app_framework.ClickableQLabel('      Hide all')
+        button = app_framework.ClickableQLabel('      - hide all -')
         toolsvbox.addWidget(button)
         button.label_clicked.connect(self._hideAllTools)
         #

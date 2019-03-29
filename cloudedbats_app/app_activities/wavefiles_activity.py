@@ -5,6 +5,7 @@
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
 import sys
+import pathlib
 import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui
@@ -12,9 +13,11 @@ from PyQt5 import QtCore
 
 import hdf54bats
 import dsp4bats
+import metadata4bats
 from cloudedbats_app import app_framework
 from cloudedbats_app import app_utils
 from cloudedbats_app import app_core
+from PyQt5.Qt import QApplication
 # from platform import node
 
 
@@ -252,7 +255,13 @@ class WavefilesActivity(app_framework.ActivityBase):
     
     def import_wavefile(self):
         """ """
-        try:        
+        try:
+            if self.survey_combo.currentIndex() == 0:
+                QtWidgets.QMessageBox.warning(self, 'Warning', 
+                     'Survey not selected, please try again.', 
+                     QtWidgets.QMessageBox.Ok)
+                return
+            #
             my_dialog = ImportWavefileDialog(self)
             if my_dialog.exec_():
                 self.refresh()
@@ -265,7 +274,13 @@ class WavefilesActivity(app_framework.ActivityBase):
         
     def delete_wavefiles(self):
         """ """
-        try:        
+        try:
+            if self.survey_combo.currentIndex() == 0:
+                QtWidgets.QMessageBox.warning(self, 'Warning', 
+                     'Survey not selected, please try again.', 
+                     QtWidgets.QMessageBox.Ok)
+                return
+            #
             dialog = DeleteDialog(self)
             if dialog.exec_():
                 self.refresh()
@@ -326,21 +341,22 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         self.survey_name = str(self._parentwidget.survey_combo.currentText())
         # 
         self.update_event_list()
-
+        self.enable_buttons()
+    
     def _content(self):
         """ """
         # Target detector as item_id
         self.detector_combo = QtWidgets.QComboBox()
         self.detector_combo.setEditable(False)
         self.detector_combo.setMinimumWidth(400)
+        self.detector_combo.currentIndexChanged.connect(self.enable_buttons)
         # Detector type.
         self.detectortype_combo = QtWidgets.QComboBox()
         self.detectortype_combo.setEditable(False)
         self.detectortype_combo.setMinimumWidth(400)
-        self.detectortype_combo.addItems(['<auto>', 
-                                          'Generic', 
+        self.detectortype_combo.addItems(['Generic', 
                                           '(Generic GUANO)', 
-                                          '(AudioMoth version 1.0)', 
+                                          'AudioMoth version 1.0', 
                                           '(AudioMoth version 1.2)', 
                                           '(Pettersson-M500X)', 
                                           'CloudedBats-WURB/Pathfinder', 
@@ -349,14 +365,15 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         self.position_combo = QtWidgets.QComboBox()
         self.position_combo.setEditable(False)
         self.position_combo.setMinimumWidth(400)
-        self.position_combo.addItems(['Get from wave file', 
-                                      '(Enter manually)', 
-                                      '(Unknown position)', 
+        self.position_combo.addItems(['Get from wave files', 
+                                      'Enter manually', 
+                                      'Unknown position', 
                                       ])
+        self.position_combo.currentIndexChanged.connect(self.enable_buttons)
         self.latitude_dd_edit = QtWidgets.QLineEdit('')
         self.latitude_dd_edit.setPlaceholderText('dd.dddd')
         self.logitude_dd_edit = QtWidgets.QLineEdit('')
-        self.logitude_dd_edit.setPlaceholderText('dd.dddd')
+        self.logitude_dd_edit.setPlaceholderText('ddd.dddd')
         # Processing during import.
         self.processing_combo = QtWidgets.QComboBox()
         self.processing_combo.setEditable(False)
@@ -370,13 +387,18 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         
         
         # Select files
-        self.sourcedir_edit = QtWidgets.QLineEdit('')
+        self.sourcedir_edit = QtWidgets.QLineEdit('../../../batfiles')
+#         self.sourcedir_edit = QtWidgets.QLineEdit('')
         self.sourcedir_button = QtWidgets.QPushButton('Browse...')
         self.sourcedir_button.clicked.connect(self.source_dir_browse)
+        self.recursive_checkbox = QtWidgets.QCheckBox('Include subdirectories')
+        self.recursive_checkbox.setChecked(False)
         self.addfiles_button = QtWidgets.QPushButton('Add files in directory')
         self.addfiles_button.clicked.connect(self.add_files)
-        self.addmorefiles_button = QtWidgets.QPushButton('(Add more files...)')
+        self.addmorefiles_button = QtWidgets.QPushButton('(Add other files...)')
 #         self.addmorefiles_button.clicked.connect(self.add_more_files)
+        self.clearfiles_button = QtWidgets.QPushButton('Clear')
+        self.clearfiles_button.clicked.connect(self.clear_files)
          
         self.items_listview = QtWidgets.QListView()
         self._items_model = QtGui.QStandardItemModel()
@@ -386,9 +408,6 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         self.clearall_button.label_clicked.connect(self._uncheck_all_items)
         self.markall_button = app_framework.ClickableQLabel('Mark all')
         self.markall_button.label_clicked.connect(self._check_all_items)
-        self.filter_edit = QtWidgets.QLineEdit('')
-        self.filterclear_button = QtWidgets.QPushButton('(Clear)')
-        
         
         self.cancel_button = QtWidgets.QPushButton('Cancel')
         self.cancel_button.clicked.connect(self.reject) # Close dialog box.               
@@ -407,33 +426,33 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         form1.addWidget(label, gridrow, 1, 1, 1)
         form1.addWidget(self.detector_combo, gridrow, 2, 1, 17)
         gridrow += 1
-        label = QtWidgets.QLabel('(Detector type:)')
+        label = QtWidgets.QLabel('Detector type:')
         form1.addWidget(label, gridrow, 1, 1, 1)
         form1.addWidget(self.detectortype_combo, gridrow, 2, 1, 17)
         gridrow += 1
-        label = QtWidgets.QLabel('(Detector position:)')
+        label = QtWidgets.QLabel('Detector position:')
         form1.addWidget(label, gridrow, 0, 1, 2)
         gridrow += 1
-        label = QtWidgets.QLabel('(Detector position:)')
+        label = QtWidgets.QLabel('Position:')
         form1.addWidget(label, gridrow, 1, 1, 1)
         form1.addWidget(self.position_combo, gridrow, 2, 1, 17)
         gridrow += 1
-        label = QtWidgets.QLabel('(Latitude (DD):)')
+        label = QtWidgets.QLabel('Latitude (DD):')
         form1.addWidget(label, gridrow, 1, 1, 1)
         form1.addWidget(self.latitude_dd_edit, gridrow, 2, 1, 10)
         gridrow += 1
-        label = QtWidgets.QLabel('(Longitude (DD):)')
+        label = QtWidgets.QLabel('Longitude (DD):')
         form1.addWidget(label, gridrow, 1, 1, 1)
         form1.addWidget(self.logitude_dd_edit, gridrow, 2, 1, 10)
         gridrow += 1
-        label = QtWidgets.QLabel('(Import processing:)')
+        label = QtWidgets.QLabel('Import processing:')
         form1.addWidget(label, gridrow, 0, 1, 2)
         gridrow += 1
-        label = QtWidgets.QLabel('(Processing:)')
+        label = QtWidgets.QLabel('Processing:')
         form1.addWidget(label, gridrow, 1, 1, 1)
         form1.addWidget(self.processing_combo, gridrow, 2, 1, 17)
         gridrow += 1
-        label = QtWidgets.QLabel('(Max length (s):)')
+        label = QtWidgets.QLabel('Max length (s):')
         form1.addWidget(label, gridrow, 1, 1, 1)
         form1.addWidget(self.processing_max_length_edit, gridrow, 2, 1, 10)
         
@@ -451,8 +470,10 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         gridrow += 1
         hbox1 = QtWidgets.QHBoxLayout()
         hbox1.addStretch(10)
+        hbox1.addWidget(self.recursive_checkbox)
         hbox1.addWidget(self.addfiles_button)
         hbox1.addWidget(self.addmorefiles_button)
+        hbox1.addWidget(self.clearfiles_button)
         form1.addLayout(hbox1, gridrow, 1, 1, 19)
 
         gridrow += 1
@@ -461,10 +482,7 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         hbox1 = QtWidgets.QHBoxLayout()
         hbox1.addWidget(self.clearall_button)
         hbox1.addWidget(self.markall_button)
-        label = QtWidgets.QLabel('   (Filter:)')
-        hbox1.addWidget(label)
-        hbox1.addWidget(self.filter_edit,20)
-        hbox1.addWidget(self.filterclear_button)
+        hbox1.addStretch(20)
         form1.addLayout(hbox1, gridrow, 1, 1, 19)
         gridrow += 1
         label = QtWidgets.QLabel('   ')
@@ -480,6 +498,20 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         layout.addLayout(hbox1)
         # 
         return layout
+    
+    def enable_buttons(self):
+        """ """
+        if self.detector_combo.currentIndex() > 0:
+            self.importwavefiles_button.setEnabled(True)
+        else:
+            self.importwavefiles_button.setEnabled(False)
+        #
+        if self.position_combo.currentText() == 'Enter manually':
+            self.latitude_dd_edit.setEnabled(True)
+            self.logitude_dd_edit.setEnabled(True)
+        else:
+            self.latitude_dd_edit.setEnabled(False)
+            self.logitude_dd_edit.setEnabled(False)
     
     def update_event_list(self):
         """ """
@@ -537,23 +569,28 @@ class ImportWavefileDialog(QtWidgets.QDialog):
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
-#     def load_data(self):
     def add_files(self):
         """ """
         dir_path = str(self.sourcedir_edit.text())
-        scanner = app_core.WaveFileScanner()
-        dataframe = scanner.get_file_info_as_dataframe(dir_path)
-         
-        path_array = list(dataframe['abs_file_path'])
-        print('abs_file_path: ', path_array)
-         
-        for wave_file_path in sorted(path_array):
-#                 self.groupid_combo.addItem(event_group)
-                item = QtGui.QStandardItem(wave_file_path)
+        path_list = []
+        # Search for wave files. 
+        if self.recursive_checkbox.isChecked():
+            path_list = list(pathlib.Path(dir_path).glob('**/*.wav'))
+            path_list += list(pathlib.Path(dir_path).glob('**/*.WAV'))
+        else:
+            path_list = list(pathlib.Path(dir_path).glob('*.wav'))
+            path_list += list(pathlib.Path(dir_path).glob('*.WAV'))
+        #
+        for wave_file_path in sorted(path_list):
+                item = QtGui.QStandardItem(str(wave_file_path))
                 item.setCheckState(QtCore.Qt.Unchecked)
                 item.setCheckable(True)
                 self._items_model.appendRow(item)
-
+    
+    def clear_files(self):
+        """ """
+        self._items_model.clear()
+    
     def _import_wavefiles(self):
         """ """
         try:        
@@ -562,7 +599,10 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                 self._parentwidget._write_to_status_bar('- Busy: Importing wave files.')
                 
                 h5wavefile = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
-                wurb_utils = dsp4bats.WurbFileUtils()
+#                 wurb_utils = dsp4bats.WurbFileUtils()
+                
+                
+                
                 
                 for rowindex in range(self._items_model.rowCount()):
                     try:
@@ -573,20 +613,50 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                             
                             wave_reader = None
                             try:
-                                metadata = wurb_utils.extract_metadata(wave_file_path)
-                                
-                                file_name = metadata['file_name']
+                                #
+                                detector_type = self.detectortype_combo.currentText()
+                                if detector_type == 'Generic':
+                                    metadata_reader = metadata4bats.MetadataWavefile(wave_file_path)
+                                if detector_type == '(Generic GUANO)':
+                                    metadata_reader = metadata4bats.MetadataWavefile(wave_file_path)
+                                if detector_type == 'AudioMoth version 1.0':
+                                    metadata_reader = metadata4bats.MetadataWavefileAudiomoth(wave_file_path)
+                                if detector_type == '(AudioMoth version 1.2)':
+                                    metadata_reader = metadata4bats.MetadataWavefileAudiomoth(wave_file_path)
+                                if detector_type == '(Pettersson-M500X)':
+                                    metadata_reader = metadata4bats.MetadataWavefile(wave_file_path)
+                                if detector_type == 'CloudedBats-WURB/Pathfinder':
+                                    metadata_reader = metadata4bats.MetadataWavefileWurb(wave_file_path)
+                                else:
+                                    metadata_reader = metadata4bats.MetadataWavefile(wave_file_path)
+                                #
+                                metadata_reader.extract_metadata()
+                                metadata = metadata_reader.get_metadata()
+                                #
+                                file_name = metadata['rec_file_name']
                                 title = file_name
-                                if 'datetime_str' in metadata:
-                                    datetime_str = metadata['datetime_str'][0:15]
+                                if 'rec_datetime_local' in metadata:
+                                    datetime_str = metadata['rec_datetime_local'][0:15]
                                     name = 'wave_' + hdf54bats.str_to_ascii(datetime_str)
                                 else:
-                                    name = metadata['file_stem'].lower()
+                                    name = metadata['rec_file_stem'].lower()
                                 
+                                
+                                if self.position_combo.currentText() == 'Get from wave files':
+                                    pass # Already done.
+                                elif self.position_combo.currentText() == 'Enter manually':
+                                    metadata['rec_latitude_dd'] = self.latitude_dd_edit.text()
+                                    metadata['rec_longitude_dd'] = self.logitude_dd_edit.text()
+                                elif self.position_combo.currentText() == 'Unknown position':
+                                    metadata['rec_latitude_dd'] = ''
+                                    metadata['rec_longitude_dd'] = ''
+                                
+                                name = hdf54bats.str_to_ascii(name)
                                 self._parentwidget._write_to_status_bar('- Busy: Importing: ' + file_name)
                                 
-                                app_utils.Logging().info('Importing: ' + file_name)
-                            
+                                app_utils.Logging().info('Importing wavefile: ' + title)
+                                QtWidgets.QApplication.processEvents()
+
                                 wave_reader = dsp4bats.WaveFileReader(wave_file_path)
                                 signal = np.array([], dtype=np.int16)
                                 buffer = wave_reader.read_buffer(convert_to_float=False)
@@ -596,9 +666,8 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                             finally:
                                 if wave_reader:
                                     wave_reader.close()
-                        
-                            h5wavefile.add_wavefile(parent_id=detectorgroup, new_name=name, title=title, array=signal)
                             
+                            h5wavefile.add_wavefile(parent_id=detectorgroup, new_name=name, title=title, array=signal)                            
                             h5wavefile.set_user_metadata(detectorgroup + '.' + name, metadata)
                     #
                     except Exception as e:
@@ -674,8 +743,15 @@ class DeleteDialog(QtWidgets.QDialog):
         #
         widget.setLayout(layout)
         #
-        return widget                
-
+        return widget
+    
+    def enable_buttons(self):
+        """ """
+        if self.detector_combo.currentIndex() > 0:
+            self.importwavefiles_button.setEnabled(True)
+        else:
+            self.importwavefiles_button.setEnabled(False)
+    
     def _load_item_data(self):
         """ """
         try:

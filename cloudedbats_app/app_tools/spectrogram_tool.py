@@ -329,7 +329,11 @@ class SpectrogramTool(app_framework.ToolBase):
             finally:
                 h5wavefile.close()
             #
-            sampling_freq_hz = item_metadata.get('frame_rate_hz', '')
+            sampling_freq_hz = item_metadata.get('rec_frame_rate_hz', '')
+            if not sampling_freq_hz:
+                sampling_freq_hz = item_metadata.get('frame_rate_hz', '')
+            if not sampling_freq_hz:
+                sampling_freq_hz = item_metadata.get('rec_framerate', '')
             if not sampling_freq_hz:
                 sampling_freq = 500000 # Correct for D500X.
             else:

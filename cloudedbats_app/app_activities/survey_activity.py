@@ -236,7 +236,13 @@ class SurveyActivity(app_framework.ActivityBase):
         
     def add_event(self):
         """ """
-        try:        
+        try:
+            if self.survey_combo.currentIndex() == 0:
+                QtWidgets.QMessageBox.warning(self, 'Warning', 
+                     'Survey not selected, please try again.', 
+                     QtWidgets.QMessageBox.Ok)
+                return
+            #
             my_dialog = NewEventDialog(self)
             if my_dialog.exec_():
                 self.refresh()
@@ -246,7 +252,13 @@ class SurveyActivity(app_framework.ActivityBase):
 
     def add_detector(self):
         """ """
-        try:        
+        try:
+            if self.survey_combo.currentIndex() == 0:
+                QtWidgets.QMessageBox.warning(self, 'Warning', 
+                     'Survey not selected, please try again.', 
+                     QtWidgets.QMessageBox.Ok)
+                return
+            #
             my_dialog = NewDetectorDialog(self)
             if my_dialog.exec_():
                 self.refresh()
@@ -256,27 +268,45 @@ class SurveyActivity(app_framework.ActivityBase):
 
     def rename_content(self):
         """ """
-        try:        
-            my_dialog = RenameDialog(self)
-            if my_dialog.exec_():
-                self.refresh()
+        try:
+            if self.survey_combo.currentIndex() == 0:
+                QtWidgets.QMessageBox.warning(self, 'Warning', 
+                     'Survey not selected, please try again.', 
+                     QtWidgets.QMessageBox.Ok)
+                return
+            #
+#             my_dialog = RenameDialog(self)
+#             if my_dialog.exec_():
+#                 self.refresh()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
     def copy_content(self):
         """ """
-        try:        
-            my_dialog = CopyDialog(self)
-            if my_dialog.exec_():
-                self.refresh()
+        try:
+            if self.survey_combo.currentIndex() == 0:
+                QtWidgets.QMessageBox.warning(self, 'Warning', 
+                     'Survey not selected, please try again.', 
+                     QtWidgets.QMessageBox.Ok)
+                return
+            #
+#             my_dialog = CopyDialog(self)
+#             if my_dialog.exec_():
+#                 self.refresh()
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
     def delete_content(self):
         """ """
-        try:        
+        try:
+            if self.survey_combo.currentIndex() == 0:
+                QtWidgets.QMessageBox.warning(self, 'Warning', 
+                     'Survey not selected, please try again.', 
+                     QtWidgets.QMessageBox.Ok)
+                return
+            #
             dialog = DeleteDialog(self)
             if dialog.exec_():
                 self.refresh()
@@ -334,18 +364,21 @@ class NewEventDialog(QtWidgets.QDialog):
         #
         self.dir_path = app_core.DesktopAppSync().get_workspace()
         self.survey_name = str(self.parentwidget.survey_combo.currentText())
-
+        #
+        self.enable_buttons()
+    
     def content(self):
         """ """
         self.eventtitle_edit = QtWidgets.QLineEdit('')
         self.eventtitle_edit.setMinimumWidth(400)
+        self.eventtitle_edit.textChanged.connect(self.update_groupname)
         self.auto_checkbox = QtWidgets.QCheckBox('Auto')
         self.auto_checkbox.setChecked(True)
-        self.auto_checkbox.stateChanged.connect(self.auto_changed)
+        self.auto_checkbox.stateChanged.connect(self.enable_buttons)
         self.eventgroup_edit = QtWidgets.QLineEdit('')
         self.eventgroup_edit.setMinimumWidth(400)
         self.eventgroup_edit.setEnabled(False)
-        self.eventtitle_edit.textChanged.connect(self.update_groupname)
+        self.eventgroup_edit.textChanged.connect(self.enable_buttons)
         cancel_button = QtWidgets.QPushButton('Cancel')
         cancel_button.clicked.connect(self.reject) # Close dialog box.               
         self.createevent_button = QtWidgets.QPushButton('Create event')
@@ -375,8 +408,15 @@ class NewEventDialog(QtWidgets.QDialog):
         # 
         return layout
     
-    def auto_changed(self):
+    def enable_buttons(self):
         """ """
+        if len(str(self.eventgroup_edit.text())) > 0:
+            self.createevent_button.setEnabled(True)
+            self.createevent_button.setDefault(True)
+        else:
+            self.createevent_button.setEnabled(False)
+            self.createevent_button.setDefault(False)
+        #
         check_state = self.auto_checkbox.checkState()
         if check_state:
             self.eventgroup_edit.setEnabled(False)
@@ -389,13 +429,10 @@ class NewEventDialog(QtWidgets.QDialog):
             new_text = hdf54bats.str_to_ascii(text)
             if len(new_text) > 0:
                 self.eventgroup_edit.setText(new_text)
-                self.createevent_button.setEnabled(True)
-                self.createevent_button.setDefault(True)
             else:
                 self.eventgroup_edit.setText('')
-                self.createevent_button.setEnabled(False)
-                self.createevent_button.setDefault(False)
-
+        self.enable_buttons()
+    
     def create_event(self):
         """ """
         try:
@@ -431,16 +468,18 @@ class NewDetectorDialog(QtWidgets.QDialog):
         self.event_combo.setEditable(False)
         self.event_combo.addItem('<select>')
         self.event_combo.setMinimumWidth(400)
+        self.event_combo.currentIndexChanged.connect(self.enable_buttons)
         
         self.detectortitle_edit = QtWidgets.QLineEdit('')
         self.detectortitle_edit.setMinimumWidth(400)
+        self.detectortitle_edit.textChanged.connect(self.update_groupname)
         self.auto_checkbox = QtWidgets.QCheckBox('Auto')
         self.auto_checkbox.setChecked(True)
-        self.auto_checkbox.stateChanged.connect(self.auto_changed)
+        self.auto_checkbox.stateChanged.connect(self.enable_buttons)
         self.detectorgroup_edit = QtWidgets.QLineEdit('')
         self.detectorgroup_edit.setMinimumWidth(400)
         self.detectorgroup_edit.setEnabled(False)
-        self.detectortitle_edit.textChanged.connect(self.update_groupname)
+        self.detectorgroup_edit.textChanged.connect(self.enable_buttons)
         cancel_button = QtWidgets.QPushButton('Cancel')
         cancel_button.clicked.connect(self.reject) # Close dialog box.               
         self.createdetector_button = QtWidgets.QPushButton('Create detector')
@@ -474,6 +513,49 @@ class NewDetectorDialog(QtWidgets.QDialog):
         #
         return layout
     
+    def enable_buttons(self):
+        """ """
+        if (len(str(self.detectorgroup_edit.text())) > 0) and \
+           (self.event_combo.currentIndex() > 0):
+            self.createdetector_button.setEnabled(True)
+            self.createdetector_button.setDefault(True)
+        else:
+            self.createdetector_button.setEnabled(False)
+            self.createdetector_button.setDefault(False)
+        #
+        check_state = self.auto_checkbox.checkState()
+        if check_state:
+            self.detectorgroup_edit.setEnabled(False)
+        else:
+            self.detectorgroup_edit.setEnabled(True)
+    
+    def update_groupname(self, text):
+        """ """
+        if self.auto_checkbox.checkState():
+            new_text = hdf54bats.str_to_ascii(text)
+            if len(new_text) > 0:
+                self.detectorgroup_edit.setText(new_text)
+            else:
+                self.detectorgroup_edit.setText('')
+        self.enable_buttons()
+    
+#     def update_groupname(self, text):
+#         """ """
+#         if self.auto_checkbox.checkState():
+#             new_text = hdf54bats.str_to_ascii(text)
+#             if len(new_text) > 0:
+#                 self.detectorgroup_edit.setText(new_text)
+#             else:
+#                 self.detectorgroup_edit.setText('')
+#         #
+#         new_id = self.detectorgroup_edit.text()
+#         if (len(new_id) > 0) and (self.event_combo.currentIndex() > 0):
+#             self.createdetector_button.setEnabled(True)
+#             self.createdetector_button.setDefault(True)
+#         else:
+#             self.createdetector_button.setEnabled(False)
+#             self.createdetector_button.setDefault(False)
+
     def update_event_list(self):
         """ """
         selected_event_id = app_core.DesktopAppSync().get_selected_item_id(item_type='event')
@@ -500,23 +582,6 @@ class NewDetectorDialog(QtWidgets.QDialog):
         else:
             self.detectorgroup_edit.setEnabled(True)
     
-    def update_groupname(self, text):
-        """ """
-        if self.auto_checkbox.checkState():
-            new_text = hdf54bats.str_to_ascii(text)
-            if len(new_text) > 0:
-                self.detectorgroup_edit.setText(new_text)
-            else:
-                self.detectorgroup_edit.setText('')
-        #
-        new_id = self.detectorgroup_edit.text()
-        if (len(new_id) > 0) and (self.event_combo.currentIndex() > 0):
-            self.createdetector_button.setEnabled(True)
-            self.createdetector_button.setDefault(True)
-        else:
-            self.createdetector_button.setEnabled(False)
-            self.createdetector_button.setDefault(False)
-
     def create_detector(self):
         """ """
         try:
@@ -556,7 +621,7 @@ class RenameDialog(QtWidgets.QDialog):
         self.groupid_combo.setEditable(False)
         self.groupid_combo.setMinimumWidth(400)
         self.groupid_combo.addItem('<select>')
-        self.groupid_combo.currentIndexChanged.connect(self.set_groupname)
+        self.groupid_combo.currentIndexChanged.connect(self.enable_buttons)
         
         self.itemtitle_edit = QtWidgets.QLineEdit('')
         self.itemtitle_edit.setMinimumWidth(400)
@@ -587,6 +652,29 @@ class RenameDialog(QtWidgets.QDialog):
         # 
         return layout
     
+    def enable_buttons(self):
+        """ """
+        if self.groupid_combo.currentIndex() > 0:
+            self.renameitem_button.setEnabled(True)
+            self.renameitem_button.setDefault(True)
+        else:
+            self.renameitem_button.setEnabled(False)
+            self.renameitem_button.setDefault(False)
+    
+    def update_groupname(self, text):
+        """ """
+        self.renameitem_button.setEnabled(False)
+        self.renameitem_button.setDefault(False)
+#         new_text = hdf54bats.str_to_ascii(text)
+#         if len(new_text) > 0:
+#             self.itemgroupname_edit.setText(new_text)
+#             self.renameitem_button.setEnabled(True)
+#             self.renameitem_button.setDefault(True)
+#         else:
+#             self.itemgroupname_edit.setText('')
+#             self.renameitem_button.setEnabled(False)
+#             self.renameitem_button.setDefault(False)
+    
     def update_item_list(self):
         """ """
         selected_event_id = app_core.DesktopAppSync().get_selected_item_id(item_type='event')
@@ -616,20 +704,6 @@ class RenameDialog(QtWidgets.QDialog):
         else:
             self.itemtitle_edit.setText('')
     
-    def update_groupname(self, text):
-        """ """
-        self.renameitem_button.setEnabled(False)
-        self.renameitem_button.setDefault(False)
-#         new_text = hdf54bats.str_to_ascii(text)
-#         if len(new_text) > 0:
-#             self.itemgroupname_edit.setText(new_text)
-#             self.renameitem_button.setEnabled(True)
-#             self.renameitem_button.setDefault(True)
-#         else:
-#             self.itemgroupname_edit.setText('')
-#             self.renameitem_button.setEnabled(False)
-#             self.renameitem_button.setDefault(False)
-
     def rename_item(self):
         """ """
         self.accept() # Close dialog box.
@@ -669,7 +743,7 @@ class CopyDialog(QtWidgets.QDialog):
         self.groupid_combo.setEditable(False)
         self.groupid_combo.setMinimumWidth(400)
         self.groupid_combo.addItem('<select>')
-        self.groupid_combo.currentIndexChanged.connect(self.set_groupname)
+        self.groupid_combo.currentIndexChanged.connect(self.enable_buttons)
         
         self.itemtitle_edit = QtWidgets.QLineEdit('')
         self.itemtitle_edit.setMinimumWidth(400)
@@ -700,6 +774,29 @@ class CopyDialog(QtWidgets.QDialog):
         # 
         return layout
     
+    def enable_buttons(self):
+        """ """
+        if self.groupid_combo.currentIndex() > 0:
+            self.copyitem_button.setEnabled(True)
+            self.copyitem_button.setDefault(True)
+        else:
+            self.copyitem_button.setEnabled(False)
+            self.copyitem_button.setDefault(False)
+    
+    def update_groupname(self, text):
+        """ """
+#         self.copyitem_button.setEnabled(False)
+#         self.copyitem_button.setDefault(False)
+#         new_text = hdf54bats.str_to_ascii(text)
+#         if len(new_text) > 0:
+#             self.itemgroupname_edit.setText(new_text)
+#             self.copyitem_button.setEnabled(True)
+#             self.copyitem_button.setDefault(True)
+#         else:
+#             self.itemgroupname_edit.setText('')
+#             self.copyitem_button.setEnabled(False)
+#             self.copyitem_button.setDefault(False)
+    
     def update_item_list(self):
         """ """
         selected_event_id = app_core.DesktopAppSync().get_selected_item_id(item_type='event')
@@ -729,20 +826,6 @@ class CopyDialog(QtWidgets.QDialog):
         else:
             self.itemtitle_edit.setText('')
     
-    def update_groupname(self, text):
-        """ """
-        self.copyitem_button.setEnabled(False)
-        self.copyitem_button.setDefault(False)
-#         new_text = hdf54bats.str_to_ascii(text)
-#         if len(new_text) > 0:
-#             self.itemgroupname_edit.setText(new_text)
-#             self.copyitem_button.setEnabled(True)
-#             self.copyitem_button.setDefault(True)
-#         else:
-#             self.itemgroupname_edit.setText('')
-#             self.copyitem_button.setEnabled(False)
-#             self.copyitem_button.setDefault(False)
-
     def create_item(self):
         """ """
         self.accept() # Close dialog box.
@@ -788,8 +871,6 @@ class DeleteDialog(QtWidgets.QDialog):
 #         self.main_tab_widget.addTab(self.sample_content(), 'Delete detectors')
         
         return contentLayout                
-
-    # EVENTS.
     
     def item_content(self):
         """ """
@@ -805,8 +886,8 @@ class DeleteDialog(QtWidgets.QDialog):
         markall_button.label_clicked.connect(self.check_all_items)                
         cancel_button = QtWidgets.QPushButton('Cancel')
         cancel_button.clicked.connect(self.reject) # Close dialog box.               
-        delete_button = QtWidgets.QPushButton('Delete marked item(s)')
-        delete_button.clicked.connect(self.delete_marked_items)               
+        self.delete_button = QtWidgets.QPushButton('Delete marked item(s)')
+        self.delete_button.clicked.connect(self.delete_marked_items)               
         # Layout widgets.
         hbox1 = QtWidgets.QHBoxLayout()
         hbox1.addWidget(clearall_button)
@@ -816,7 +897,7 @@ class DeleteDialog(QtWidgets.QDialog):
         hbox2 = QtWidgets.QHBoxLayout()
         hbox2.addStretch(10)
         hbox2.addWidget(cancel_button)
-        hbox2.addWidget(delete_button)
+        hbox2.addWidget(self.delete_button)
         #
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(items_listview, 10)
@@ -826,7 +907,16 @@ class DeleteDialog(QtWidgets.QDialog):
         widget.setLayout(layout)
         #
         return widget
-
+    
+#     def enable_buttons(self):
+#         """ """
+#         if self.detector_combo.currentIndex() > 0:
+#             self.delete_button.setEnabled(True)
+#             self.delete_button.setDefault(True)
+#         else:
+#             self.delete_button.setEnabled(False)
+#             self.delete_button.setDefault(False)
+    
     def load_item_data(self):
         """ """
         try:

@@ -252,6 +252,9 @@ class MapTool(app_framework.ToolBase):
     def update_map(self):
         """ """
         if not self.isVisible():
+            self.last_used_latitude = 0.0
+            self.last_used_longitude = 0.0
+            self.last_used_degree_range = 0.0
             return
         
         try:
@@ -259,8 +262,12 @@ class MapTool(app_framework.ToolBase):
             item_id = app_core.DesktopAppSync().get_selected_item_id()
             item_metadata = app_core.DesktopAppSync().get_metadata_dict()
             item_title = item_metadata.get('item_title', '')
-            latitude_dd = item_metadata.get('latitude_dd', '')
-            longitude_dd = item_metadata.get('longitude_dd', '')
+            latitude_dd = item_metadata.get('rec_latitude_dd', '')
+            if not latitude_dd:
+                latitude_dd = item_metadata.get('latitude_dd', '')
+            longitude_dd = item_metadata.get('rec_longitude_dd', '')
+            if not longitude_dd:
+                longitude_dd = item_metadata.get('longitude_dd', '')
             #
             self.survey_edit.setText(survey)
             self.itemid_edit.setText(item_id)
@@ -280,12 +287,18 @@ class MapTool(app_framework.ToolBase):
                 lat_dd = float(latitude_dd)
                 long_dd = float(longitude_dd)
             except:
+                self.last_used_latitude = 0.0
+                self.last_used_longitude = 0.0
+                self.last_used_degree_range = 0.0
                 self.axes.cla()
                 self._canvas.draw()
                 return
             #
             if (lat_dd == 0.0) or (long_dd == 0):
                     # Clear.
+                    self.last_used_latitude = 0.0
+                    self.last_used_longitude = 0.0
+                    self.last_used_degree_range = 0.0
                     self.axes.cla()
                     self._canvas.draw()
                     return
