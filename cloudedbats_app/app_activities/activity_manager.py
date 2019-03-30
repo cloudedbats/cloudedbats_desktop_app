@@ -30,15 +30,18 @@ class ActivityManager(object):
         self._activitylist.append(app_activities.SurveyActivity('Survey', self._parent))
 
         self._activitylist.append(app_activities.WavefilesActivity('Wave files', self._parent))
-
-
-
         
         self._activitylist.append(app_activities.ScannerActivity('(Scanner)', self._parent))
         
-        self._activitylist.append(app_activities.ExportActivity('(Export)', self._parent))
+        self._activitylist.append(app_activities.AnalysisActivity('(Analysis)', self._parent))
         
-        self._activitylist.append(app_activities.DarwinCoreActivity('(Darwin Core)', self._parent))
+        self._activitylist.append(app_activities.ExportImportActivity('(Export/import)', self._parent))
+        
+        self._activitylist.append(app_activities.UploadDownloadActivity('(Upload/download)', self._parent))
+        
+        self._activitylist.append(app_activities.CloudActivity('(Cloud)', self._parent))
+        
+        self._activitylist.append(app_activities.DarwinCoreActivity('(Darwin core)', self._parent))
     
     def show_activity_by_name(self, object_name):
         """ Makes an activity visible. """

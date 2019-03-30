@@ -53,112 +53,112 @@ class ScannerActivity(app_framework.ActivityBase):
         """ """
         widget = QtWidgets.QWidget()
         # From dir.
-        self.sourcedir_edit = QtWidgets.QLineEdit('')
-        self.sourcedir_button = QtWidgets.QPushButton('Browse...')
-        self.sourcedir_button.clicked.connect(self.source_dir_browse)
-        self.recursive_checkbox = QtWidgets.QCheckBox('Include subdirectories')
-        self.recursive_checkbox.setChecked(False)
-        # View from dir content as table.
-        self.sourcecontent_button = QtWidgets.QPushButton('View files')
-        self.sourcecontent_button.clicked.connect(self.load_data)
-        
-        
-        self.sourcefiles_tableview = app_framework.ToolboxQTableView()
-#         self.sourcefiles_tableview = app_framework.SelectableQListView()
-#         self.sourcefiles_tableview = QtWidgets.QTableView()
-#        self.sourcefiles_tableview.setSortingEnabled(True)
-
-        # Check files in tool window.
-        self.showfileinbrowser_button = QtWidgets.QPushButton('Show in file browser')
-        self.showfileinbrowser_button.clicked.connect(self.load_data)        
-        self.firstfile_button = QtWidgets.QPushButton('|<')
-        self.firstfile_button.setMaximumWidth(30)
-        self.firstfile_button.clicked.connect(self.load_data)        
-        self.previousfile_button = QtWidgets.QPushButton('<')
-        self.previousfile_button.clicked.connect(self.load_data)        
-        self.previousfile_button.setMaximumWidth(30)
-        self.nextfile_button = QtWidgets.QPushButton('>')
-        self.nextfile_button.clicked.connect(self.load_data)        
-        self.nextfile_button.setMaximumWidth(30)
-        self.lastfile_button = QtWidgets.QPushButton('>|')
-        self.lastfile_button.clicked.connect(self.load_data)        
-        self.lastfile_button.setMaximumWidth(30)
-
-        
-        
-        
-        
-        # Frequencies.
-        self.lowfreqfilter_edit = QtWidgets.QDoubleSpinBox()
-        self.lowfreqfilter_edit.setRange(0.0, 250.0)
-        self.lowfreqfilter_edit.setValue(15.0)
-        self.highfreqfilter_edit = QtWidgets.QDoubleSpinBox()
-        self.highfreqfilter_edit.setRange(0.0, 250.0)
-        self.highfreqfilter_edit.setValue(250.0)
-        # To dir.
-        self.targetdir_edit = QtWidgets.QLineEdit('')
-        self.targetdir_button = QtWidgets.QPushButton('Browse...')
-        self.targetdir_button.clicked.connect(self.target_dir_browse)
-        # Scan.
-        self.scanfiles_button = QtWidgets.QPushButton("Scan all files")
-        self.scanfiles_button.clicked.connect(self.scan_files)
-        
-        # Layout widgets.
-        form1 = QtWidgets.QGridLayout()
-        gridrow = 0
-        label = QtWidgets.QLabel('From directory:')
-        form1.addWidget(label, gridrow, 0, 1, 1)
-        form1.addWidget(self.sourcedir_edit, gridrow, 1, 1, 13)
-        form1.addWidget(self.sourcedir_button, gridrow, 14, 1, 1)
-        gridrow += 1
-        form1.addWidget(self.recursive_checkbox, gridrow, 1, 1, 13)
-        form1.addWidget(self.sourcecontent_button, gridrow, 14, 1, 1)
-        gridrow += 1
-        form1.addWidget(self.sourcefiles_tableview, gridrow, 0, 1, 15)
-#         form1.addWidget(self.loaded_datasets_listview, gridrow, 0, 1, 15)
-        gridrow += 1
-#         form1.addWidget(QtWidgets.QLabel(''), gridrow, 0, 1, 1) # Empty row.
-        form1.addWidget(app_framework.LeftAlignedQLabel('<b>View in browser:</b>'), gridrow, 0, 1, 1)
-        gridrow += 1
-#         form1.addWidget(self.showfileinbrowser_button, gridrow, 0, 1, 1)
-#         form1.addWidget(self.firstfile_button, gridrow, 1, 1, 1)
-#         form1.addWidget(self.previousfile_button, gridrow, 2, 1, 1)
-#         form1.addWidget(self.nextfile_button, gridrow, 3, 1, 1)
-#         form1.addWidget(self.lastfile_button, gridrow, 4, 1, 1)
-        
-        hlayout = QtWidgets.QHBoxLayout()
-        hlayout.addWidget(self.showfileinbrowser_button)
-        hlayout.addWidget(self.firstfile_button)
-        hlayout.addWidget(self.previousfile_button)
-        hlayout.addWidget(self.nextfile_button)
-        hlayout.addWidget(self.lastfile_button)
-        hlayout.addStretch(10)
-        form1.addLayout(hlayout, gridrow, 0, 1, 15)
-        
-        
-        gridrow += 1
-        label = QtWidgets.QLabel('Low frequency limit (kHz):')
-        form1.addWidget(label, gridrow, 0, 1, 2)
-        form1.addWidget(self.lowfreqfilter_edit, gridrow, 2, 1, 5)
-        gridrow += 1
-        label = QtWidgets.QLabel('High frequency limit (kHz):')
-        form1.addWidget(label, gridrow, 0, 1, 2)
-        form1.addWidget(self.highfreqfilter_edit, gridrow, 2, 1, 5)
-        gridrow += 1
-#         form1.addWidget(QtWidgets.QLabel(''), gridrow, 0, 1, 1) # Empty row.
-        form1.addWidget(app_framework.LeftAlignedQLabel('<b>Scan all:</b>'), gridrow, 0, 1, 1)
-
-        gridrow += 1
-        label = QtWidgets.QLabel('To directory:')
-        form1.addWidget(label, gridrow, 0, 1, 1)
-        form1.addWidget(self.targetdir_edit, gridrow, 1, 1, 13)
-        form1.addWidget(self.targetdir_button, gridrow, 14, 1, 1)
-        gridrow += 1
-        form1.addWidget(self.scanfiles_button, gridrow, 0, 1, 1)
-        #
-        layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(form1)
-        widget.setLayout(layout)
+#         self.sourcedir_edit = QtWidgets.QLineEdit('')
+#         self.sourcedir_button = QtWidgets.QPushButton('Browse...')
+#         self.sourcedir_button.clicked.connect(self.source_dir_browse)
+#         self.recursive_checkbox = QtWidgets.QCheckBox('Include subdirectories')
+#         self.recursive_checkbox.setChecked(False)
+#         # View from dir content as table.
+#         self.sourcecontent_button = QtWidgets.QPushButton('View files')
+#         self.sourcecontent_button.clicked.connect(self.load_data)
+#         
+#         
+#         self.sourcefiles_tableview = app_framework.ToolboxQTableView()
+# #         self.sourcefiles_tableview = app_framework.SelectableQListView()
+# #         self.sourcefiles_tableview = QtWidgets.QTableView()
+# #        self.sourcefiles_tableview.setSortingEnabled(True)
+# 
+#         # Check files in tool window.
+#         self.showfileinbrowser_button = QtWidgets.QPushButton('Show in file browser')
+#         self.showfileinbrowser_button.clicked.connect(self.load_data)        
+#         self.firstfile_button = QtWidgets.QPushButton('|<')
+#         self.firstfile_button.setMaximumWidth(30)
+#         self.firstfile_button.clicked.connect(self.load_data)        
+#         self.previousfile_button = QtWidgets.QPushButton('<')
+#         self.previousfile_button.clicked.connect(self.load_data)        
+#         self.previousfile_button.setMaximumWidth(30)
+#         self.nextfile_button = QtWidgets.QPushButton('>')
+#         self.nextfile_button.clicked.connect(self.load_data)        
+#         self.nextfile_button.setMaximumWidth(30)
+#         self.lastfile_button = QtWidgets.QPushButton('>|')
+#         self.lastfile_button.clicked.connect(self.load_data)        
+#         self.lastfile_button.setMaximumWidth(30)
+# 
+#         
+#         
+#         
+#         
+#         # Frequencies.
+#         self.lowfreqfilter_edit = QtWidgets.QDoubleSpinBox()
+#         self.lowfreqfilter_edit.setRange(0.0, 250.0)
+#         self.lowfreqfilter_edit.setValue(15.0)
+#         self.highfreqfilter_edit = QtWidgets.QDoubleSpinBox()
+#         self.highfreqfilter_edit.setRange(0.0, 250.0)
+#         self.highfreqfilter_edit.setValue(250.0)
+#         # To dir.
+#         self.targetdir_edit = QtWidgets.QLineEdit('')
+#         self.targetdir_button = QtWidgets.QPushButton('Browse...')
+#         self.targetdir_button.clicked.connect(self.target_dir_browse)
+#         # Scan.
+#         self.scanfiles_button = QtWidgets.QPushButton("Scan all files")
+#         self.scanfiles_button.clicked.connect(self.scan_files)
+#         
+#         # Layout widgets.
+#         form1 = QtWidgets.QGridLayout()
+#         gridrow = 0
+#         label = QtWidgets.QLabel('From directory:')
+#         form1.addWidget(label, gridrow, 0, 1, 1)
+#         form1.addWidget(self.sourcedir_edit, gridrow, 1, 1, 13)
+#         form1.addWidget(self.sourcedir_button, gridrow, 14, 1, 1)
+#         gridrow += 1
+#         form1.addWidget(self.recursive_checkbox, gridrow, 1, 1, 13)
+#         form1.addWidget(self.sourcecontent_button, gridrow, 14, 1, 1)
+#         gridrow += 1
+#         form1.addWidget(self.sourcefiles_tableview, gridrow, 0, 1, 15)
+# #         form1.addWidget(self.loaded_datasets_listview, gridrow, 0, 1, 15)
+#         gridrow += 1
+# #         form1.addWidget(QtWidgets.QLabel(''), gridrow, 0, 1, 1) # Empty row.
+#         form1.addWidget(app_framework.LeftAlignedQLabel('<b>View in browser:</b>'), gridrow, 0, 1, 1)
+#         gridrow += 1
+# #         form1.addWidget(self.showfileinbrowser_button, gridrow, 0, 1, 1)
+# #         form1.addWidget(self.firstfile_button, gridrow, 1, 1, 1)
+# #         form1.addWidget(self.previousfile_button, gridrow, 2, 1, 1)
+# #         form1.addWidget(self.nextfile_button, gridrow, 3, 1, 1)
+# #         form1.addWidget(self.lastfile_button, gridrow, 4, 1, 1)
+#         
+#         hlayout = QtWidgets.QHBoxLayout()
+#         hlayout.addWidget(self.showfileinbrowser_button)
+#         hlayout.addWidget(self.firstfile_button)
+#         hlayout.addWidget(self.previousfile_button)
+#         hlayout.addWidget(self.nextfile_button)
+#         hlayout.addWidget(self.lastfile_button)
+#         hlayout.addStretch(10)
+#         form1.addLayout(hlayout, gridrow, 0, 1, 15)
+#         
+#         
+#         gridrow += 1
+#         label = QtWidgets.QLabel('Low frequency limit (kHz):')
+#         form1.addWidget(label, gridrow, 0, 1, 2)
+#         form1.addWidget(self.lowfreqfilter_edit, gridrow, 2, 1, 5)
+#         gridrow += 1
+#         label = QtWidgets.QLabel('High frequency limit (kHz):')
+#         form1.addWidget(label, gridrow, 0, 1, 2)
+#         form1.addWidget(self.highfreqfilter_edit, gridrow, 2, 1, 5)
+#         gridrow += 1
+# #         form1.addWidget(QtWidgets.QLabel(''), gridrow, 0, 1, 1) # Empty row.
+#         form1.addWidget(app_framework.LeftAlignedQLabel('<b>Scan all:</b>'), gridrow, 0, 1, 1)
+# 
+#         gridrow += 1
+#         label = QtWidgets.QLabel('To directory:')
+#         form1.addWidget(label, gridrow, 0, 1, 1)
+#         form1.addWidget(self.targetdir_edit, gridrow, 1, 1, 13)
+#         form1.addWidget(self.targetdir_button, gridrow, 14, 1, 1)
+#         gridrow += 1
+#         form1.addWidget(self.scanfiles_button, gridrow, 0, 1, 1)
+#         #
+#         layout = QtWidgets.QVBoxLayout()
+#         layout.addLayout(form1)
+#         widget.setLayout(layout)
         #
         return widget        
         
@@ -362,7 +362,7 @@ class ScannerActivity(app_framework.ActivityBase):
         <p>&nbsp;</p>
         <h3>Scanner</h3>
         <p>
-        The scanner...
+        Work in progress...
         </p>
         
         """
@@ -1088,7 +1088,7 @@ class ScannerActivity(app_framework.ActivityBase):
 # ###        self._graph_plot_data = app_utils.GraphPlotData(
 # ###                        title = 'Parameter values in sequence', 
 # ###                        y_type = 'float',
-# ###                        x_label = 'Sequence position in dataset(s)',
+# ###                        x_label = 'Sequence position in datasets',
 # ###                        y_label = 'Value')        
 #         # One plot for each selected parameter.
 #         for parameter in self._parameter_list.getSelectedDataList():

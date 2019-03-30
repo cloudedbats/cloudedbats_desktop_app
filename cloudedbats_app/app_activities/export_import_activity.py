@@ -10,7 +10,7 @@ from PyQt5 import QtCore
 
 from cloudedbats_app import app_framework
 
-class ExportActivity(app_framework.ActivityBase):
+class ExportImportActivity(app_framework.ActivityBase):
     """ """
 
     def __init__(self, name, parentwidget):
@@ -18,7 +18,7 @@ class ExportActivity(app_framework.ActivityBase):
         self._last_used_dir_path = None
         # Initialize parent. Should be called after other 
         # initialization since the base class calls _create_content().
-        super(ExportActivity, self).__init__(name, parentwidget)
+        super(ExportImportActivity, self).__init__(name, parentwidget)
     
     def _create_content(self):
         """ """
@@ -46,7 +46,7 @@ class ExportActivity(app_framework.ActivityBase):
         # Layout widgets.
         form1 = QtWidgets.QGridLayout()
         gridrow = 0
-        label = QtWidgets.QLabel('Work in progress...')
+        label = QtWidgets.QLabel('Future work...')
         form1.addWidget(label, gridrow, 0, 1, 1)
         #
         layout = QtWidgets.QVBoxLayout()
@@ -87,9 +87,9 @@ class ExportActivity(app_framework.ActivityBase):
         """ """
         return """
         <p>&nbsp;</p>
-        <h3>Export</h3>
+        <h3>Export/import</h3>
         <p>
-        Work in progress...
+        Future work...
         </p>
         
         """

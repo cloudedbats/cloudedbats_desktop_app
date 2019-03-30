@@ -4,7 +4,11 @@ from .workspace_activity import WorkspaceActivity
 from .survey_activity import SurveyActivity
 from .wavefiles_activity import WavefilesActivity
 from .scanner_activity import ScannerActivity
-from .export_activity import ExportActivity
+
+from .analysis_activity import AnalysisActivity
+from .export_import_activity import ExportImportActivity
+from .upload_download_activity import UploadDownloadActivity
+from .cloud_activity import CloudActivity
 from .darwincore_activity import DarwinCoreActivity
 #
 from .new_activity import NewActivity

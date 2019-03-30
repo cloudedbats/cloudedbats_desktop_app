@@ -886,7 +886,7 @@ class DeleteDialog(QtWidgets.QDialog):
         markall_button.label_clicked.connect(self.check_all_items)                
         cancel_button = QtWidgets.QPushButton('Cancel')
         cancel_button.clicked.connect(self.reject) # Close dialog box.               
-        self.delete_button = QtWidgets.QPushButton('Delete marked item(s)')
+        self.delete_button = QtWidgets.QPushButton('Delete marked items')
         self.delete_button.clicked.connect(self.delete_marked_items)               
         # Layout widgets.
         hbox1 = QtWidgets.QHBoxLayout()

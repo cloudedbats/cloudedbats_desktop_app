@@ -73,7 +73,7 @@ class WorkspaceActivity(app_framework.ActivityBase):
         self.rename_button.clicked.connect(self.rename_survey)
         self.copy_button = QtWidgets.QPushButton('Copy survey...')
         self.copy_button.clicked.connect(self.copy_survey)
-        self.delete_button = QtWidgets.QPushButton('Delete survey(s)...')
+        self.delete_button = QtWidgets.QPushButton('Delete surveys...')
         self.delete_button.clicked.connect(self.delete_survey)
         
         # Layout widgets.
@@ -666,7 +666,7 @@ class DeleteDialog(QtWidgets.QDialog):
         markall_button.label_clicked.connect(self._check_all_surveys)                
         cancel_button = QtWidgets.QPushButton('Cancel')
         cancel_button.clicked.connect(self.reject) # Close dialog box.               
-        delete_button = QtWidgets.QPushButton('Delete marked survey(s)')
+        delete_button = QtWidgets.QPushButton('Delete marked surveys')
         delete_button.clicked.connect(self._delete_marked_surveys)               
         # Layout widgets.
         hbox1 = QtWidgets.QHBoxLayout()

@@ -83,7 +83,7 @@ class HelpTexts(object):
         </p>
         <p>
         Developed by: Arnold Andreasson, Sweden.<br/>        
-        Contact: info@cloudedbats.org
+        Contact and feedback: info@cloudedbats.org
         </p>
         """
 

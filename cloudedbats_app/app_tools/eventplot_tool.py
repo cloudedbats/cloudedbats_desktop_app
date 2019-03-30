@@ -17,7 +17,7 @@ from PyQt5 import QtCore
 from cloudedbats_app import app_framework
 from cloudedbats_app import app_utils
 
-class MetricsPlotTool(app_framework.ToolBase):
+class EventPlotTool(app_framework.ToolBase):
     """
     Template class for new tools.
     """
@@ -26,7 +26,7 @@ class MetricsPlotTool(app_framework.ToolBase):
         """ """
         # Initialize parent. Should be called after other 
         # initialization since the base class calls _create_content().
-        super(MetricsPlotTool, self).__init__(name, parentwidget)
+        super(EventPlotTool, self).__init__(name, parentwidget)
         #
         # Where is the tool allowed to dock in the main window.
         self.setAllowedAreas(QtCore.Qt.RightDockWidgetArea | 

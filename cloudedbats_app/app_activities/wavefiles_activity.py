@@ -617,15 +617,15 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                                 detector_type = self.detectortype_combo.currentText()
                                 if detector_type == 'Generic':
                                     metadata_reader = metadata4bats.MetadataWavefile(wave_file_path)
-                                if detector_type == '(Generic GUANO)':
+                                elif detector_type == '(Generic GUANO)':
                                     metadata_reader = metadata4bats.MetadataWavefile(wave_file_path)
-                                if detector_type == 'AudioMoth version 1.0':
+                                elif detector_type == 'AudioMoth version 1.0':
                                     metadata_reader = metadata4bats.MetadataWavefileAudiomoth(wave_file_path)
-                                if detector_type == '(AudioMoth version 1.2)':
+                                elif detector_type == '(AudioMoth version 1.2)':
                                     metadata_reader = metadata4bats.MetadataWavefileAudiomoth(wave_file_path)
-                                if detector_type == '(Pettersson-M500X)':
+                                elif detector_type == '(Pettersson-M500X)':
                                     metadata_reader = metadata4bats.MetadataWavefile(wave_file_path)
-                                if detector_type == 'CloudedBats-WURB/Pathfinder':
+                                elif detector_type == 'CloudedBats-WURB/Pathfinder':
                                     metadata_reader = metadata4bats.MetadataWavefileWurb(wave_file_path)
                                 else:
                                     metadata_reader = metadata4bats.MetadataWavefile(wave_file_path)
@@ -687,7 +687,7 @@ class DeleteDialog(QtWidgets.QDialog):
     def __init__(self, parentwidget):
         """ """
         super(DeleteDialog, self).__init__(parentwidget)
-        self.setWindowTitle("Delete wavefile(s)")
+        self.setWindowTitle("Delete wavefiles")
         self._parentwidget = parentwidget
         self.setLayout(self._content())
         self.setMinimumSize(500, 500)
@@ -704,7 +704,7 @@ class DeleteDialog(QtWidgets.QDialog):
         #
         self._main_tab_widget = QtWidgets.QTabWidget(self)
         contentLayout.addWidget(self._main_tab_widget)
-        self._main_tab_widget.addTab(self._item_content(), 'Delete wavefile(s)')
+        self._main_tab_widget.addTab(self._item_content(), 'Delete wavefiles')
 #         self._main_tab_widget.addTab(self._sample_content(), 'Delete detectors')
         
         return contentLayout                
@@ -723,7 +723,7 @@ class DeleteDialog(QtWidgets.QDialog):
         markall_button.label_clicked.connect(self._check_all_items)                
         cancel_button = QtWidgets.QPushButton('Cancel')
         cancel_button.clicked.connect(self.reject) # Close dialog box.               
-        delete_button = QtWidgets.QPushButton('Delete marked wavefile(s)')
+        delete_button = QtWidgets.QPushButton('Delete marked wavefiles')
         delete_button.clicked.connect(self._delete_marked_items)               
         # Layout widgets.
         hbox1 = QtWidgets.QHBoxLayout()

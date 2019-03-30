@@ -53,87 +53,87 @@ class SpeciesTool(app_framework.ToolBase):
         """ """
         widget = QtWidgets.QWidget()
         # Wave file.
-        self.wavefilepath_edit = QtWidgets.QLineEdit('')
-        self.wavefilepath_button = QtWidgets.QPushButton('Browse...')
-        self.wavefilepath_button.clicked.connect(self.wavefile_browse)
-#         self.wavefilepath_button.clicked.connect(self.test_plot)
-        
-        self.windowsize_combo = QtWidgets.QComboBox()
-        self.windowsize_combo.setEditable(False)
-        self.windowsize_combo.setMaximumWidth(300)
-        self.windowsize_combo.addItems(['128', 
-                                        '256', 
-                                        '512', 
-                                        '1024', 
-                                        '2048', 
-                                        '4096', 
-                                        ])
-        self.windowsize_combo.setCurrentIndex(3)
-        self.windowsize_combo.currentIndexChanged.connect(self.plot_callshape)
-        self.overlap_combo = QtWidgets.QComboBox()
-        self.overlap_combo.setEditable(False)
-        self.overlap_combo.setMaximumWidth(300)
-        self.overlap_combo.addItems(['None', 
-                                        'Low', 
-                                        'Medium', 
-                                        'High', 
-                                        'Highest', 
-                                       ])
-        self.overlap_combo.setCurrentIndex(2)
-        self.overlap_combo.currentIndexChanged.connect(self.plot_callshape)
-        
-        # Matplotlib figure and canvas for Qt5.
-        self._figure = mpl_figure.Figure()
-        self._canvas = mpl_backend.FigureCanvasQTAgg(self._figure) 
-        self.axes = self._figure.add_subplot(111)       
-        self._canvas.show()
-        # Layout widgets.
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self._canvas)
-        
-        # Layout widgets.
-        form1 = QtWidgets.QGridLayout()
-        gridrow = 0
-#         label = QtWidgets.QLabel('From directory:')
+#         self.wavefilepath_edit = QtWidgets.QLineEdit('')
+#         self.wavefilepath_button = QtWidgets.QPushButton('Browse...')
+#         self.wavefilepath_button.clicked.connect(self.wavefile_browse)
+# #         self.wavefilepath_button.clicked.connect(self.test_plot)
+#         
+#         self.windowsize_combo = QtWidgets.QComboBox()
+#         self.windowsize_combo.setEditable(False)
+#         self.windowsize_combo.setMaximumWidth(300)
+#         self.windowsize_combo.addItems(['128', 
+#                                         '256', 
+#                                         '512', 
+#                                         '1024', 
+#                                         '2048', 
+#                                         '4096', 
+#                                         ])
+#         self.windowsize_combo.setCurrentIndex(3)
+#         self.windowsize_combo.currentIndexChanged.connect(self.plot_callshape)
+#         self.overlap_combo = QtWidgets.QComboBox()
+#         self.overlap_combo.setEditable(False)
+#         self.overlap_combo.setMaximumWidth(300)
+#         self.overlap_combo.addItems(['None', 
+#                                         'Low', 
+#                                         'Medium', 
+#                                         'High', 
+#                                         'Highest', 
+#                                        ])
+#         self.overlap_combo.setCurrentIndex(2)
+#         self.overlap_combo.currentIndexChanged.connect(self.plot_callshape)
+#         
+#         # Matplotlib figure and canvas for Qt5.
+#         self._figure = mpl_figure.Figure()
+#         self._canvas = mpl_backend.FigureCanvasQTAgg(self._figure) 
+#         self.axes = self._figure.add_subplot(111)       
+#         self._canvas.show()
+#         # Layout widgets.
+#         layout = QtWidgets.QVBoxLayout()
+#         layout.addWidget(self._canvas)
+#         
+#         # Layout widgets.
+#         form1 = QtWidgets.QGridLayout()
+#         gridrow = 0
+# #         label = QtWidgets.QLabel('From directory:')
+# #         form1.addWidget(label, gridrow, 0, 1, 1)
+# #         form1.addWidget(self.sourcedir_edit, gridrow, 1, 1, 13)
+# #         form1.addWidget(self.sourcedir_button, gridrow, 14, 1, 1)
+# #         gridrow += 1
+# #         form1.addWidget(self.recursive_checkbox, gridrow, 1, 1, 13)
+# #         form1.addWidget(self.sourcecontent_button, gridrow, 14, 1, 1)
+# #         gridrow += 1
+# #         form1.addWidget(self.sourcefiles_tableview, gridrow, 0, 1, 15)
+# # #         form1.addWidget(self.loaded_datasets_listview, gridrow, 0, 1, 15)
+# #         gridrow += 1
+# # #         form1.addWidget(QtWidgets.QLabel(''), gridrow, 0, 1, 1) # Empty row.
+# #         form1.addWidget(app_framework.LeftAlignedQLabel('<b>View in browser:</b>'), gridrow, 0, 1, 1)
+# #         gridrow += 1
+# # #         form1.addWidget(self.showfileinbrowser_button, gridrow, 0, 1, 1)
+# # #         form1.addWidget(self.firstfile_button, gridrow, 1, 1, 1)
+# # #         form1.addWidget(self.previousfile_button, gridrow, 2, 1, 1)
+# # #         form1.addWidget(self.nextfile_button, gridrow, 3, 1, 1)
+# # #         form1.addWidget(self.lastfile_button, gridrow, 4, 1, 1)
+#         
+#         gridrow += 1
+#         label = QtWidgets.QLabel('Wave file:')
 #         form1.addWidget(label, gridrow, 0, 1, 1)
-#         form1.addWidget(self.sourcedir_edit, gridrow, 1, 1, 13)
-#         form1.addWidget(self.sourcedir_button, gridrow, 14, 1, 1)
+#         form1.addWidget(self.wavefilepath_edit, gridrow, 1, 1, 13)
+#         form1.addWidget(self.wavefilepath_button, gridrow, 14, 1, 1)
 #         gridrow += 1
-#         form1.addWidget(self.recursive_checkbox, gridrow, 1, 1, 13)
-#         form1.addWidget(self.sourcecontent_button, gridrow, 14, 1, 1)
-#         gridrow += 1
-#         form1.addWidget(self.sourcefiles_tableview, gridrow, 0, 1, 15)
-# #         form1.addWidget(self.loaded_datasets_listview, gridrow, 0, 1, 15)
-#         gridrow += 1
-# #         form1.addWidget(QtWidgets.QLabel(''), gridrow, 0, 1, 1) # Empty row.
-#         form1.addWidget(app_framework.LeftAlignedQLabel('<b>View in browser:</b>'), gridrow, 0, 1, 1)
-#         gridrow += 1
-# #         form1.addWidget(self.showfileinbrowser_button, gridrow, 0, 1, 1)
-# #         form1.addWidget(self.firstfile_button, gridrow, 1, 1, 1)
-# #         form1.addWidget(self.previousfile_button, gridrow, 2, 1, 1)
-# #         form1.addWidget(self.nextfile_button, gridrow, 3, 1, 1)
-# #         form1.addWidget(self.lastfile_button, gridrow, 4, 1, 1)
-        
-        gridrow += 1
-        label = QtWidgets.QLabel('Wave file:')
-        form1.addWidget(label, gridrow, 0, 1, 1)
-        form1.addWidget(self.wavefilepath_edit, gridrow, 1, 1, 13)
-        form1.addWidget(self.wavefilepath_button, gridrow, 14, 1, 1)
-        gridrow += 1
-        hbox = QtWidgets.QHBoxLayout()
-        hbox.addStretch(10)
-        hbox.addWidget(app_framework.RightAlignedQLabel('Window size:'))
-        hbox.addWidget(self.windowsize_combo)
-        hbox.addWidget(app_framework.RightAlignedQLabel('Overlap:'))
-        hbox.addWidget(self.overlap_combo)
+#         hbox = QtWidgets.QHBoxLayout()
 #         hbox.addStretch(10)
-        form1.addLayout(hbox, gridrow, 0, 1, 15)
-        gridrow += 1
-        form1.addWidget(self._canvas, gridrow, 0, 15, 15)
-        #
-        layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(form1)
-        widget.setLayout(layout)
+#         hbox.addWidget(app_framework.RightAlignedQLabel('Window size:'))
+#         hbox.addWidget(self.windowsize_combo)
+#         hbox.addWidget(app_framework.RightAlignedQLabel('Overlap:'))
+#         hbox.addWidget(self.overlap_combo)
+# #         hbox.addStretch(10)
+#         form1.addLayout(hbox, gridrow, 0, 1, 15)
+#         gridrow += 1
+#         form1.addWidget(self._canvas, gridrow, 0, 15, 15)
+#         #
+#         layout = QtWidgets.QVBoxLayout()
+#         layout.addLayout(form1)
+#         widget.setLayout(layout)
         #
         return widget        
     
@@ -143,7 +143,7 @@ class SpeciesTool(app_framework.ToolBase):
         namefilter = 'Wave files (*.wav *.WAV);;All files (*.*)'
         filenames, _ = QtWidgets.QFileDialog.getOpenFileNames(
                             self,
-                            'Import sample(s)',
+                            'Import samples',
                             '', # self._last_used_excelfile_name,
                             namefilter)
         # Check if user pressed ok or cancel.
