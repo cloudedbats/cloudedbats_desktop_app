@@ -218,6 +218,9 @@ class SpectrogramTool(app_framework.ToolBase):
         """ """
         try:
             if visible:
+                self.last_used_window_size = -1
+                self.last_used_timeresolution = -1
+                self.last_used_viewpart = -1
                 QtCore.QTimer.singleShot(100, self.plot_spectrogram)
                  
         except Exception as e:

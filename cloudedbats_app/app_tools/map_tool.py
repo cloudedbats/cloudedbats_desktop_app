@@ -45,6 +45,8 @@ class MapTool(app_framework.ToolBase):
 
         # Use sync object for workspaces and surveys. 
         app_core.DesktopAppSync().item_id_changed_signal.connect(self.plot_map)
+        # Also when visible.
+        self.visibilityChanged.connect(self.visibility_changed)
 
         # Map init.
         tilemapbase.init(create=True)
@@ -184,6 +186,9 @@ class MapTool(app_framework.ToolBase):
         """ """
         try:
             if visible:
+                self.last_used_latitude = 0.0
+                self.last_used_longitude = 0.0
+                self.last_used_degree_range = 0.0
                 QtCore.QTimer.singleShot(100, self.plot_map)
                  
         except Exception as e:
