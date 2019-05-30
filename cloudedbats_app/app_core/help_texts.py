@@ -47,7 +47,7 @@ class HelpTexts(object):
         
         <h3>Data storage</h3>
         <p>
-        Data and metadata for one survey is stored in a single HDF5 file (with the extension .h5). 
+        Data and metadata for one survey is stored in a single HDF5 file (files with the extension .h5). 
         HDF5 is a file format commonly used for scientific data; to store, work with and share data.
         It is also possible to do deeper analysis of data stored in a HDF5 file by using tools like 
         R and Python, and there are generic free browsers available for HDF5 files.
@@ -74,7 +74,7 @@ class HelpTexts(object):
         Start with, for example, a small survey with 5000 recordings, 10 seconds each, and check what's
         works best for you.
         From a metadata perspective it is important to assign enough metadata to describe the survey 
-        for future use. For example purpose of the survey, if it is a part of a program, contact information, 
+        for future use. For example; purpose of the survey, if it is a part of a program, contact information, 
         usage licenses for data, etc. 
         
         <br>One survey contains a number of events. 
@@ -82,7 +82,7 @@ class HelpTexts(object):
         
         <h4>- Events</h4>
         <p>
-        A sampling event is a place, or area, at a certain time, or period. Results from the manual or 
+        A sampling event is a place, or area, at a certain time, or time period. Results from the manual or 
         semi-automated analysis of recordings should be possible to store on the event node in a tabular form. 
         <br>One event contains a number of detectors.
         </p>
@@ -97,7 +97,7 @@ class HelpTexts(object):
         
         <h4>- Wavefiles</h4>
         <p>
-        A lot of metadata can automatically be extracted when importing the files. The files are stored in
+        A lot of metadata can automatically be extracted when importing the sound files. The files are stored in
         an internal format that makes it possible to export the wavefiles to a uniformed format even if
         different types of detectors are used.
         <br>Imported wavefiles can be scanned and visualised in various tool, for example as Spectrograms, 
@@ -127,10 +127,10 @@ class HelpTexts(object):
         Valid places for extra tools are side-by-side or stacked at the bottom or to the right. 
         It is also possible to put them outside the application window. 
         Click on the title bar to move them.
-        All activites and tools keeps their content when hidden.
+        All activites and tools keeps their content and state when hidden.
         </p>
         <p>
-        The main hierarchy <i>survey - event - detector - wavefile</i> is organised as <b>activities</b>.
+        The main hierarchy items, <i>survey - event - detector - wavefile</i>, are handled as <b>activities</b>.
         Metadata, spectrograms, maps, etc., are handled as <b>extra tools</b>. Open the extra tools you are
         interested in to work with. The content in the extra tools are automatically synchronised with
         selected parts in the activities, when possible.
@@ -145,6 +145,9 @@ class HelpTexts(object):
         the same directory as this desktop application. 
         This log file is cleared each time the application is started, and it's mainly used when 
         searching for errors in the application. 
+        </p>
+        <p>
+        There are tabs with more detailed help information in most of the activities and tools.
         </p>
         
         <h3>Open source software</h3>
