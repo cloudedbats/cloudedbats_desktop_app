@@ -354,12 +354,12 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         self.detectortype_combo = QtWidgets.QComboBox()
         self.detectortype_combo.setEditable(False)
         self.detectortype_combo.setMinimumWidth(400)
-        self.detectortype_combo.addItems(['Generic', 
+        self.detectortype_combo.addItems(['CloudedBats-WURB/Pathfinder', 
+                                          'Generic', 
                                           '(Generic GUANO)', 
                                           'AudioMoth version 1.0', 
                                           '(AudioMoth version 1.2)', 
                                           '(Pettersson-M500X)', 
-                                          'CloudedBats-WURB/Pathfinder', 
                                           ])
         # Detector position.
         self.position_combo = QtWidgets.QComboBox()
@@ -615,7 +615,9 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                             try:
                                 #
                                 detector_type = self.detectortype_combo.currentText()
-                                if detector_type == 'Generic':
+                                if detector_type == 'CloudedBats-WURB/Pathfinder':
+                                    metadata_reader = metadata4bats.MetadataWavefileWurb(wave_file_path)
+                                elif detector_type == 'Generic':
                                     metadata_reader = metadata4bats.MetadataWavefile(wave_file_path)
                                 elif detector_type == '(Generic GUANO)':
                                     metadata_reader = metadata4bats.MetadataWavefile(wave_file_path)
@@ -625,8 +627,6 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                                     metadata_reader = metadata4bats.MetadataWavefileAudiomoth(wave_file_path)
                                 elif detector_type == '(Pettersson-M500X)':
                                     metadata_reader = metadata4bats.MetadataWavefile(wave_file_path)
-                                elif detector_type == 'CloudedBats-WURB/Pathfinder':
-                                    metadata_reader = metadata4bats.MetadataWavefileWurb(wave_file_path)
                                 else:
                                     metadata_reader = metadata4bats.MetadataWavefile(wave_file_path)
                                 #

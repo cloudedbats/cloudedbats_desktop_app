@@ -14,10 +14,13 @@ pyinstaller
 ### Execute manually, not via "pip install -r requrements.txt":
 
 # brew install hdf5 # For MacOS.
+# sudo apt-get install libhdf5-serial-dev # For Ubuntu, etc.
+
 # h5py # Use "pip install h5py" instead.
 # tables # Use "pip install tables" instead.
 
 # git+https://github.com/cloudedbats/cloudedbats_dsp
+# git+https://github.com/cloudedbats/cloudedbats_sound
 # git+https://github.com/cloudedbats/cloudedbats_hdf5
 # git+https://github.com/cloudedbats/cloudedbats_metadata
 

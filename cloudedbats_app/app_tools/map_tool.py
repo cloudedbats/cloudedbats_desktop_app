@@ -50,7 +50,8 @@ class MapTool(app_framework.ToolBase):
 
         # Map init.
         tilemapbase.init(create=True)
-        self.osm_tiles = tilemapbase.tiles.OSM
+###        self.osm_tiles = tilemapbase.tiles.OSM
+        self.osm_tiles = tilemapbase.tiles.build_OSM()
     
     def _create_content(self):
         """ """

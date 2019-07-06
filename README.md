@@ -14,9 +14,11 @@ Early example of the user interface for the desktop application. CloudedBats.org
 
 Install Python3, venv, and HDF5 on your computer. 
 
-HDF5 can be downloaded from this page: https://www.hdfgroup.org/downloads/hdf5/ (It seems like version 1.8.20 is the last one with installer for Windows 32 bits. Use the latest version for all other 64 bits operating systems.)
-
-On macOS it is possible to use Homebrew to install HDF5. Use the command "brew install hdf5".
+HDF5 can be downloaded from this page: "https://www.hdfgroup.org/downloads/hdf5/". 
+It seems like version 1.8.20 is the last one with installer for Windows 32 bits. 
+Use the latest version for all other 64 bits operating systems. 
+On macOS it is possible to use Homebrew to install HDF5. Use the command "brew install hdf5". 
+For Ubuntu, etc., use "sudo apt-get install libhdf5-serial-dev".
 
 	mkdir work_cloudedbats
 	cd work_cloudedbats    
