@@ -361,15 +361,15 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                                           '(AudioMoth version 1.2)', 
                                           '(Pettersson-M500X)', 
                                           ])
-        # Detector position.
-        self.position_combo = QtWidgets.QComboBox()
-        self.position_combo.setEditable(False)
-        self.position_combo.setMinimumWidth(400)
-        self.position_combo.addItems(['Get from wave files', 
+        # Detector location.
+        self.location_combo = QtWidgets.QComboBox()
+        self.location_combo.setEditable(False)
+        self.location_combo.setMinimumWidth(400)
+        self.location_combo.addItems(['Get from wave files', 
                                       'Enter manually', 
-                                      'Unknown position', 
+                                      'Unknown location', 
                                       ])
-        self.position_combo.currentIndexChanged.connect(self.enable_buttons)
+        self.location_combo.currentIndexChanged.connect(self.enable_buttons)
         self.latitude_dd_edit = QtWidgets.QLineEdit('')
         self.latitude_dd_edit.setPlaceholderText('dd.dddd')
         self.logitude_dd_edit = QtWidgets.QLineEdit('')
@@ -430,12 +430,12 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         form1.addWidget(label, gridrow, 1, 1, 1)
         form1.addWidget(self.detectortype_combo, gridrow, 2, 1, 17)
         gridrow += 1
-        label = QtWidgets.QLabel('Detector position:')
+        label = QtWidgets.QLabel('Detector location:')
         form1.addWidget(label, gridrow, 0, 1, 2)
         gridrow += 1
-        label = QtWidgets.QLabel('Position:')
+        label = QtWidgets.QLabel('Location:')
         form1.addWidget(label, gridrow, 1, 1, 1)
-        form1.addWidget(self.position_combo, gridrow, 2, 1, 17)
+        form1.addWidget(self.location_combo, gridrow, 2, 1, 17)
         gridrow += 1
         label = QtWidgets.QLabel('Latitude (DD):')
         form1.addWidget(label, gridrow, 1, 1, 1)
@@ -506,7 +506,7 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         else:
             self.importwavefiles_button.setEnabled(False)
         #
-        if self.position_combo.currentText() == 'Enter manually':
+        if self.location_combo.currentText() == 'Enter manually':
             self.latitude_dd_edit.setEnabled(True)
             self.logitude_dd_edit.setEnabled(True)
         else:
@@ -642,12 +642,12 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                                     name = metadata['rec_file_stem'].lower()
                                 
                                 
-                                if self.position_combo.currentText() == 'Get from wave files':
+                                if self.location_combo.currentText() == 'Get from wave files':
                                     pass # Already done.
-                                elif self.position_combo.currentText() == 'Enter manually':
+                                elif self.location_combo.currentText() == 'Enter manually':
                                     metadata['rec_latitude_dd'] = self.latitude_dd_edit.text()
                                     metadata['rec_longitude_dd'] = self.logitude_dd_edit.text()
-                                elif self.position_combo.currentText() == 'Unknown position':
+                                elif self.location_combo.currentText() == 'Unknown location':
                                     metadata['rec_latitude_dd'] = ''
                                     metadata['rec_longitude_dd'] = ''
                                 
