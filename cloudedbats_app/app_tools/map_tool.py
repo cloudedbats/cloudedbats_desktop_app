@@ -139,7 +139,8 @@ class MapTool(app_framework.ToolBase):
         hlayout.addWidget(self._canvas)
         hlayout.addStretch(50)
         form1.addLayout(hlayout, gridrow, 0, 1, 30)
-#         form1.addWidget(self._canvas, gridrow, 0, 30, 30)
+        gridrow += 1
+        form1.addWidget(app_framework.CenterAlignedQLabel('© OpenStreetMap contributors'), gridrow, 0, 1, 30)
         #
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(form1)
