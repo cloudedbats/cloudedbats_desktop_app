@@ -11,10 +11,10 @@
 year_month_day = '2019.07.09'
 __version__ = year_month_day
 
-import os
-os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
-from PyQt5 import QtCore
-QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
+# import os
+# os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+# from PyQt5 import QtCore
+# QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
 
 # Matplotlib for PyQt5. 
 # Backend must be defined before other matplotlib imports.

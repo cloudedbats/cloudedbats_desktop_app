@@ -70,6 +70,12 @@ class ScannerActivity(app_framework.ActivityBase):
         self.usehighlimit_checkbox.setChecked(False)
         self.usehighlimit_checkbox.stateChanged.connect(self.enable_high_limit)
         self.highfreqfilter_edit.setEnabled(False)
+        # Amplitude level.
+        self.amplevel_edit = QtWidgets.QDoubleSpinBox()
+        self.amplevel_edit.setRange(-100.0, 100.0)
+        self.amplevel_edit.setValue(-50.0)
+        self.amplevel_checkbox = QtWidgets.QCheckBox('Relative')
+        self.amplevel_checkbox.setChecked(False)
         # Run.
         self.scanfiles_button = QtWidgets.QPushButton("Scan files")
         self.scanfiles_button.clicked.connect(self.scan_files)
@@ -87,16 +93,23 @@ class ScannerActivity(app_framework.ActivityBase):
         hbox2.addWidget(self.highfreqfilter_edit)
         hbox2.addWidget(self.usehighlimit_checkbox)
         hbox2.addStretch(10)
-        
+        #
         hbox3 = QtWidgets.QHBoxLayout()
-        hbox3.addWidget(self.scanfiles_button)
+        hbox3.addWidget(QtWidgets.QLabel('Min amp. absolute or relative RMS (dBFS): '))
+        hbox3.addWidget(self.amplevel_edit)
+        hbox3.addWidget(self.amplevel_checkbox)
         hbox3.addStretch(10)
+        #
+        hbox4 = QtWidgets.QHBoxLayout()
+        hbox4.addWidget(self.scanfiles_button)
+        hbox4.addStretch(10)
         #
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(items_listview, 10)
         layout.addLayout(hbox1)
         layout.addLayout(hbox2)
         layout.addLayout(hbox3)
+        layout.addLayout(hbox4)
         #
         widget.setLayout(layout)
         #
@@ -162,6 +175,8 @@ class ScannerActivity(app_framework.ActivityBase):
             params['low_frequency_hz'] = float(self.lowfreqfilter_edit.text()) * 1000.0
             if self.usehighlimit_checkbox.isChecked():
                 params['high_frequency_hz'] = float(self.highfreqfilter_edit.text()) * 1000.0
+            params['min_amp_level_dbfs'] = float(self.amplevel_edit.text())
+            params['min_amp_level_relative'] = self.amplevel_checkbox.isChecked()
             #
             item_id_list = []
             for rowindex in range(self._items_model.rowCount()):

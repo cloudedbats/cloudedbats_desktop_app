@@ -31,7 +31,7 @@ class ActivityManager(object):
 
         self._activitylist.append(app_activities.WavefilesActivity('Wave files', self._parent))
         
-        self._activitylist.append(app_activities.ScannerActivity('(Scanner)', self._parent))
+        self._activitylist.append(app_activities.ScannerActivity('Scanner', self._parent))
         
         self._activitylist.append(app_activities.AnalysisActivity('(Analysis)', self._parent))
         

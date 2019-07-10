@@ -49,110 +49,84 @@ class WaveFileScanner():
             # Use a thread to relese the user.
             item_id_list = param_dict.get('item_id_list', [])
             low_freq_hz = param_dict.get('low_frequency_hz', 15000.0)
-            high_freq_hz = param_dict.get('high_frequency_hz', 250000.0)
+            high_freq_hz = param_dict.get('high_frequency_hz', None)
+            min_amp_level_dbfs = param_dict.get('min_amp_level_dbfs', None)
+            min_amp_level_relative = param_dict.get('min_amp_level_relative', None)
             
             
             
-            self._scan_files(item_id_list, low_freq_hz, high_freq_hz)
+            
+            self._scan_files(item_id_list, 
+                             low_freq_hz, high_freq_hz, 
+                             min_amp_level_dbfs, min_amp_level_relative)
             
             
             
             
 #             self.thread_object = threading.Thread(target=self._scan_files, 
-#                                                   args=(item_id_list, low_freq_hz, high_freq_hz, 
-#                                                       )) # logrow_id, datatype_list, year_from, year_to, status, user ))
+#                                                   args=(item_id_list, 
+#                                                         low_freq_hz, high_freq_hz, 
+#                                                         min_amp_level_dbfs, min_amp_level_relative
+#                                                       ))
 #             self.thread_object.start()
+        
         except Exception as e:
             app_utils.Logging.warning('Failed to scan wave files. Exception: ' + str(e))
             
-    def _scan_files(self, item_id_list, low_freq_hz, high_freq_hz):
+    def _scan_files(self, item_id_list, low_freq_hz, high_freq_hz, min_amp_level_dbfs, min_amp_level_relative):
         """ """
-        
-        print('DEBUG:', item_id_list, '   ', low_freq_hz, '   ', high_freq_hz)
-        
         workspace = app_core.DesktopAppSync().get_workspace()
         survey = app_core.DesktopAppSync().get_selected_survey()
-        
-        item_id = item_id_list[0]
-        
         h5wavefile = hdf54bats.Hdf5Wavefiles(workspace, survey)
-        signal = h5wavefile.get_wavefile(item_id=item_id, close=False)
         
-        extractor = sound4bats.PulsePeaksExtractor(debug=True)
-        extractor.setup(sampling_freq_hz=384000)
-        signal_filtered = extractor.filter(signal, filter_low_hz=20000, filter_high_hz=100000)
-        extractor.new_result_table()
-        extractor.extract_peaks(signal_filtered)
-        extractor.save_result_table(file_path='debug_pulse_peaks.txt')
+        for item_id in item_id_list:
+            
+            app_utils.Logging().info('Scanning: ' + item_id)
+            
+            print('DEBUG:', item_id, '   ', low_freq_hz, '   ', high_freq_hz, '   ', min_amp_level_dbfs, '   ', min_amp_level_relative)
+            
+            signal = h5wavefile.get_wavefile(item_id=item_id, close=True)
+            
+            signal = signal / 32767 # To interval -1.0 to 1.0
+            
+            extractor = sound4bats.PulsePeaksExtractor(debug=True)
+            extractor.setup(sampling_freq_hz=384000)
+            signal_filtered = extractor.filter(signal, 
+                                               filter_low_hz=low_freq_hz, filter_high_hz=high_freq_hz)
+            extractor.new_result_table()
+            extractor.extract_peaks(signal_filtered, 
+                                    min_amp_level_dbfs=min_amp_level_dbfs, min_amp_level_relative=min_amp_level_relative)
+            
+            result_table = extractor.get_result_table()
+            
+            print('Debug: TABLE len:', len(result_table))
+            
+            h5wavefile.add_pulse_peaks_table(item_id, result_table)
+            
+            
+#             extractor.save_result_table(file_path='debug_pulse_peaks' + item_id + '.txt')
 
-        # Plot.
-        import matplotlib.pyplot
-        
-        time = []
-        freq = []
-        amp = []
-        for row in extractor.get_result_table():
-            if row[0] == 1:
-                if row[3] > -100: # -100 means silent.
-                    time.append(float(row[1]))
-                    freq.append(float(row[2]))
-                    amp.append(float(row[3]))
-        #
-        amp_min = abs(min(amp))
-        sizes = [((x+amp_min)**1.2) * 0.1 for x in amp]
-         
-    #     matplotlib.pyplot.scatter(time, freq, c=sizes, s=sizes, cmap='Blues')
-#         matplotlib.pyplot.scatter(time, freq, c=amp, s=sizes, cmap='Reds')
-        matplotlib.pyplot.scatter(time, freq, c=amp, s=0.5, cmap='Reds')
-        matplotlib.pyplot.show()
+#         # Plot.
+#         import matplotlib.pyplot
+#         
+#         time = []
+#         freq = []
+#         amp = []
+#         for row in extractor.get_result_table():
+#             if row[0] == 1:
+#                 if row[3] > -100: # -100 means silent.
+#                     time.append(float(row[1]))
+#                     freq.append(float(row[2]))
+#                     amp.append(float(row[3]))
+#         #
+#         amp_min = abs(min(amp))
+#         sizes = [((x+amp_min)**1.2) * 0.1 for x in amp]
+#          
+#     #     matplotlib.pyplot.scatter(time, freq, c=sizes, s=sizes, cmap='Blues')
+# #         matplotlib.pyplot.scatter(time, freq, c=amp, s=sizes, cmap='Reds')
+# #        matplotlib.pyplot.scatter(time, freq, c=amp, s=0.5, cmap='Reds') #, origin='lower')
+#         matplotlib.pyplot.scatter(time, freq, s=0.5 )
+#         matplotlib.pyplot.show()
 
         return #####################################################
 
-
-
-# ########## From pulse_peaks_extractor ##########
-#     file_path = pathlib.Path('../data', 'test_chirp_generator.wav')
-#     
-#     with wave.open(str(file_path), 'r') as wave_file:
-#         nchannels = wave_file.getnchannels() # 1=mono, 2=stereo.
-#         sampwidth = wave_file.getsampwidth() # sample width in bytes.
-#         framerate = wave_file.getframerate() # Sampling frequency.
-#         nframes = wave_file.getnframes() # Number of audio frames.
-#         
-#         if int(framerate > 90000):
-#             frame_rate_hz = framerate
-#             lenght_s = int(nframes) / int(framerate)
-#         else:
-#             # Probably time division by a factor of 10.
-#             frame_rate_hz = framerate * 10
-#             lenght_s = int(nframes) / int(framerate) / 10
-#             
-#         buffer_raw = wave_file.readframes(frame_rate_hz) # Max 1 sec.
-#         signal = numpy.fromstring(buffer_raw, dtype=numpy.int16) / 32767
-#     
-#     print('frame_rate_hz: ', frame_rate_hz, ' lenght_s: ', lenght_s)
-#     
-#     extractor = PulsePeaksExtractor(debug=True)
-#     extractor.setup(frame_rate_hz)
-#     signal_filtered = extractor.filter(signal, filter_low_hz=20000, filter_high_hz=100000)
-#     extractor.new_result_table()
-#     extractor.extract_peaks(signal_filtered)
-#     extractor.save_result_table(file_path='../data/pulse_peaks.txt')
-#     
-#     # Plot.
-#     time = []
-#     freq = []
-#     amp = []
-#     for row in extractor.get_result_table():
-#         if row[0] == 1:
-#             if row[3] > -100: # -100 means silent.
-#                 time.append(float(row[1]))
-#                 freq.append(float(row[2]))
-#                 amp.append(float(row[3]))
-#     #
-#     amp_min = abs(min(amp))
-#     sizes = [((x+amp_min)**1.2) * 0.1 for x in amp]
-#     
-# #     matplotlib.pyplot.scatter(time, freq, c=sizes, s=sizes, cmap='Blues')
-#     matplotlib.pyplot.scatter(time, freq, c=amp, s=sizes, cmap='Reds')
-#     matplotlib.pyplot.show()
