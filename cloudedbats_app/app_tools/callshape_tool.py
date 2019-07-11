@@ -5,29 +5,29 @@
 # License: MIT License (see LICENSE.txt or http://opensource.org/licenses/mit).
 
 import sys
-import pathlib
+import time
+import queue
 import threading
 from PyQt5 import QtWidgets
+from PyQt5 import QtGui
 from PyQt5 import QtCore
-import numpy as np
 import matplotlib.backends.backend_qt5agg as mpl_backend
 import matplotlib.figure as mpl_figure
 
 from cloudedbats_app import app_framework
+from cloudedbats_app import app_core
 from cloudedbats_app import app_utils
 import dsp4bats
+import hdf54bats
 
 class CallShapesTool(app_framework.ToolBase):
     """ CallShapes plotting tool. Zero Crossing style. """
     
     def __init__(self, name, parentwidget):
         """ """
-        self.callshape_thread = None
-        self.callshape_thread_active = False
         # Initialize parent. Should be called after other 
         # initialization since the base class calls _create_content().
         super(CallShapesTool, self).__init__(name, parentwidget)
-        #
         # Where is the tool allowed to dock in the main window.
         self.setAllowedAreas(QtCore.Qt.RightDockWidgetArea | 
                              QtCore.Qt.BottomDockWidgetArea)
@@ -35,33 +35,62 @@ class CallShapesTool(app_framework.ToolBase):
         # Default position. Hide as default.
         self._parent.addDockWidget(QtCore.Qt.RightDockWidgetArea, self)
         self.hide()
-
+        # Plot queue. Used to separate threads.
+        self.callshapes_queue = queue.Queue(maxsize=100)
+        self.callshapes_thread = None
+#         self.callshapes_active = False
+        self.callshapes_active = True
+        self.last_used_callshapes_item_id = ''
+#         self.last_used_window_size = -1
+#         self.last_used_timeresolution = -1
+#         self.last_used_viewpart = -1
+        # Use sync object for workspaces and surveys. 
+        app_core.DesktopAppSync().item_id_changed_signal.connect(self.plot_callshapes)
+        # Also when visible.
+        self.visibilityChanged.connect(self.visibility_changed)
+    
     def _create_content(self):
         """ """
         content = self._create_scrollable_content()
         layout = QtWidgets.QVBoxLayout()
         # Add tabs.
         tabWidget = QtWidgets.QTabWidget()
-        tabWidget.addTab(self._content_callshape(), 'Call shape')
-#         tabWidget.addTab(self._content_settings(), 'Settings')
+        tabWidget.addTab(self._content_callshapes(), 'Call shapes')
         tabWidget.addTab(self._content_more(), '(More)')
         tabWidget.addTab(self._content_help(), '(Help)')
         # 
         layout.addWidget(tabWidget)
         content.setLayout(layout)
     
-    def _content_callshape(self):
+    def _content_callshapes(self):
         """ """
         widget = QtWidgets.QWidget()
-        # Wave file.
-#         self.wavefilepath_edit = QtWidgets.QLineEdit('')
-#         self.wavefilepath_button = QtWidgets.QPushButton('Browse...')
-#         self.wavefilepath_button.clicked.connect(self.wavefile_browse)
-# #         self.wavefilepath_button.clicked.connect(self.test_plot)
-#         
+        
+#         self.workspacedir_label = QtWidgets.QLabel('Workspace: -     ')
+        self.survey_label = QtWidgets.QLabel('Survey: ')
+        self.itemid_label = QtWidgets.QLabel('Item id: ')
+        self.title_label = QtWidgets.QLabel('Title: ')
+        self.survey_edit = QtWidgets.QLineEdit('')
+        self.itemid_edit = QtWidgets.QLineEdit('')
+        self.title_edit = QtWidgets.QLineEdit('')
+        self.survey_edit.setReadOnly(True)
+        self.itemid_edit.setReadOnly(True)
+        self.title_edit.setReadOnly(True)
+        self.survey_edit.setMaximumWidth(1000)
+        self.itemid_edit.setMaximumWidth(1000)
+        self.title_edit.setMaximumWidth(1000)
+        self.survey_edit.setFrame(False)
+        self.itemid_edit.setFrame(False)
+        self.title_edit.setFrame(False)
+        font = QtGui.QFont('Helvetica', pointSize=-1, weight=QtGui.QFont.Bold)
+        self.survey_edit.setFont(font)
+        self.itemid_edit.setFont(font)
+        self.title_edit.setFont(font)
+        
 #         self.windowsize_combo = QtWidgets.QComboBox()
 #         self.windowsize_combo.setEditable(False)
-#         self.windowsize_combo.setMaximumWidth(300)
+#         self.windowsize_combo.setMinimumWidth(80)
+#         self.windowsize_combo.setMaximumWidth(150)
 #         self.windowsize_combo.addItems(['128', 
 #                                         '256', 
 #                                         '512', 
@@ -70,133 +99,78 @@ class CallShapesTool(app_framework.ToolBase):
 #                                         '4096', 
 #                                         ])
 #         self.windowsize_combo.setCurrentIndex(3)
-#         self.windowsize_combo.currentIndexChanged.connect(self.plot_callshape)
-#         self.overlap_combo = QtWidgets.QComboBox()
-#         self.overlap_combo.setEditable(False)
-#         self.overlap_combo.setMaximumWidth(300)
-#         self.overlap_combo.addItems(['None', 
-#                                         'Low', 
-#                                         'Medium', 
-#                                         'High', 
-#                                         'Highest', 
-#                                        ])
-#         self.overlap_combo.setCurrentIndex(2)
-#         self.overlap_combo.currentIndexChanged.connect(self.plot_callshape)
+#         self.windowsize_combo.currentIndexChanged.connect(self.plot_spectrogram)
 #         
-#         # Matplotlib figure and canvas for Qt5.
-#         self._figure = mpl_figure.Figure()
-#         self._canvas = mpl_backend.FigureCanvasQTAgg(self._figure) 
-#         self.axes = self._figure.add_subplot(111)       
-#         self._canvas.show()
-#         # Layout widgets.
-#         layout = QtWidgets.QVBoxLayout()
-#         layout.addWidget(self._canvas)
+#         self.timeresolution_combo = QtWidgets.QComboBox()
+#         self.timeresolution_combo.setEditable(False)
+#         self.timeresolution_combo.setMinimumWidth(80)
+#         self.timeresolution_combo.setMaximumWidth(150)
+#         self.timeresolution_combo.addItems(['2 ms', 
+#                                              '1 ms', 
+#                                              '1/2 ms', 
+#                                              '1/4 ms', 
+#                                              '1/8 ms', 
+#                                              ])
+#         self.timeresolution_combo.setCurrentIndex(1)
+#         self.timeresolution_combo.currentIndexChanged.connect(self.plot_spectrogram)
 #         
-#         # Layout widgets.
-#         form1 = QtWidgets.QGridLayout()
-#         gridrow = 0
-# #         label = QtWidgets.QLabel('From directory:')
-# #         form1.addWidget(label, gridrow, 0, 1, 1)
-# #         form1.addWidget(self.sourcedir_edit, gridrow, 1, 1, 13)
-# #         form1.addWidget(self.sourcedir_button, gridrow, 14, 1, 1)
-# #         gridrow += 1
-# #         form1.addWidget(self.recursive_checkbox, gridrow, 1, 1, 13)
-# #         form1.addWidget(self.sourcecontent_button, gridrow, 14, 1, 1)
-# #         gridrow += 1
-# #         form1.addWidget(self.sourcefiles_tableview, gridrow, 0, 1, 15)
-# # #         form1.addWidget(self.loaded_datasets_listview, gridrow, 0, 1, 15)
-# #         gridrow += 1
-# # #         form1.addWidget(QtWidgets.QLabel(''), gridrow, 0, 1, 1) # Empty row.
-# #         form1.addWidget(app_framework.LeftAlignedQLabel('<b>View in browser:</b>'), gridrow, 0, 1, 1)
-# #         gridrow += 1
-# # #         form1.addWidget(self.showfileinbrowser_button, gridrow, 0, 1, 1)
-# # #         form1.addWidget(self.firstfile_button, gridrow, 1, 1, 1)
-# # #         form1.addWidget(self.previousfile_button, gridrow, 2, 1, 1)
-# # #         form1.addWidget(self.nextfile_button, gridrow, 3, 1, 1)
-# # #         form1.addWidget(self.lastfile_button, gridrow, 4, 1, 1)
-#         
-#         gridrow += 1
-#         label = QtWidgets.QLabel('Wave file:')
-#         form1.addWidget(label, gridrow, 0, 1, 1)
-#         form1.addWidget(self.wavefilepath_edit, gridrow, 1, 1, 13)
-#         form1.addWidget(self.wavefilepath_button, gridrow, 14, 1, 1)
-#         gridrow += 1
-#         hbox = QtWidgets.QHBoxLayout()
-#         hbox.addStretch(10)
-#         hbox.addWidget(app_framework.RightAlignedQLabel('Window size:'))
-#         hbox.addWidget(self.windowsize_combo)
-#         hbox.addWidget(app_framework.RightAlignedQLabel('Overlap:'))
-#         hbox.addWidget(self.overlap_combo)
-# #         hbox.addStretch(10)
-#         form1.addLayout(hbox, gridrow, 0, 1, 15)
-#         gridrow += 1
-#         form1.addWidget(self._canvas, gridrow, 0, 15, 15)
-#         #
-#         layout = QtWidgets.QVBoxLayout()
-#         layout.addLayout(form1)
-#         widget.setLayout(layout)
+#         self.viewpart_combo = QtWidgets.QComboBox()
+#         self.viewpart_combo.setEditable(False)
+#         self.viewpart_combo.setMinimumWidth(80)
+#         self.viewpart_combo.setMaximumWidth(150)
+#         self.viewpart_combo.addItems(['All', 
+#                                       '0-1 s', 
+#                                       '1-2 s', 
+#                                       '2-3 s', 
+#                                       '3-4 s', 
+#                                       '4-5 s', 
+#                                       '5-6 s', 
+#                                       '6-7 s', 
+#                                       '7-8 s', 
+#                                       '8-9 s', 
+#                                       '9-10 s', 
+#                                       ])
+#         self.viewpart_combo.setCurrentIndex(0)
+#         self.viewpart_combo.currentIndexChanged.connect(self.plot_spectrogram)
+        
+        # Matplotlib figure and canvas for Qt5.
+        self._figure = mpl_figure.Figure()
+        self._canvas = mpl_backend.FigureCanvasQTAgg(self._figure)
+        self.axes = self._figure.add_subplot(111)
+        self._figure.tight_layout()
+        self._canvas.show()
+        
+        # Layout widgets.
+        form1 = QtWidgets.QGridLayout()
+        form1.setSpacing(5)
+        form1.setContentsMargins(5,5,5,5)
+        
+        gridrow = 0
+        form1.addWidget(self.survey_label, gridrow, 0, 1, 1)
+        form1.addWidget(self.survey_edit, gridrow, 1, 1, 27)
+#         label = app_framework.RightAlignedQLabel('FFT window size:')
+#         form1.addWidget(label, gridrow, 28, 1, 1)
+#         form1.addWidget(self.windowsize_combo, gridrow, 29, 1, 1)
+        gridrow += 1
+        form1.addWidget(self.itemid_label, gridrow, 0, 1, 1)
+        form1.addWidget(self.itemid_edit, gridrow, 1, 1, 27)
+#         label = app_framework.RightAlignedQLabel('Time resolution:')
+#         form1.addWidget(label, gridrow, 28, 1, 1)
+#         form1.addWidget(self.timeresolution_combo, gridrow, 29, 1, 1)
+        gridrow += 1
+        form1.addWidget(self.title_label, gridrow, 0, 1, 1)
+        form1.addWidget(self.title_edit, gridrow, 1, 1, 27)
+#         label = app_framework.RightAlignedQLabel('View part:')
+#         form1.addWidget(label, gridrow, 28, 1, 1)
+#         form1.addWidget(self.viewpart_combo, gridrow, 29, 1, 1)
+        gridrow += 1
+        form1.addWidget(self._canvas, gridrow, 0, 100, 30)
+        #
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(form1)
+        widget.setLayout(layout)
         #
         return widget        
-    
-    def wavefile_browse(self):
-        """ """
-        # Show select file dialog box. Multiple files can be selected.
-        namefilter = 'Wave files (*.wav *.WAV);;All files (*.*)'
-        filenames, _ = QtWidgets.QFileDialog.getOpenFileNames(
-                            self,
-                            'Import samples',
-                            '', # self._last_used_excelfile_name,
-                            namefilter)
-        # Check if user pressed ok or cancel.
-        if filenames:
-            for filename in filenames:
-#                 print('DEBUG: ', filename)
-                self.wavefilepath_edit.setText(filename)
-                self.plot_callshape()
-    
-    
-    # === Settings ===
-#     def _content_settings(self):
-#         """ """
-#         widget = QtWidgets.QWidget()
-#         #
-#         
-#         self.image = QtWidgets.QLabel()
-#         self.image.setPixmap(QtGui.QPixmap('/home/arnold/Desktop/develop/github_cloudedbats_dsp/dsp4bats/batfiles_done1_results/WurbAA03_20170731T221032+0200_N43.3148W2.0060_TE384_Plot.png'))
-#         self.image.setObjectName("image")
-# #         self.image.mousePressEvent = self.getPos
-#         
-#         # Active widgets and connections.
-#         self._nameedit = QtWidgets.QLineEdit('<Name>')
-#         self._emailedit = QtWidgets.QLineEdit('<Email>')
-#         self._customerlist = QtWidgets.QListWidget()
-#         # Layout.
-#         form_layout = QtWidgets.QFormLayout()
-#         form_layout.addRow('&Name:', self._nameedit)
-#         form_layout.addRow('&Mail:', self._emailedit)
-#         form_layout.addRow('&Projects:', self._customerlist)
-#         # Test data.
-#         self._customerlist.addItem('<First project.>')
-#         self._customerlist.addItem('<Second project.>')
-#         #
-#         # Active widgets and connections.
-#         self._testbutton = QtWidgets.QPushButton('Write info to log')
-# #         self._testbutton.clicked.connect(self._test)                
-#         # Layout.
-#         button_layout = QtWidgets.QHBoxLayout()
-#         button_layout.addWidget(self._testbutton)
-#         button_layout.addStretch(5)
-#         #
-#         layout = QtWidgets.QVBoxLayout()
-#         layout.addLayout(form_layout, 10)
-#         
-#         layout.addWidget(self.image)
-#         
-#         layout.addLayout(button_layout)
-#         widget.setLayout(layout)                
-#         #
-#         return widget
-    
     
     # === More ===
     def _content_more(self):
@@ -221,231 +195,177 @@ class CallShapesTool(app_framework.ToolBase):
         gridrow += 1
         layout.addWidget(QtWidgets.QLabel(''), gridrow, 1, 1, 20)
         #
-        widget.setLayout(layout)                
+        widget.setLayout(layout)
         #
         return widget
-
-
-    # === Core ===
     
-    def plot_callshape(self):
-        """ Use a thread to relese the user. """
-        # Clear.
-        self.axes.cla()
-        self._canvas.draw()
+    def close(self):
+        """ """
         try:
-            # Check if thread is running.
-            if self.callshape_thread:
-#                 while self.callshape_thread.is_alive():
-#                     #print('DEBUG: Stop running thread.')
-                self.callshape_thread_active = False
-                threading.Timer(0.5, self.plot_callshape)
-                    
-            # Use a thread to relese the user.
-            self.callshape_thread_active = True
-            self.callshape_thread = threading.Thread(target = self.run_plot_callshape, 
-                                                          args=())
-            self.callshape_thread.start()
+            # Terminate callshapes thread.
+            self.callshapes_active = False
+            #
+            while self.callshapes_queue.qsize() > 5:
+                try: self.callshapes_queue.get_nowait()
+                except queue.Empty: break # Exits while loop.
+            # Send on queue to release thread.
+            self.callshapes_queue.put(False)
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
-    def run_plot_callshape(self):
+    def visibility_changed(self, visible):
         """ """
-        # File.
-        wave_file = self.wavefilepath_edit.text()
-        wave_file_path = pathlib.Path(wave_file)
-        if not wave_file_path.is_file():
-            print('DEBUG: File does not exists: ', wave_file)
-            return
-        # Settings.
-        window_size = int(self.windowsize_combo.currentText())
-        overlap = self.overlap_combo.currentText()
-#         window_size = 1024
-#         resolution = 'Highest'
-        window_function = 'hann'
-        jump = int(window_size / 2)
-        if overlap == 'None':
-            window_function = 'hann'
-            jump = window_size
-        elif overlap == 'Low':
-            window_function = 'hann'
-            jump = int(window_size / 1.33) 
-        elif overlap == 'Medium':
-#             window_function = 'black'
-            window_function = 'hann'
-            jump = int(window_size / 2)
-        elif overlap == 'High':
-            window_function = 'blackh'
-#             window_function = 'hann'
-            jump = int(window_size / 4)
-        elif overlap == 'Highest':
-            window_function = 'kaiser'
-#             window_function = 'hann'
-            jump = int(window_size / 8)
-        #
-        if not self.callshape_thread_active:
-            return
-        # Read signal from file.
-        wave_reader = dsp4bats.WaveFileReader(wave_file)
-        sampling_freq = wave_reader.sampling_freq
-        signal = np.array([])
-        buffer = wave_reader.read_buffer()
-        while len(buffer) > 0:
-            signal = np.append(signal, buffer)
-            buffer = wave_reader.read_buffer()  
-        wave_reader.close()
-        #
-        pos_in_sec_from = 0.0
-        pos_in_sec_to = len(signal) / sampling_freq        
-        #
-        # Cut part from 1 sec signal.
-        signal_short = signal[int(pos_in_sec_from * sampling_freq):int(pos_in_sec_to * sampling_freq)]
-        # 
-        if not self.callshape_thread_active:
-            return
-        # Create util.
-        dbsf_util = dsp4bats.DbfsSpectrumUtil(window_size=window_size, 
-                                               window_function=window_function)
-        #
-        if not self.callshape_thread_active:
-            return
-        # Create matrix.
-        ### jump = int(sampling_freq/1000/jumps_per_ms)
-        size = int(len(signal_short) / jump)
-        matrix = dbsf_util.calc_dbfs_matrix(signal_short, matrix_size=size, jump=jump)
-        #
-        if not self.callshape_thread_active:
-            return
-        # Plot.
-        max_freq = sampling_freq / 1000 / 2 # kHz and Nyquist.
-        ###f, ax = plt.subplots(figsize=(15, 5))
-        self.axes.imshow(matrix.T, 
-                  cmap='viridis', 
-                  origin='lower',
-                  extent=(pos_in_sec_from, pos_in_sec_to, 
-                          0, max_freq)
-                 )
-        self.axes.axis('tight')
-        self.axes.set_title(wave_file_path.name)
-        self.axes.set_ylabel('Frequency (kHz)')
-        self.axes.set_xlabel('Time (s)')
-        #ax.set_ylim([0,160])
-        #
-        if not self.callshape_thread_active:
-            return
-        #
-        self._canvas.draw()
+        try:
+            if visible:
+#                 self.last_used_window_size = -1
+#                 self.last_used_timeresolution = -1
+#                 self.last_used_viewpart = -1
+                QtCore.QTimer.singleShot(100, self.plot_callshapes)
+                 
+        except Exception as e:
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
-#     # === Core ===
-#     
-#     def plot_spectrogram(self):
-#         """ Use a thread to relese the user. """
-#         # Clear.
-#         self.axes.cla()
-#         self._canvas.draw()
-#         try:
-#             # Check if thread is running.
-#             if scallshapegram_thread:
-# #                 while self.spectrogram_thread.is_alive():
-# #                     #print('DEBUG: Stop running thread.')
-#                 self.spectrogram_thread_active = False
-#                 threading.Timer(0.5, self.plot_spectrogram)
-#                     
-#             # Use a thread to relese the user.
-#             self.spectrogram_thread_active = True
-#             self.spectrogram_thread = threading.Thread(target = self.run_plot_spectrogram, 
-#                                                           args=())
-#             self.spectrogram_thread.start()
-#         except Exception as e:
-#             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
-#             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
-#     
-#     def run_plot_spectrogram(self):
-#         """ """
-#         # File.
-#         wave_file = self.wavefilepath_edit.text()
-#         wave_file_path = pathlib.Path(wave_file)
-#         if not wave_file_path.is_file():
-#             print('DEBUG: File does not exists: ', wave_file)
-#             return
-#         # Settings.
-#         window_size = int(self.windowsize_combo.currentText())
-#         overlap = self.overlap_combo.currentText()
-# #         window_size = 1024
-# #         resolution = 'Highest'
-#         window_function = 'hann'
-#         jump = int(window_size / 2)
-#         if overlap == 'None':
-#             window_function = 'hann'
-#             jump = window_size
-#         elif overlap == 'Low':
-#             window_function = 'hann'
-#             jump = int(window_size / 1.33) 
-#         elif overlap == 'Medium':
-# #             window_function = 'black'
-#             window_function = 'hann'
-#             jump = int(window_size / 2)
-#         elif overlap == 'High':
-#             window_function = 'blackh'
-# #             window_function = 'hann'
-#             jump = int(window_size / 4)
-#         elif overlap == 'Highest':
-#             window_function = 'kaiser'
-# #             window_function = 'hann'
-#             jump = int(window_size / 8)
-#         #
-#         if not self.spectrogram_thread_active:
-#             return
-#         # Read signal from file.
-#         wave_reader = dsp4bats.WaveFileReader(wave_file)
-#         sampling_freq = wave_reader.sampling_freq
-#         signal = np.array([])
-#         buffer = wave_reader.read_buffer()
-#         while len(buffer) > 0:
-#             signal = np.append(signal, buffer)
-#             buffer = wave_reader.read_buffer()  
-#         wave_reader.close()
-#         #
-#         pos_in_sec_from = 0.0
-#         pos_in_sec_to = len(signal) / sampling_freq        
-#         #
-#         # Cut part from 1 sec signal.
-#         signal_short = signal[int(pos_in_sec_from * sampling_freq):int(pos_in_sec_to * sampling_freq)]
-#         # 
-#         if not self.spectrogram_thread_active:
-#             return
-#         # Create util.
-#         dbsf_util = dsp4bats.DbfsSpectrumUtil(window_size=window_size, 
-#                                                window_function=window_function)
-#         #
-#         if not self.spectrogram_thread_active:
-#             return
-#         # Create matrix.
-#         ### jump = int(sampling_freq/1000/jumps_per_ms)
-#         size = int(len(signal_short) / jump)
-#         matrix = dbsf_util.calc_dbfs_matrix(signal_short, matrix_size=size, jump=jump)
-#         #
-#         if not self.spectrogram_thread_active:
-#             return
-#         # Plot.
-#         max_freq = sampling_freq / 1000 / 2 # kHz and Nyquist.
-#         ###f, ax = plt.subplots(figsize=(15, 5))
-#         self.axes.imshow(matrix.T, 
-#                   cmap='viridis', 
-#                   origin='lower',
-#                   extent=(pos_in_sec_from, pos_in_sec_to, 
-#                           0, max_freq)
-#                  )
-#         self.axes.axis('tight')
-#         self.axes.set_title(wave_file_path.name)
-#         self.axes.set_ylabel('Frequency (kHz)')
-#         self.axes.set_xlabel('Time (s)')
-#         #ax.set_ylim([0,160])
-#         #
-#         if not self.spectrogram_thread_active:
-#             return
-#         #
-#         self._canvas.draw()
-#     
+    def plot_callshapes(self):
+        """ Use a thread to relese the user. """
+        try:
+            workspace = app_core.DesktopAppSync().get_workspace()
+            survey = app_core.DesktopAppSync().get_selected_survey()
+            item_id = app_core.DesktopAppSync().get_selected_item_id(item_type='wavefile')
+            item_metadata = app_core.DesktopAppSync().get_metadata_dict()
+            item_title = item_metadata.get('item_title', '')
+            # Don't redraw the same callshapes.
+            if (item_id == self.last_used_callshapes_item_id): ### and \
+#                (int(self.windowsize_combo.currentText()) == self.last_used_window_size) and \
+#                (self.timeresolution_combo.currentText() == self.last_used_timeresolution) and \
+#                (self.viewpart_combo.currentText() == self.last_used_viewpart):
+                return
+            #
+            try:
+                # Check if thread is running.
+                if not self.callshapes_thread:
+#                     self.callshapes_active = True
+                    self.callshapes_thread = threading.Thread(target = self.run_callshapes_plotter, 
+                                                               args=())
+                    self.callshapes_thread.start()
+            
+            except Exception as e:
+                debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+                app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
+            #
+            callshapes_dict = {}
+            callshapes_dict['workspace'] = workspace
+            callshapes_dict['survey'] = survey
+            callshapes_dict['item_id'] = item_id
+            callshapes_dict['item_title'] = item_title
+            #
+            if self.callshapes_queue.qsize() > 5:
+                app_utils.Logging().info('Items removed from the callshapes plotting queue.')
+                while self.callshapes_queue.qsize() > 5:
+                    try:
+                        self.callshapes_queue.get_nowait()
+                    except queue.Empty:
+                        break # Exits while loop.
+            #
+#             print('- To queue: ', item_id)
+            self.callshapes_queue.put(callshapes_dict)
+            #
+            self.last_used_callshapes_item_id = item_id
+#             self.last_used_window_size = int(self.windowsize_combo.currentText())
+#             self.last_used_timeresolution = self.timeresolution_combo.currentText()
+#             self.last_used_viewpart = self.viewpart_combo.currentText()
 
+
+        
+        except Exception as e:
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
+    
+    def run_callshapes_plotter(self):
+        """ """
+        try:
+            try:
+                while self.callshapes_active:
+                    queue_item = self.callshapes_queue.get()
+                    if queue_item == False:
+                        # Exit.
+                        self.callshapes_active = False
+                        continue
+                    #
+                    self.survey_edit.setText('')
+                    self.itemid_edit.setText('')
+                    self.title_edit.setText('')
+                    #
+                    if self.isVisible():
+                        workspace = queue_item.get('workspace', '') 
+                        survey = queue_item.get('survey', '') 
+                        item_id = queue_item.get('item_id', '') 
+                        item_title = queue_item.get('item_title', '') 
+                        #
+                        self.create_callshapes(workspace, survey, item_id)
+                        #
+                        self.survey_edit.setText(survey)
+                        self.itemid_edit.setText(item_id)
+                        self.title_edit.setText(item_title)
+                        #
+                        time.sleep(0.3)
+            finally:
+                self.callshapes_thread = None
+        
+        except Exception as e:
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
+    
+    def create_callshapes(self, workspace, survey, item_id):
+        """ """
+        try:
+            if not item_id:
+                self.axes.cla()
+                self._canvas.draw()
+                return
+            #
+            h5wavefile = hdf54bats.Hdf5Wavefiles(workspace, survey)
+            try:
+                item_metadata = h5wavefile.get_user_metadata(item_id=item_id, close=False)
+                pulsepeaks_dict = h5wavefile.get_pulse_peaks_table(wavefile_id=item_id, close=True)
+            finally:
+                h5wavefile.close()
+                
+            sampling_freq_hz = item_metadata.get('rec_frame_rate_hz', '')
+            max_freq = int(sampling_freq_hz) / 2 / 1000
+            rec_nframes = item_metadata.get('rec_nframes', '')
+            pos_in_sec_from = 0.0
+            pos_in_sec_to = rec_nframes / int(sampling_freq_hz)
+
+            # Plot.
+            self.axes.cla()
+            #
+            time = pulsepeaks_dict['time_s']
+            freq = pulsepeaks_dict['freq_khz']
+            amp = pulsepeaks_dict['amp_dbfs']
+            #
+            amp_min = abs(min(amp))
+            sizes = [((x+amp_min)**1.2) * 0.1 for x in amp]
+              
+#         #     matplotlib.pyplot.scatter(time, freq, c=sizes, s=sizes, cmap='Blues')
+#     #         matplotlib.pyplot.scatter(time, freq, c=amp, s=sizes, cmap='Reds')
+#     #        matplotlib.pyplot.scatter(time, freq, c=amp, s=0.5, cmap='Reds') #, origin='lower')
+#             matplotlib.pyplot.scatter(time, freq, s=0.5 )
+#             matplotlib.pyplot.show()
+
+            self.axes.scatter(time, freq, s=0.5, )
+            self.axes.set_xlim(pos_in_sec_from, pos_in_sec_to)
+            self.axes.set_ylim(0, max_freq)
+#             self.axes.axis('tight')
+#             self.axes.set_title(item_title)
+            self.axes.set_ylabel('Frequency (kHz)')
+            self.axes.set_xlabel('Time (s)')
+            #ax.set_ylim([0,160])
+            #
+            self._canvas.draw()
+
+            
+        except Exception as e:
+            debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
+            app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))

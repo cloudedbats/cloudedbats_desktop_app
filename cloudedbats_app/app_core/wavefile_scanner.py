@@ -85,12 +85,16 @@ class WaveFileScanner():
             
             print('DEBUG:', item_id, '   ', low_freq_hz, '   ', high_freq_hz, '   ', min_amp_level_dbfs, '   ', min_amp_level_relative)
             
+            item_metadata = h5wavefile.get_user_metadata(item_id=item_id, close=False)
             signal = h5wavefile.get_wavefile(item_id=item_id, close=True)
+            
+            sampling_freq_hz = item_metadata.get('rec_frame_rate_hz', '')
+            sampling_freq_hz = int(sampling_freq_hz)
             
             signal = signal / 32767 # To interval -1.0 to 1.0
             
             extractor = sound4bats.PulsePeaksExtractor(debug=True)
-            extractor.setup(sampling_freq_hz=384000)
+            extractor.setup(sampling_freq_hz=sampling_freq_hz)
             signal_filtered = extractor.filter(signal, 
                                                filter_low_hz=low_freq_hz, filter_high_hz=high_freq_hz)
             extractor.new_result_table()
@@ -99,7 +103,7 @@ class WaveFileScanner():
             
             result_table = extractor.get_result_table()
             
-            print('Debug: TABLE len:', len(result_table))
+            print('DEBUG: TABLE len:', len(result_table), ' for item_id: ', item_id)
             
             h5wavefile.add_pulse_peaks_table(item_id, result_table)
             

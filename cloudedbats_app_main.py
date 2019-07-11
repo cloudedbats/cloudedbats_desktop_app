@@ -8,7 +8,7 @@
 # Format: <year>.<month>.<day>, example: '2019.01.01' 
 # import time
 # year_month_day = time.strftime("%Y.%m.%d")
-year_month_day = '2019.07.09'
+year_month_day = '2019.07.11'
 __version__ = year_month_day
 
 # import os

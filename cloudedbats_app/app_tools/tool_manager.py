@@ -29,7 +29,7 @@ class ToolManager(object):
         self._toollist.append(app_tools.MapTool('Map', self._parent))
         self._toollist.append(app_tools.ImagesTool('(Images)', self._parent))
         self._toollist.append(app_tools.SpectrogramTool('Spectrogram', self._parent))
-        self._toollist.append(app_tools.CallShapesTool('(Call shapes)', self._parent))
+        self._toollist.append(app_tools.CallShapesTool('Call shapes', self._parent))
         self._toollist.append(app_tools.MetricsPlotTool('(Metrics plot)', self._parent))
         self._toollist.append(app_tools.EventPlotTool('(Event plot)', self._parent))
         self._toollist.append(app_tools.SpeciesTool('(Species)', self._parent))
