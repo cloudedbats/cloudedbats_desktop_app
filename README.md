@@ -27,12 +27,13 @@ For Ubuntu, etc., use "sudo apt-get install libhdf5-serial-dev".
 	# venv\Scripts\activate # On Windows.
 	git clone https://github.com/cloudedbats/cloudedbats_desktop_app.git
 	cd cloudedbats_desktop_app
-	pip install -r rquirements.txt
+	pip install -r requirements.txt
 	pip install tables
 	pip install h5py
 	pip install git+https://github.com/cloudedbats/cloudedbats_dsp
 	pip install git+https://github.com/cloudedbats/cloudedbats_hdf5
 	pip install git+https://github.com/cloudedbats/cloudedbats_metadata
+	pip install git+https://github.com/cloudedbats/cloudedbats_sound
 
 To run the desktop application:
 
