@@ -171,11 +171,14 @@ class ScannerActivity(app_framework.ActivityBase):
     def scan_files(self):
         """ """
         try:
+            lowfreqfilter = str(self.lowfreqfilter_edit.text()).replace(',', '.')
+            highfreqfilter = str(self.highfreqfilter_edit.text()).replace(',', '.')
+            amplevel = str(self.amplevel_edit.text()).replace(',', '.')
             params = {}
-            params['low_frequency_hz'] = float(self.lowfreqfilter_edit.text()) * 1000.0
+            params['low_frequency_hz'] = float(lowfreqfilter) * 1000.0
             if self.usehighlimit_checkbox.isChecked():
-                params['high_frequency_hz'] = float(self.highfreqfilter_edit.text()) * 1000.0
-            params['min_amp_level_dbfs'] = float(self.amplevel_edit.text())
+                params['high_frequency_hz'] = float(highfreqfilter) * 1000.0
+            params['min_amp_level_dbfs'] = float(amplevel)
             params['min_amp_level_relative'] = self.amplevel_checkbox.isChecked()
             #
             item_id_list = []
