@@ -309,7 +309,7 @@ class CallShapesTool(app_framework.ToolBase):
                         self.itemid_edit.setText(item_id)
                         self.title_edit.setText(item_title)
                         #
-                        time.sleep(0.3)
+#                         time.sleep(0.3)
             finally:
                 self.callshapes_thread = None
         
@@ -328,7 +328,7 @@ class CallShapesTool(app_framework.ToolBase):
             h5wavefile = hdf54bats.Hdf5Wavefiles(workspace, survey)
             try:
                 item_metadata = h5wavefile.get_user_metadata(item_id=item_id, close=False)
-                pulsepeaks_dict = h5wavefile.get_pulse_peaks_table(wavefile_id=item_id, close=True)
+                pulsepeaks_dict = h5wavefile.get_pulse_peaks_table(wavefile_id=item_id, close=False)
             finally:
                 h5wavefile.close()
                 
@@ -341,20 +341,22 @@ class CallShapesTool(app_framework.ToolBase):
             # Plot.
             self.axes.cla()
             #
-            time = pulsepeaks_dict['time_s']
+            time_s = pulsepeaks_dict['time_s']
             freq = pulsepeaks_dict['freq_khz']
             amp = pulsepeaks_dict['amp_dbfs']
             #
             amp_min = abs(min(amp))
             sizes = [((x+amp_min)**1.2) * 0.1 for x in amp]
               
-#         #     matplotlib.pyplot.scatter(time, freq, c=sizes, s=sizes, cmap='Blues')
-#     #         matplotlib.pyplot.scatter(time, freq, c=amp, s=sizes, cmap='Reds')
-#     #        matplotlib.pyplot.scatter(time, freq, c=amp, s=0.5, cmap='Reds') #, origin='lower')
-#             matplotlib.pyplot.scatter(time, freq, s=0.5 )
+#         #     matplotlib.pyplot.scatter(time_s, freq, c=sizes, s=sizes, cmap='Blues')
+#     #         matplotlib.pyplot.scatter(time_s, freq, c=amp, s=sizes, cmap='Reds')
+#     #        matplotlib.pyplot.scatter(time_s, freq, c=amp, s=0.2, cmap='Reds') #, origin='lower')
+#             matplotlib.pyplot.scatter(time_s, freq, s=0.5 )
 #             matplotlib.pyplot.show()
 
-            self.axes.scatter(time, freq, s=0.5, )
+            self.axes.scatter(time_s, freq, s=0.2, alpha=0.5)
+#             self.axes.scatter(time_s, freq, c=amp, s=0.2, cmap='Blues', alpha=0.5)
+            
             self.axes.set_xlim(pos_in_sec_from, pos_in_sec_to)
             self.axes.set_ylim(0, max_freq)
 #             self.axes.axis('tight')
@@ -362,9 +364,14 @@ class CallShapesTool(app_framework.ToolBase):
             self.axes.set_ylabel('Frequency (kHz)')
             self.axes.set_xlabel('Time (s)')
             #ax.set_ylim([0,160])
+             
+            self.axes.minorticks_on()
+            self.axes.grid(which='major', linestyle='-', linewidth='0.5', alpha=0.6)
+            self.axes.grid(which='minor', linestyle='-', linewidth='0.5', alpha=0.3)
+            self.axes.tick_params(which='both', top='off', left='off', right='off', bottom='off')
             #
             self._canvas.draw()
-
+            
             
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
