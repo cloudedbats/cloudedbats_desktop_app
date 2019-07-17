@@ -46,6 +46,8 @@ class SpectrogramTool(app_framework.ToolBase):
         self.last_used_viewpart = -1
         # Use sync object for workspaces and surveys. 
         app_core.DesktopAppSync().item_id_changed_signal.connect(self.plot_spectrogram)
+        # Use sync object to clear buffers. 
+        app_core.DesktopAppSync().clear_buffers_signal.connect(self.clear_buffers)
         # Also when visible.
         self.visibilityChanged.connect(self.visibility_changed)
     
@@ -205,9 +207,11 @@ class SpectrogramTool(app_framework.ToolBase):
             # Terminate spectrogram thread.
             self.spectrogram_active = False
             #
-            while self.spectrogram_queue.qsize() > 5:
+            while True:
+#             while self.spectrogram_queue.qsize() > 3:
                 try: self.spectrogram_queue.get_nowait()
-                except queue.Empty: break # Exits while loop.
+                except queue.Empty: 
+                    break # Exits while loop.
             # Send on queue to release thread.
             self.spectrogram_queue.put(False)
         except Exception as e:
@@ -226,6 +230,14 @@ class SpectrogramTool(app_framework.ToolBase):
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
+    
+    def clear_buffers(self):
+        """ """
+        while True:
+            try:
+                self.spectrogram_queue.get_nowait()
+            except queue.Empty:
+                break # Exits while loop.
     
     def plot_spectrogram(self):
         """ Use a thread to relese the user. """
@@ -260,9 +272,9 @@ class SpectrogramTool(app_framework.ToolBase):
             spectrogram_dict['item_id'] = item_id
             spectrogram_dict['item_title'] = item_title
             #
-            if self.spectrogram_queue.qsize() > 5:
+            if self.spectrogram_queue.qsize() > 3:
                 app_utils.Logging().info('Items removed from the spectrogram plotting queue.')
-                while self.spectrogram_queue.qsize() > 5:
+                while self.spectrogram_queue.qsize() > 3:
                     try:
                         self.spectrogram_queue.get_nowait()
                     except queue.Empty:

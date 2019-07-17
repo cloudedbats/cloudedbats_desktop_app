@@ -17,6 +17,7 @@ class DesktopAppSync(QtCore.QObject):
     workspace_changed_signal = QtCore.pyqtSignal()
     survey_changed_signal = QtCore.pyqtSignal()
     item_id_changed_signal = QtCore.pyqtSignal()
+    clear_buffers_signal = QtCore.pyqtSignal()
 
     def __init__(self):
         """ """
@@ -93,13 +94,12 @@ class DesktopAppSync(QtCore.QObject):
     
     def set_selected_item_id(self, item_id):
         """ """
-#         print('- SET ITEM: ', item_id)
         if self.item_id != item_id:
             self.item_id = item_id
-            self.update_metadata_dict()
-        
-        # Emit signal after a short delay.
-        QtCore.QTimer.singleShot(100, self._emit_item_id_changed)
+            
+            # Emit signal after a short delay. 
+            # The parameter is attach to avoid too many updates if item_id changes too fast.
+            QtCore.QTimer.singleShot(100, lambda: self._emit_item_id_changed(item_id))
     
     def get_selected_item_id(self, item_type=''):
         """ """
@@ -270,9 +270,16 @@ class DesktopAppSync(QtCore.QObject):
         """ """
         self.survey_changed_signal.emit()
     
-    def _emit_item_id_changed(self):
+    def _emit_item_id_changed(self, item_id):
         """ """
-        self.item_id_changed_signal.emit()
+        # Skip emit if item_id changes too fast, for example when 
+        # the user holds down the arrow key.
+        if item_id == self.item_id:
+            self.update_metadata_dict()
+            self.item_id_changed_signal.emit()
+#         else:
+#             # Clear buffers when scrolling too fast.
+#             self.clear_buffers_signal.emit()
     
     
     def save_last_used(self):
