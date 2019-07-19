@@ -208,7 +208,6 @@ class CallShapesTool(app_framework.ToolBase):
             self.callshapes_active = False
             #
             while True:
-#             while self.callshapes_queue.qsize() > 3:
                 try: self.callshapes_queue.get_nowait()
                 except queue.Empty: 
                     break # Exits while loop.
@@ -272,9 +271,9 @@ class CallShapesTool(app_framework.ToolBase):
             callshapes_dict['item_id'] = item_id
             callshapes_dict['item_title'] = item_title
             #
-            if self.callshapes_queue.qsize() > 3:
-                app_utils.Logging().info('Items removed from the callshapes plotting queue.')
-                while self.callshapes_queue.qsize() > 3:
+            if self.callshapes_queue.qsize() >= 2:
+#                 app_utils.Logging().info('Items removed from the callshapes plotting queue.')
+                while self.callshapes_queue.qsize() >= 2:
                     try:
                         self.callshapes_queue.get_nowait()
                     except queue.Empty:
@@ -338,11 +337,8 @@ class CallShapesTool(app_framework.ToolBase):
                 return
             #
             h5wavefile = hdf54bats.Hdf5Wavefiles(workspace, survey)
-            try:
-                item_metadata = h5wavefile.get_user_metadata(item_id=item_id, close=False)
-                pulsepeaks_dict = h5wavefile.get_pulse_peaks_table(wavefile_id=item_id, close=False)
-            finally:
-                h5wavefile.close()
+            item_metadata = h5wavefile.get_user_metadata(item_id=item_id)
+            pulsepeaks_dict = h5wavefile.get_pulse_peaks_table(wavefile_id=item_id)
                 
             sampling_freq_hz = item_metadata.get('rec_frame_rate_hz', '')
             max_freq = int(sampling_freq_hz) / 2 / 1000
@@ -385,7 +381,7 @@ class CallShapesTool(app_framework.ToolBase):
             self.axes.minorticks_on()
             self.axes.grid(which='major', linestyle='-', linewidth='0.5', alpha=0.6)
             self.axes.grid(which='minor', linestyle='-', linewidth='0.5', alpha=0.3)
-            self.axes.tick_params(which='both', top='off', left='off', right='off', bottom='off')
+            self.axes.tick_params(which='both', top=False, left=False, right=False, bottom=False)
             #
             self._canvas.draw()
             

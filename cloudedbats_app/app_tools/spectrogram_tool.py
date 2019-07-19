@@ -208,7 +208,6 @@ class SpectrogramTool(app_framework.ToolBase):
             self.spectrogram_active = False
             #
             while True:
-#             while self.spectrogram_queue.qsize() > 3:
                 try: self.spectrogram_queue.get_nowait()
                 except queue.Empty: 
                     break # Exits while loop.
@@ -272,9 +271,9 @@ class SpectrogramTool(app_framework.ToolBase):
             spectrogram_dict['item_id'] = item_id
             spectrogram_dict['item_title'] = item_title
             #
-            if self.spectrogram_queue.qsize() > 3:
-                app_utils.Logging().info('Items removed from the spectrogram plotting queue.')
-                while self.spectrogram_queue.qsize() > 3:
+            if self.spectrogram_queue.qsize() >= 1:
+#                 app_utils.Logging().info('Items removed from the spectrogram plotting queue.')
+                while self.spectrogram_queue.qsize() >= 1:
                     try:
                         self.spectrogram_queue.get_nowait()
                     except queue.Empty:
@@ -338,11 +337,8 @@ class SpectrogramTool(app_framework.ToolBase):
                 return
             #
             h5wavefile = hdf54bats.Hdf5Wavefiles(workspace, survey)
-            try:
-                signal = h5wavefile.get_wavefile(item_id=item_id, close=False)
-                item_metadata = h5wavefile.get_user_metadata(item_id=item_id, close=False)
-            finally:
-                h5wavefile.close()
+            signal = h5wavefile.get_wavefile(item_id=item_id)
+            item_metadata = h5wavefile.get_user_metadata(item_id=item_id)
             #
             sampling_freq_hz = item_metadata.get('rec_frame_rate_hz', '')
             if not sampling_freq_hz:

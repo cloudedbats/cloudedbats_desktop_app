@@ -85,8 +85,8 @@ class WaveFileScanner():
             
             print('DEBUG:', item_id, '   ', low_freq_hz, '   ', high_freq_hz, '   ', min_amp_level_dbfs, '   ', min_amp_level_relative)
             
-            item_metadata = h5wavefile.get_user_metadata(item_id=item_id, close=False)
-            signal = h5wavefile.get_wavefile(item_id=item_id, close=True)
+            item_metadata = h5wavefile.get_user_metadata(item_id=item_id)
+            signal = h5wavefile.get_wavefile(item_id=item_id)
             
             sampling_freq_hz = item_metadata.get('rec_frame_rate_hz', '')
             sampling_freq_hz = int(sampling_freq_hz)

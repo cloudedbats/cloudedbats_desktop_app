@@ -6,9 +6,7 @@
 
 # Version for "Cloudedbats - desktop application".
 # Format: <year>.<month>.<day>, example: '2019.01.01' 
-# import time
-# year_month_day = time.strftime("%Y.%m.%d")
-year_month_day = '2019.07.12'
+year_month_day = '2019.07.19 - development version'
 __version__ = year_month_day
 
 # import os
