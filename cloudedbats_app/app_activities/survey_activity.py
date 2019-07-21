@@ -337,7 +337,7 @@ class SurveyActivity(app_framework.ActivityBase):
         gridrow += 1
         layout.addWidget(QtWidgets.QLabel(''), gridrow, 1, 1, 20)
         #
-        widget.setLayout(layout)                
+        widget.setLayout(layout)
         #
         return widget
  
@@ -400,7 +400,7 @@ class NewEventDialog(QtWidgets.QDialog):
         hbox1 = QtWidgets.QHBoxLayout()
         hbox1.addStretch(10)
         hbox1.addWidget(cancel_button)
-        hbox1.addWidget(self.createevent_button)        
+        hbox1.addWidget(self.createevent_button)
         # 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(form1, 10)
@@ -436,10 +436,10 @@ class NewEventDialog(QtWidgets.QDialog):
     def create_event(self):
         """ """
         try:
-            event = hdf54bats.Hdf5Events(self.dir_path, self.survey_name)
+            h5_event = hdf54bats.Hdf5Events(self.dir_path, self.survey_name)
             eventtitle = str(self.eventtitle_edit.text())
             eventgroup = str(self.eventgroup_edit.text())
-            event.add_event(parent_id='', new_event_name=eventgroup, title=eventtitle)
+            h5_event.add_event(parent_id='', new_event_name=eventgroup, title=eventtitle)
             self.accept() # Close dialog box.
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
@@ -539,23 +539,6 @@ class NewDetectorDialog(QtWidgets.QDialog):
                 self.detectorgroup_edit.setText('')
         self.enable_buttons()
     
-#     def update_groupname(self, text):
-#         """ """
-#         if self.auto_checkbox.checkState():
-#             new_text = hdf54bats.str_to_ascii(text)
-#             if len(new_text) > 0:
-#                 self.detectorgroup_edit.setText(new_text)
-#             else:
-#                 self.detectorgroup_edit.setText('')
-#         #
-#         new_id = self.detectorgroup_edit.text()
-#         if (len(new_id) > 0) and (self.event_combo.currentIndex() > 0):
-#             self.createdetector_button.setEnabled(True)
-#             self.createdetector_button.setDefault(True)
-#         else:
-#             self.createdetector_button.setEnabled(False)
-#             self.createdetector_button.setDefault(False)
-
     def update_event_list(self):
         """ """
         selected_event_id = app_core.DesktopAppSync().get_selected_item_id(item_type='event')
@@ -586,11 +569,11 @@ class NewDetectorDialog(QtWidgets.QDialog):
         """ """
         try:
             if self.event_combo.currentIndex() > 0:
-                detector = hdf54bats.Hdf5Events(self.dir_path, self.survey_name)
+                h5_detector = hdf54bats.Hdf5Events(self.dir_path, self.survey_name)
                 eventgroup = self.event_combo.currentText()
                 detectortitle = str(self.detectortitle_edit.text())
                 detectorgroup = str(self.detectorgroup_edit.text())
-                detector.add_event(parent_id=eventgroup, new_event_name=detectorgroup, 
+                h5_detector.add_event(parent_id=eventgroup, new_event_name=detectorgroup, 
                                    title=detectortitle, item_type='detector')
                 self.accept() # Close dialog box.
         except Exception as e:
@@ -708,11 +691,11 @@ class RenameDialog(QtWidgets.QDialog):
         """ """
         self.accept() # Close dialog box.
 #         try:
-#             detector = hdf54bats.Hdf5Samples(self.dir_path, self.survey_name)
+#             h5_detector = hdf54bats.Hdf5Samples(self.dir_path, self.survey_name)
 #             eventgroup = self.event_combo.currentText()
 #             detectortitle = str(self.detectortitle_edit.text())
 #             detectorgroup = str(self.detectorgroup_edit.text())
-#             detector.rename_detector(parent_id=eventgroup, name=detectorgroup, title=detectortitle)
+#             h5_detector.rename_detector(parent_id=eventgroup, name=detectorgroup, title=detectortitle)
 #             self.accept() # Close dialog box.
 #         except Exception as e:
 #             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
@@ -959,12 +942,12 @@ class DeleteDialog(QtWidgets.QDialog):
     def delete_marked_items(self):
         """ """
         try:        
-            event = hdf54bats.Hdf5Events(self.dir_path, self.survey_name)
+            h5_event = hdf54bats.Hdf5Events(self.dir_path, self.survey_name)
             for rowindex in range(self.items_model.rowCount()):
                 item = self.items_model.item(rowindex, 0)
                 if item.checkState() == QtCore.Qt.Checked:
                     item_groupname = str(item.text())
-                    event.remove_event(item_groupname, recursive=True)
+                    h5_event.remove_event(item_groupname, recursive=True)
             #
 #             self.parentwidget._emit_change_notification()
             self.accept() # Close dialog box.

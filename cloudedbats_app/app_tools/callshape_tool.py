@@ -290,6 +290,8 @@ class CallShapesTool(app_framework.ToolBase):
 
         
         except Exception as e:
+            self.axes.cla()
+            self._canvas.draw()
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
@@ -325,6 +327,8 @@ class CallShapesTool(app_framework.ToolBase):
                 self.callshapes_thread = None
         
         except Exception as e:
+            self.axes.cla()
+            self._canvas.draw()
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))
     
@@ -336,9 +340,15 @@ class CallShapesTool(app_framework.ToolBase):
                 self._canvas.draw()
                 return
             #
-            h5wavefile = hdf54bats.Hdf5Wavefiles(workspace, survey)
-            item_metadata = h5wavefile.get_user_metadata(item_id=item_id)
-            pulsepeaks_dict = h5wavefile.get_pulse_peaks_table(wavefile_id=item_id)
+            h5_wavefiles = hdf54bats.Hdf5Wavefiles(workspace, survey)
+            item_metadata = h5_wavefiles.get_user_metadata(item_id)
+            if not h5_wavefiles.exists(item_id, 'wavefile_peaks'):
+                self.axes.cla()
+                self._canvas.draw()
+                return
+
+            #
+            pulsepeaks_dict = h5_wavefiles.get_wavefile_peaks(wavefile_id=item_id)
                 
             sampling_freq_hz = item_metadata.get('rec_frame_rate_hz', '')
             max_freq = int(sampling_freq_hz) / 2 / 1000
@@ -360,6 +370,9 @@ class CallShapesTool(app_framework.ToolBase):
             #
             amp_min = abs(min(amp))
             sizes = [((x+amp_min)**1.2) * 0.1 for x in amp]
+            colours = [(x * -1.0) for x in amp]
+            
+            self.axes.scatter(time_s, freq, s=1.0, c=colours, cmap='inferno', alpha=0.2)
               
 #         #     matplotlib.pyplot.scatter(time_s, freq, c=sizes, s=sizes, cmap='Blues')
 #     #         matplotlib.pyplot.scatter(time_s, freq, c=amp, s=sizes, cmap='Reds')
@@ -367,7 +380,7 @@ class CallShapesTool(app_framework.ToolBase):
 #             matplotlib.pyplot.scatter(time_s, freq, s=0.5 )
 #             matplotlib.pyplot.show()
 
-            self.axes.scatter(time_s, freq, s=0.2, alpha=0.5)
+#             self.axes.scatter(time_s, freq, s=0.2, alpha=0.5)
 #             self.axes.scatter(time_s, freq, c=amp, s=0.2, cmap='Blues', alpha=0.5)
             
             self.axes.set_xlim(pos_in_sec_from, pos_in_sec_to)
@@ -387,5 +400,7 @@ class CallShapesTool(app_framework.ToolBase):
             
             
         except Exception as e:
+            self.axes.cla()
+            self._canvas.draw()
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
             app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))

@@ -196,7 +196,6 @@ class WavefilesActivity(app_framework.ActivityBase):
             #
             self.dir_path = app_core.DesktopAppSync().get_workspace()
             self.survey_name = app_core.DesktopAppSync().get_selected_survey()
-#             h5wavefile = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
             #
             if self.survey_combo.currentIndex() == 0:
                 dataset_table = app_framework.DatasetTable()
@@ -598,7 +597,7 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                 detectorgroup = self.detector_combo.currentText()
                 self._parentwidget._write_to_status_bar('- Busy: Importing wave files.')
                 
-                h5wavefile = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
+                h5_wavefiles = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
 #                 wurb_utils = dsp4bats.WurbFileUtils()
                 
                 
@@ -667,8 +666,8 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                                 if wave_reader:
                                     wave_reader.close()
                             
-                            h5wavefile.add_wavefile(parent_id=detectorgroup, new_name=name, title=title, array=signal)                            
-                            h5wavefile.set_user_metadata(detectorgroup + '.' + name, metadata)
+                            h5_wavefiles.add_wavefile(parent_id=detectorgroup, new_name=name, title=title, array=signal)                            
+                            h5_wavefiles.set_user_metadata(detectorgroup + '.' + name, metadata)
                     #
                     except Exception as e:
                         debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
@@ -756,9 +755,9 @@ class DeleteDialog(QtWidgets.QDialog):
         """ """
         try:
             self._items_model.clear()
-            wavefiles = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
+            h5_wavefiles = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
             from_top_node = ''
-            nodes = wavefiles.get_child_nodes(from_top_node)
+            nodes = h5_wavefiles.get_child_nodes(from_top_node)
             for node_key in sorted(nodes):
                 node_dict = nodes.get(node_key, {})
                 node_item_id = node_dict.get('item_id', '')
@@ -825,12 +824,12 @@ class DeleteDialog(QtWidgets.QDialog):
         """ """
         try:
             try:        
-                wave = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
+                h5_wavefiles = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
                 for rowindex in range(self._items_model.rowCount()):
                     item = self._items_model.item(rowindex, 0)
                     if item.checkState() == QtCore.Qt.Checked:
                         item_id = str(item.text())
-                        wave.remove_wavefile(item_id, recursive=True)
+                        h5_wavefiles.remove_wavefile(item_id, recursive=True)
             finally:
                 self.accept() # Close dialog box.
         #

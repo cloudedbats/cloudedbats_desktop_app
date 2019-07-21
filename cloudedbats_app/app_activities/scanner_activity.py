@@ -122,9 +122,9 @@ class ScannerActivity(app_framework.ActivityBase):
         #
         try:
             self._items_model.clear()
-            wavefiles = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
+            h5_wavefiles = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
             from_top_node = ''
-            nodes = wavefiles.get_child_nodes(from_top_node)
+            nodes = h5_wavefiles.get_child_nodes(from_top_node)
             for node_key in sorted(nodes):
                 node_dict = nodes.get(node_key, {})
                 node_item_id = node_dict.get('item_id', '')
@@ -181,11 +181,21 @@ class ScannerActivity(app_framework.ActivityBase):
             params['min_amp_level_dbfs'] = float(amplevel)
             params['min_amp_level_relative'] = self.amplevel_checkbox.isChecked()
             #
+            h5_wavefiles = hdf54bats.Hdf5Wavefiles(self.dir_path, self.survey_name)
             item_id_list = []
             for rowindex in range(self._items_model.rowCount()):
                 item = self._items_model.item(rowindex, 0)
                 if item.checkState() == QtCore.Qt.Checked:
-                    item_id_list.append(str(item.text()))
+                    
+                    
+                    
+                    item_id = str(item.text())
+                    if not h5_wavefiles.exists(item_id, 'wavefile_peaks'):
+                        item_id_list.append(item_id)
+                        
+                        
+                        
+                        
             params['item_id_list'] = item_id_list
             #
             scanner = app_core.WaveFileScanner()

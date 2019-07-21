@@ -336,9 +336,9 @@ class SpectrogramTool(app_framework.ToolBase):
                 self._canvas.draw()
                 return
             #
-            h5wavefile = hdf54bats.Hdf5Wavefiles(workspace, survey)
-            signal = h5wavefile.get_wavefile(item_id=item_id)
-            item_metadata = h5wavefile.get_user_metadata(item_id=item_id)
+            h5_wavefiles = hdf54bats.Hdf5Wavefiles(workspace, survey)
+            signal = h5_wavefiles.get_wavefile(wavefile_id=item_id)
+            item_metadata = h5_wavefiles.get_user_metadata(item_id)
             #
             sampling_freq_hz = item_metadata.get('rec_frame_rate_hz', '')
             if not sampling_freq_hz:

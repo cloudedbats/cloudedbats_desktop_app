@@ -186,9 +186,9 @@ class DesktopAppSync(QtCore.QObject):
                 if not pathlib.Path(self.workspace, self.survey).exists():
                     return
                 #
-                h5_wavefile = hdf54bats.Hdf5Wavefiles(self.workspace, self.survey)
-                self.metadata_dict = h5_wavefile.get_user_metadata(self.item_id)
-                self.metadata_dict['item_title'] = h5_wavefile.get_item_title(self.item_id)
+                h5_wavefiles = hdf54bats.Hdf5Wavefiles(self.workspace, self.survey)
+                self.metadata_dict = h5_wavefiles.get_user_metadata(self.item_id)
+                self.metadata_dict['item_title'] = h5_wavefiles.get_item_title(self.item_id)
             except Exception as e:
                 debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
                 app_utils.Logging().error('Exception: (' + debug_info + '): ' + str(e))

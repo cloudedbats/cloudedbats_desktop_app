@@ -44,7 +44,7 @@ class WaveFileScanner():
             # Check if thread is running.
             if self.thread_object:
                 if self.thread_object.is_alive():
-                    app_utils.Logging.warning('Wave file scanner is already running. Please try again later.')
+                    app_utils.Logging().warning('Wave file scanner is already running. Please try again later.')
                     return
             # Use a thread to relese the user.
             item_id_list = param_dict.get('item_id_list', [])
@@ -71,22 +71,27 @@ class WaveFileScanner():
 #             self.thread_object.start()
         
         except Exception as e:
-            app_utils.Logging.warning('Failed to scan wave files. Exception: ' + str(e))
+            app_utils.Logging().warning('Failed to scan wave files. Exception: ' + str(e))
             
     def _scan_files(self, item_id_list, low_freq_hz, high_freq_hz, min_amp_level_dbfs, min_amp_level_relative):
         """ """
         workspace = app_core.DesktopAppSync().get_workspace()
         survey = app_core.DesktopAppSync().get_selected_survey()
-        h5wavefile = hdf54bats.Hdf5Wavefiles(workspace, survey)
+        h5_wavefiles = hdf54bats.Hdf5Wavefiles(workspace, survey)
         
+        print('DEBUG: Scanner', ' low freq: ', low_freq_hz, ' high freq: ', high_freq_hz, 
+              ' min dbfs: ', min_amp_level_dbfs, ' relative: ', min_amp_level_relative)
+
+        counter = 0
+        counter_max = len(item_id_list)
         for item_id in item_id_list:
             
             app_utils.Logging().info('Scanning: ' + item_id)
+            counter += 1
+            print('DEBUG: Scanning ', counter, ' (', counter_max, ')   ', item_id)
             
-            print('DEBUG:', item_id, '   ', low_freq_hz, '   ', high_freq_hz, '   ', min_amp_level_dbfs, '   ', min_amp_level_relative)
-            
-            item_metadata = h5wavefile.get_user_metadata(item_id=item_id)
-            signal = h5wavefile.get_wavefile(item_id=item_id)
+            item_metadata = h5_wavefiles.get_user_metadata(item_id)
+            signal = h5_wavefiles.get_wavefile(wavefile_id=item_id)
             
             sampling_freq_hz = item_metadata.get('rec_frame_rate_hz', '')
             sampling_freq_hz = int(sampling_freq_hz)
@@ -105,10 +110,10 @@ class WaveFileScanner():
             
             print('DEBUG: TABLE len:', len(result_table), ' for item_id: ', item_id)
             
-            h5wavefile.add_pulse_peaks_table(item_id, result_table)
+            h5_wavefiles.add_wavefile_peaks(item_id, result_table)
             
             
-#             extractor.save_result_table(file_path='debug_pulse_peaks' + item_id + '.txt')
+#             extractor.save_result_table(file_path='debug_wavefile_peaks' + item_id + '.txt')
 
 #         # Plot.
 #         import matplotlib.pyplot
