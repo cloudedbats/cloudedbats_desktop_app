@@ -439,7 +439,7 @@ class NewEventDialog(QtWidgets.QDialog):
             h5_event = hdf54bats.Hdf5Events(self.dir_path, self.survey_name)
             eventtitle = str(self.eventtitle_edit.text())
             eventgroup = str(self.eventgroup_edit.text())
-            h5_event.add_event(parent_id='', new_event_name=eventgroup, title=eventtitle)
+            h5_event.add_event(parent_id='', node_id=eventgroup, title=eventtitle)
             self.accept() # Close dialog box.
         except Exception as e:
             debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
@@ -573,7 +573,7 @@ class NewDetectorDialog(QtWidgets.QDialog):
                 eventgroup = self.event_combo.currentText()
                 detectortitle = str(self.detectortitle_edit.text())
                 detectorgroup = str(self.detectorgroup_edit.text())
-                h5_detector.add_event(parent_id=eventgroup, new_event_name=detectorgroup, 
+                h5_detector.add_event(parent_id=eventgroup, node_id=detectorgroup, 
                                    title=detectortitle, item_type='detector')
                 self.accept() # Close dialog box.
         except Exception as e:
