@@ -573,12 +573,22 @@ class ImportWavefileDialog(QtWidgets.QDialog):
         dir_path = str(self.sourcedir_edit.text())
         path_list = []
         # Search for wave files. 
+#         if self.recursive_checkbox.isChecked():
+#             path_list = list(pathlib.Path(dir_path).glob('**/*.wav'))
+#             path_list += list(pathlib.Path(dir_path).glob('**/*.WAV'))
+#         else:
+#             path_list = list(pathlib.Path(dir_path).glob('*.wav'))
+#             path_list += list(pathlib.Path(dir_path).glob('*.WAV'))
+
+        file_ext_list = ['*.wav', '*.WAV']
         if self.recursive_checkbox.isChecked():
-            path_list = list(pathlib.Path(dir_path).glob('**/*.wav'))
-            path_list += list(pathlib.Path(dir_path).glob('**/*.WAV'))
-        else:
-            path_list = list(pathlib.Path(dir_path).glob('*.wav'))
-            path_list += list(pathlib.Path(dir_path).glob('*.WAV'))
+            file_ext_list = ['**/*.wav', '**/*.WAV']
+        #
+        for file_ext in file_ext_list:
+            for file_name in pathlib.Path(dir_path).glob(file_ext):
+                file_name_str = str(file_name).replace('/._', '/') # TODO: Strange chars when reading from ext. SSD?
+                if file_name_str not in path_list:
+                    path_list.append(file_name_str)
         #
         for wave_file_path in sorted(path_list):
                 item = QtGui.QStandardItem(str(wave_file_path))
@@ -666,8 +676,8 @@ class ImportWavefileDialog(QtWidgets.QDialog):
                                 if wave_reader:
                                     wave_reader.close()
                             
-                            h5_wavefiles.add_wavefile(parent_id=detectorgroup, new_name=name, title=title, array=signal)                            
-                            h5_wavefiles.set_user_metadata(detectorgroup + '.' + name, metadata)
+                            wavefile_id = h5_wavefiles.add_wavefile(parent_id=detectorgroup, node_id=name, title=title, array=signal)
+                            h5_wavefiles.set_user_metadata(wavefile_id, metadata=metadata)
                     #
                     except Exception as e:
                         debug_info = self.__class__.__name__ + ', row  ' + str(sys._getframe().f_lineno)
@@ -717,13 +727,13 @@ class DeleteDialog(QtWidgets.QDialog):
         items_listview.setModel(self._items_model)
 
         clearall_button = app_framework.ClickableQLabel('Clear all')
-        clearall_button.label_clicked.connect(self._uncheck_all_items)                
+        clearall_button.label_clicked.connect(self._uncheck_all_items)
         markall_button = app_framework.ClickableQLabel('Mark all')
-        markall_button.label_clicked.connect(self._check_all_items)                
+        markall_button.label_clicked.connect(self._check_all_items)
         cancel_button = QtWidgets.QPushButton('Cancel')
         cancel_button.clicked.connect(self.reject) # Close dialog box.               
         delete_button = QtWidgets.QPushButton('Delete marked wavefiles')
-        delete_button.clicked.connect(self._delete_marked_items)               
+        delete_button.clicked.connect(self._delete_marked_items)
         # Layout widgets.
         hbox1 = QtWidgets.QHBoxLayout()
         hbox1.addWidget(clearall_button)
